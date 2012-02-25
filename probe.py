@@ -1,8 +1,10 @@
 import telnetlib
 import argparse
 import random
+import re
 
 rand = random.SystemRandom()
+location = re.compile(r"Completed probe request: 0.\d+ -> (0.\d+)")
 
 #Set up argument parsing
 parser = argparse.ArgumentParser(description="Collect information gathered by making probes to random network locations, then update analysis thereof, generate graphs, and optionally upload the results.")
@@ -31,4 +33,13 @@ tn.read_until(prompt)
 #Each thread will need its own sqlite and telnet connection.
 for _ in range(args.numProbes):
 	tn.write("PROBE:" + str(rand.random()) + "\n")
-	print(tn.read_until(prompt, args.probeWait))
+	raw = tn.read_until(prompt, args.probeWait)
+	#TODO: What if timeout elapses? Need to skip parsing attempt.
+	
+	#Take the right side of "Completed probe request: <target location> -> <closest found location>"
+	print("Found location: ", location.search(raw).group(1))
+	
+	#TODO: Take context of UIDs into account, giving infromation on distribution and average peer count.
+	#Follow probe traces for list of UIDs.
+	
+	
