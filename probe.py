@@ -4,7 +4,8 @@ import random
 import re
 
 rand = random.SystemRandom()
-location = re.compile(r"Completed probe request: 0.\d+ -> (0.\d+)")
+location = re.compile(r"Completed probe request: 0\.\d+ -> (0\.\d+)")
+uid = re.compile(r"peer UIDs=\[([-\d ,]*)\]")
 
 #Set up argument parsing
 parser = argparse.ArgumentParser(description="Make probes to random network locations, analyze the results for estimates of network size, generate graphs, and optionally upload the results.")
@@ -35,11 +36,13 @@ for _ in range(args.numProbes):
 	tn.write("PROBE:" + str(rand.random()) + "\n")
 	raw = tn.read_until(prompt, args.probeWait)
 	#TODO: What if timeout elapses? Need to skip parsing attempt.
+	#TODO: Wait time between probe attempts.
 	
 	#Take the right side of "Completed probe request: <target location> -> <closest found location>"
 	print("Found location: ", location.search(raw).group(1))
 	
-	#TODO: Take context of UIDs into account, giving infromation on distribution and average peer count.
 	#Follow probe traces for list of UIDs.
+	for group in uid.search(raw).groups():
+		print(group.split(','))
 	
-	
+	#TODO: Take peer locations into account, giving infromation on distribution and average peer count.
