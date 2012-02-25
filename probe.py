@@ -29,7 +29,6 @@ tn.read_until(prompt)
 
 #TODO: Thread this out into requested number of processes.
 #Each thread will need its own sqlite and telnet connection.
-#TODO: Better way to do this in Python? Having an array just to loop seems silly.
-for i in range(args.numProbes):
+for _ in range(args.numProbes):
 	tn.write("PROBE:" + str(rand.random()) + "\n")
 	print(tn.read_until(prompt, args.probeWait))
