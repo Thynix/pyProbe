@@ -42,7 +42,7 @@ for _ in range(args.numProbes):
 	print("Found location: ", location.search(raw).group(1))
 	
 	#Follow probe traces for list of UIDs.
-	for group in uid.search(raw).groups():
+	for group in uid.findall(raw):
 		print(group.split(','))
 	
 	#TODO: Take peer locations into account, giving infromation on distribution and average peer count.
