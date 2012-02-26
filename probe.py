@@ -17,7 +17,6 @@ closestGreater = re.compile(r"Completed probe request: 0\.\d+ -> (0\.\d+)")
 #group 5: comma-separated peer UIDs
 parseTrace = re.compile(r"location=(0\.\d+)node UID=([-\d]*) prev UID=([-\d]*) peer locs=\[([-\d ,.]*)\] peer UIDs=\[([-\d ,]*)\]")
 
-#Set up argument parsing
 parser = argparse.ArgumentParser(description="Make probes to random network locations, analyze the results for estimates of network size, generate graphs, and optionally upload the results.")
 parser.add_argument('-u', dest="upload", default=False,\
                     action="store_true", help="Upload updated analysis. This is not done by default.")
