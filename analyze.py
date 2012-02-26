@@ -41,17 +41,14 @@ delta = datetime.datetime.utcnow() - datetime.datetime.utcfromtimestamp(args.sta
 hour = long(delta.days * 24 + delta.seconds/3.6e3 + delta.microseconds/3.6e9)
 
 #Hour since stats epoch, peers in: last hour, last day, last five days, last 7 days, last 15 days.
-data = "{0} {1} {2} {3} {4} {5} {6} {7} {8} {9}\n".format(hour, timeSpans[0][0], timeSpans[1][0], timeSpans[1][0], timeSpans[2][0], timeSpans[2][0], timeSpans[3][0], timeSpans[3][0], timeSpans[4][0], timeSpans[4][0], timeSpans[2][0]/5)
-print(data)
+data = "{0} {1} {2} {3} {4} {5} {6} {7} {8} {9}".format(hour, timeSpans[0][0], timeSpans[1][0], timeSpans[1][0], timeSpans[2][0], timeSpans[2][0], timeSpans[3][0], timeSpans[3][0], timeSpans[4][0], timeSpans[4][0], timeSpans[2][0]/5)
 
-#If the file doesn't exist, create it.
+#Create the file if it doesn't exist so that sed can find it on first run.run:
 dataFile = open(args.fullData, 'a')
 dataFile.close()
 
-with open(args.fullData, 'r+') as dataFile:
-#If there's already an entry for this hour, replace it. If not, append it.
-	if (re.search(r"^{0}[\d ]*$".format(hour), dataFile.read())):
-		subprocess.call([r'sed -E "s/^{0}[\d ]*$/{1}/"'.format(hour, data)])
-	else:
-		#TODO: Should be at end because the entire file was read?
-		dataFile.write(data)
+#Remove existing entry(/ies) for this hour and append updated one.
+subprocess.call(['sed','-i', r'/^{0}.*$/d'.format(hour), args.fullData])
+
+with open(args.fullData, 'a') as dataFile:
+	dataFile.write("{0}\n".format(data))
