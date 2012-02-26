@@ -46,7 +46,8 @@ tn.read_until(prompt)
 #TODO: Thread this out into requested number of processes.
 #Each thread will need its own sqlite and telnet connection.
 for _ in range(args.numProbes):
-	tn.write("PROBE:" + str(rand.random()) + "\n")
+	target = rand.random()
+	tn.write("PROBE: {0}\n".format(target))
 	raw = tn.read_until(prompt, args.probeWait)
 	#TODO: What if timeout elapses? Need to skip parsing attempt.
 	#TODO: Wait time between probe attempts.
@@ -54,7 +55,12 @@ for _ in range(args.numProbes):
 	currentTime = datetime.datetime.utcnow()
 	
 	#Take the right side of "Completed probe request: <target location> -> <closest found location>"
-	print("Closest greater location from target ", closestGreater.search(raw).group(1))
+	location = closestGreater.search(raw)
+	if location is not None:
+		#print("Closest greater location from target ", location.group(1))
+	#else:
+		#TODO: Is this something worth logging?
+		#print("Probe request to {0} did not complete: {1} ".format(target, raw))
 	
 	#Parse for locations and UIDs of each trace's node and its peers.
 	for trace in parseTrace.findall(raw):
@@ -68,9 +74,9 @@ for _ in range(args.numProbes):
 		for uid in peerUIDs + [UID, prevUID]:
 			db.execute("insert into uids(uid, time) values (?, ?)", (uid, currentTime))
 		
-		#TODO: Where best to call commit()?
-		db.commit()
-		
-		print("Trace through location ", location, " with UID ", UID, ", previously through UID ", prevUID, " with peer locations ", peerLocs, " and peer UIDs ", peerUIDs)
+		#print("Trace through location ", location, " with UID ", UID, ", previously through UID ", prevUID, " with peer locations ", peerLocs, " and peer UIDs ", peerUIDs)
+	
+	#Commit after parsing and inserting each probe.
+	db.commit()
 
 db.close()
