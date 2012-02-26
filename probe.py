@@ -88,8 +88,9 @@ for _ in range(args.numProbes):
 		location = trace[0]
 		UID = trace[1]
 		prevUID = trace[2]
-		peerLocs = trace[3].split(',')
-		peerUIDs = trace[4].split(',')
+		#Remove whitespace so that numerically identical values aren't considered different.
+		peerLocs = filter(None, trace[3].split(','))
+		peerUIDs = filter(None, trace[4].split(','))
 
 		for uid in peerUIDs + [UID, prevUID]:
 			db.execute("insert into uids(uid, time) values (?, ?)", (uid, currentTime))
