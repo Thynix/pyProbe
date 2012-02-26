@@ -98,16 +98,17 @@ for _ in range(args.numProbes):
 		if args.verbosity > 1:
 			print("Trace went through location {0} with UID {1} (previously through UID {2}) with peer locations:\n {3}\nand peer UIDs: \n{4}".format(location, UID, prevUID, peerLocs, peerUIDs))
 
+	
+	#Commit after inserting each probe and before waiting.
+	db.commit()
+	
 	#If the minimum wait time between probes has not elapsed, wait that long.
 	#TODO: http://twistedmatrix.com/documents/current/api/twisted.internet.task.LoopingCall.html
 	timeTaken = (datetime.datetime.utcnow() - startProbe).seconds
 	wait = args.probeWait - timeTaken
 	if args.verbosity > 0:
-		print("{0}: {1} sec since probe. Waiting {2} sec.".format(datetime.datetime.now(), timeTaken, wait))
+		print("{0}: Database changes committed. {1} sec since probe. Waiting {2} sec.".format(datetime.datetime.now(), timeTaken, wait))
 	if wait > 0:
 		time.sleep(wait)
-	
-	#Commit after parsing and inserting each probe.
-	db.commit()
 
 db.close()
