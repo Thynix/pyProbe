@@ -57,7 +57,7 @@ for _ in range(args.numProbes):
 	#Take the right side of "Completed probe request: <target location> -> <closest found location>"
 	location = closestGreater.search(raw)
 	if location is not None:
-		#print("Closest greater location from target ", location.group(1))
+		#print("Closest greater location to target {0} was {1}".format(target, location.group(1)))
 	#else:
 		#TODO: Is this something worth logging?
 		#print("Probe request to {0} did not complete: {1} ".format(target, raw))
@@ -74,7 +74,7 @@ for _ in range(args.numProbes):
 		for uid in peerUIDs + [UID, prevUID]:
 			db.execute("insert into uids(uid, time) values (?, ?)", (uid, currentTime))
 		
-		#print("Trace through location ", location, " with UID ", UID, ", previously through UID ", prevUID, " with peer locations ", peerLocs, " and peer UIDs ", peerUIDs)
+		#print("Trace went through location {0} with UID {1} (previously through UID {2}) with peer locations:\n {3}\nand peer UIDs: \n{4}".format(location, UID, prevUID, peerLocs, peerUIDs))
 	
 	#Commit after parsing and inserting each probe.
 	db.commit()
