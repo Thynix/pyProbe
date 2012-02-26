@@ -4,8 +4,16 @@ import random
 import re
 
 rand = random.SystemRandom()
-location = re.compile(r"Completed probe request: 0\.\d+ -> (0\.\d+)")
-uid = re.compile(r"peer UIDs=\[([-\d ,]*)\]")
+closestGreater = re.compile(r"Completed probe request: 0\.\d+ -> (0\.\d+)")
+
+#Parse current node's location and UID, previous UID, and peer locations and UIDs.
+#UIDs are integers, and locations are decimals.
+#group 1: current location
+#group 2: current UID
+#group 3: previous UID
+#group 4: comma-separated peer locations
+#group 5: comma-separated peer UIDs
+parseTrace = re.compile(r"location=(0\.\d+)node UID=([-\d]*) prev UID=([-\d]*) peer locs=\[([-\d ,.]*)\] peer UIDs=\[([-\d ,]*)\]")
 
 #Set up argument parsing
 parser = argparse.ArgumentParser(description="Make probes to random network locations, analyze the results for estimates of network size, generate graphs, and optionally upload the results.")
@@ -39,10 +47,15 @@ for _ in range(args.numProbes):
 	#TODO: Wait time between probe attempts.
 	
 	#Take the right side of "Completed probe request: <target location> -> <closest found location>"
-	print("Found location: ", location.search(raw).group(1))
+	print("Closest greater location from target ", closestGreater.search(raw).group(1))
 	
-	#Follow probe traces for list of UIDs.
-	for group in uid.findall(raw):
-		print(group.split(','))
-	
-	#TODO: Take peer locations into account, giving infromation on distribution and average peer count.
+	#Parse for locations and UIDs of each trace's node and its peers.
+	for trace in parseTrace.findall(raw):
+		#Of node described by current trace.
+		location = trace[0]
+		UID = trace[1]
+		prevUID = trace[2]
+		peerLocs = trace[3].split(',')
+		peerUIDs = trace[4].split(',')
+		
+		print("Trace through location ", location, " with UID ", UID, ", previously through UID ", prevUID, " with peer locations ", peerLocs, " and peer UIDs ", peerUIDs)
