@@ -2,6 +2,8 @@ import telnetlib
 import argparse
 import random
 import re
+import sqlite3
+import datetime
 
 rand = random.SystemRandom()
 closestGreater = re.compile(r"Completed probe request: 0\.\d+ -> (0\.\d+)")
@@ -29,8 +31,14 @@ parser.add_argument('-N', dest="numProbes", default=120, type=int,\
                     help="Number of total probes to make in each thread. Default 120 probes.")
 parser.add_argument('-w', dest="probeWait", default=30, type=int,\
                     help="Number of seconds to wait for a probe response. Default 30 seconds.")
+parser.add_argument('-f', dest="databaseFile", default="database.sql",\
+                    help="Path to database file. Default \"database.sql\"")
 
 args = parser.parse_args()
+
+db = sqlite3.connect(args.databaseFile)
+
+db.execute("create table if not exists uids(uid, time)")
 
 prompt="TMCI> "
 tn = telnetlib.Telnet(args.host, args.port)
@@ -45,6 +53,8 @@ for _ in range(args.numProbes):
 	raw = tn.read_until(prompt, args.probeWait)
 	#TODO: What if timeout elapses? Need to skip parsing attempt.
 	#TODO: Wait time between probe attempts.
+
+	currentTime = datetime.datetime.utcnow()
 	
 	#Take the right side of "Completed probe request: <target location> -> <closest found location>"
 	print("Closest greater location from target ", closestGreater.search(raw).group(1))
@@ -57,5 +67,13 @@ for _ in range(args.numProbes):
 		prevUID = trace[2]
 		peerLocs = trace[3].split(',')
 		peerUIDs = trace[4].split(',')
+
+		for uid in peerUIDs + [UID, prevUID]:
+			db.execute("insert into uids(uid, time) values (?, ?)", (uid, currentTime))
+		
+		#TODO: Where best to call commit()?
+		db.commit()
 		
 		print("Trace through location ", location, " with UID ", UID, ", previously through UID ", prevUID, " with peer locations ", peerLocs, " and peer UIDs ", peerUIDs)
+
+db.close()
