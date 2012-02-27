@@ -54,10 +54,6 @@ tn = telnetlib.Telnet(args.host, args.port)
 #Read through intial help message.
 tn.read_until(prompt)
 
-#Don't wait before starting first probe.
-startProbe = datetime.datetime.utcfromtimestamp(time.time() - args.probeWait)
-timeTaken = 0
-
 #TODO: Thread this out into requested number of processes.
 #Each thread will need its own sqlite and telnet connection.
 for _ in range(args.numProbes):
@@ -68,13 +64,13 @@ for _ in range(args.numProbes):
 	
 	tn.write("PROBE: {0}\n".format(target))
 	
-	startProbe = datetime.datetime.utcnow()
+	beforeProbe = datetime.datetime.utcnow()
 	raw = tn.read_until(prompt, args.probeTimeout)
-	currentTime = datetime.datetime.utcnow()
+	afterProbe = datetime.datetime.utcnow()
 	
 	#TODO: What if timeout elapses? Need to skip parsing attempt.
 	if args.verbosity > 0:
-		print("{0}: Probe finished. Took {1} sec. Saving traces.".format(datetime.datetime.now(), (datetime.datetime.utcnow() - startProbe).seconds))
+		print("{0}: Probe finished. Took {1} sec. Saving traces.".format(datetime.datetime.now(), (afterProbe - beforeProbe).seconds))
 
 	if args.verbosity > 1:
 		#TODO: Reasonable to start and end block with newlines? Might be misleading for the end.
@@ -87,7 +83,7 @@ for _ in range(args.numProbes):
 		closest = location.group(1)
 	
 	#NULL prompt the database to assign a key as probeID is an INTEGER PRIMARY KEY.
-	cursor.execute("insert into probes(probeID, time, target, closest) values (NULL, ?, ?, ?)", [currentTime, target, closest])
+	cursor.execute("insert into probes(probeID, time, target, closest) values (NULL, ?, ?, ?)", [afterProbe, target, closest])
 	probeID = cursor.lastrowid
 	
 	#Parse for locations and UIDs of each trace's node and its peers.
@@ -101,11 +97,11 @@ for _ in range(args.numProbes):
 		peerUIDs = filter(None, trace[3].split(','))
 
 		for uid in peerUIDs + [UID]:
-			db.execute("insert into uids(uid, time) values (?, ?)", (uid, currentTime))
+			db.execute("insert into uids(uid, time) values (?, ?)", (uid, afterProbe))
 		
 		assert len(peerLocs) == len(peerUIDs)
 		for i in range(len(peerLocs)):
-			db.execute("insert into traces(probeID, traceNum, time, uid, location, peerLoc, peerUID) values (?, ?, ?, ?, ?, ?, ?)", (probeID, traceID, currentTime, UID, location, peerLocs[i], peerUIDs[i]))
+			db.execute("insert into traces(probeID, traceNum, time, uid, location, peerLoc, peerUID) values (?, ?, ?, ?, ?, ?, ?)", (probeID, traceID, afterProbe, UID, location, peerLocs[i], peerUIDs[i]))
 		traceID += 1
 	
 	#Commit after inserting each probe and before waiting.
@@ -113,11 +109,12 @@ for _ in range(args.numProbes):
 	
 	#If the minimum wait time between probes has not elapsed, wait that long.
 	#TODO: http://twistedmatrix.com/documents/current/api/twisted.internet.task.LoopingCall.html
-	databaseTime = (datetime.datetime.utcnow() - currentTime).seconds
-	sinceProbe = (datetime.datetime.utcnow() - startProbe).seconds
+	afterDatabase = datetime.datetime.utcnow()
+	databaseTime = (afterDatabase - afterProbe).seconds
+	sinceProbe = (afterDatabase - beforeProbe).seconds
 	wait = args.probeWait - sinceProbe
 	if args.verbosity > 0:
-		print("{0}: {1} traces committed to database in {1} seconds. {2} sec since probe. Waiting {3} sec.".format(datetime.datetime.now(), traceID, databaseTime, sinceProbe, wait))
+		print("{0}: {1} traces committed to database in {2} seconds. {3} sec since probe. Waiting {4} sec.".format(datetime.datetime.now(), traceID, databaseTime, sinceProbe, wait))
 	if wait > 0:
 		time.sleep(wait)
 
