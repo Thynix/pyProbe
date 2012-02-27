@@ -21,7 +21,7 @@ if uidblah == 'v':
 elif uidblah == 'n':
 	numEntries = 0
 	print("-----First seen less than a day ago:-----")
-	for entry in  db.execute("select fs.uid, fs.firstSeen from (select uid, min(time) as firstSeen from uids group by uid) as fs where firstSeen > datetime('now','-1 day')").fetchall():
+	for entry in db.execute("select uid, firstSeen from (select uid, min(time) as firstSeen from uids group by uid) where firstSeen > datetime('now','-1 day')").fetchall():
 		print(entry)
 		numEntries += 1
 	print("---------------------")
