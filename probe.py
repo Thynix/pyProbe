@@ -14,10 +14,9 @@ closestGreater = re.compile(r"Completed probe request: 0\.\d+ -> (0\.\d+)")
 #UIDs are integers, and locations are decimals.
 #group 1: current location
 #group 2: current UID
-#group 3: previous UID
-#group 4: comma-separated peer locations
-#group 5: comma-separated peer UIDs
-parseTrace = re.compile(r"location=(0\.\d+)node UID=([-\d]*) prev UID=([-\d]*) peer locs=\[([-\d ,.]*)\] peer UIDs=\[([-\d ,]*)\]")
+#group 3: comma-separated peer locations
+#group 4: comma-separated peer UIDs
+parseTrace = re.compile(r"location=(0\.\d+)node UID=([-\d]*) prev UID=[-\d]* peer locs=\[([-\d ,.]*)\] peer UIDs=\[([-\d ,]*)\]")
 
 parser = argparse.ArgumentParser(description="Make probes to random network locations, saving the results to the specified database.")
 parser.add_argument('-t', dest="numThreads", default=5, type=int,\
@@ -96,12 +95,11 @@ for _ in range(args.numProbes):
 		#Of node described by current trace.
 		location = trace[0]
 		UID = trace[1]
-		prevUID = trace[2]
 		#Remove whitespace so that numerically identical values aren't considered different.
-		peerLocs = filter(None, trace[3].split(','))
-		peerUIDs = filter(None, trace[4].split(','))
+		peerLocs = filter(None, trace[2].split(','))
+		peerUIDs = filter(None, trace[3].split(','))
 
-		for uid in peerUIDs + [UID, prevUID]:
+		for uid in peerUIDs + [UID]:
 			db.execute("insert into uids(uid, time) values (?, ?)", (uid, currentTime))
 		
 		if args.verbosity > 1:
