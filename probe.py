@@ -7,6 +7,7 @@ import datetime
 import time
 
 rand = random.SystemRandom()
+#Not much use; stored anyway.
 closestGreater = re.compile(r"Completed probe request: 0\.\d+ -> (0\.\d+)")
 
 #Parse current node's location and UID, previous UID, and peer locations and UIDs.
@@ -40,8 +41,13 @@ parser.add_argument('-v', dest="verbosity", action='count',\
 args = parser.parse_args()
 
 db = sqlite3.connect(args.databaseFile)
+cursor = db.cursor()
 
 db.execute("create table if not exists uids(uid, time)")
+#probeID is unique among probes
+db.execute("create table if not exists probes(probeID INTEGER PRIMARY KEY, time, target, closest)")
+#traceID is not unique among traces for a given probe; only one peer location or UID is stored per entry.
+db.execute("create table if not exists traces(probeID, traceNum, time, uid, location, peerLoc, peerUID)")
 
 prompt="TMCI> "
 tn = telnetlib.Telnet(args.host, args.port)
@@ -74,15 +80,18 @@ for _ in range(args.numProbes):
 
 	currentTime = datetime.datetime.utcnow()
 	
-	#Take the right side of "Completed probe request: <target location> -> <closest found location>"
+	#Check for closest location to target location reached. If no such entry exists, insert NULL/None.
+	closest = None
 	location = closestGreater.search(raw)
-	#if location is not None:
-		#print("Closest greater location to target {0} was {1}".format(target, location.group(1)))
-	#else:
-		#TODO: Is this something worth logging?
-		#print("Probe request to {0} did not complete: {1} ".format(target, raw))
+	if location is not None:
+		closest = location.group(1)
+	
+	#NULL prompt the database to assign a key as probeID is an INTEGER PRIMARY KEY.
+	cursor.execute("insert into probes(probeID, time, target, closest) values (NULL, ?, ?, ?)", [currentTime, target, closest])
+	probeID = cursor.lastrowid
 	
 	#Parse for locations and UIDs of each trace's node and its peers.
+	traceID = 0
 	for trace in parseTrace.findall(raw):
 		#Of node described by current trace.
 		location = trace[0]
@@ -98,6 +107,10 @@ for _ in range(args.numProbes):
 		if args.verbosity > 1:
 			print("Trace went through location {0} with UID {1} (previously through UID {2}) with peer locations:\n {3}\nand peer UIDs: \n{4}".format(location, UID, prevUID, peerLocs, peerUIDs))
 
+		assert len(peerLocs) == len(peerUIDs)
+		for i in range(len(peerLocs)):
+			db.execute("insert into traces(probeID, traceNum, time, uid, location, peerLoc, peerUID) values (?, ?, ?, ?, ?, ?, ?)", (probeID, traceID, currentTime, UID, location, peerLocs[i], peerUIDs[i]))
+		traceID += 1
 	
 	#Commit after inserting each probe and before waiting.
 	db.commit()
@@ -111,4 +124,5 @@ for _ in range(args.numProbes):
 	if wait > 0:
 		time.sleep(wait)
 
+cursor.close()
 db.close()
