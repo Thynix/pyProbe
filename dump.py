@@ -10,7 +10,7 @@ print("* {0} probes".format(db.execute("select count(probeID) from probes").fetc
 print("* {0} traces".format(db.execute("select count(traceNum) from traces").fetchone()[0]))
 #print("{0} new nodes.".format(db.execute("select min(time) as mintime from uids group by uid").fetchall()))
 
-uidblah = str(raw_input("h: calculate histogram of number of peers\nv: vaccuum database (requires no open transactions or active SQL statements)"))
+uidblah = str(raw_input("h: calculate histogram of number of peers\nv: vaccuum database (requires no open transactions or active SQL statements)\nEnter choice, or anything else to exit >"))
 
 if uidblah == 'v':
 	print("Vacuuming")
@@ -19,7 +19,7 @@ if uidblah == 'v':
 	print("Complete")
 	exit(0)
 elif uidblah != 'h':
-	print("No option recognized; exiting")
+	print("No option recognized; exiting.")
 	exit(1)
 
 histogramMax = 100
