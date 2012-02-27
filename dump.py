@@ -2,21 +2,30 @@ import sqlite3
 from array import array
 from sys import exit
 
+print("Connecting to database.")
 db = sqlite3.connect("database.sql")
 
 print("Database contains:")
 print("* {0} distinct UIDs".format(db.execute("select count(distinct uid) from uids").fetchone()[0]))
 print("* {0} probes".format(db.execute("select count(probeID) from probes").fetchone()[0]))
 print("* {0} traces".format(db.execute("select count(traceNum) from traces").fetchone()[0]))
-#print("{0} new nodes.".format(db.execute("select min(time) as mintime from uids group by uid").fetchall()))
 
-uidblah = str(raw_input("h: calculate histogram of number of peers\nv: vaccuum database (requires no open transactions or active SQL statements)\nEnter choice, or anything else to exit >"))
+uidblah = str(raw_input("h: calculate histogram of number of peers\nn: list of UIDs first seen in the last day\nv: vaccuum database (requires no open transactions or active SQL statements)\nEnter choice, or anything else to exit >"))
 
 if uidblah == 'v':
 	print("Vacuuming")
 	db.execute("vacuum")
 	#TODO: Any way to have progress bar?
 	print("Complete")
+	exit(0)
+elif uidblah == 'n':
+	numEntries = 0
+	print("-----First seen less than a day ago:-----")
+	for entry in  db.execute("select fs.uid, fs.firstSeen from (select uid, min(time) as firstSeen from uids group by uid) as fs where firstSeen > datetime('now','-1 day')").fetchall():
+		print(entry)
+		numEntries += 1
+	print("---------------------")
+	print("Total {0} UIDs".format(numEntries))
 	exit(0)
 elif uidblah != 'h':
 	print("No option recognized; exiting.")
