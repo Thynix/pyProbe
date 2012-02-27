@@ -19,7 +19,7 @@
 #
 #   http://code.activestate.com/recipes/168639/
 # 
-# This version is available at:
+# This version is based off of the version available at:
 #
 #   http://www.5dollarwhitebox.org/drupal/node/65
 #
@@ -39,7 +39,9 @@ class ProgressBar:
         self.span = max_value - min_value
         self.width = width
         self.amount = 0       # When amount == max, we are 100% done 
-        self.update_amount(0) 
+        self.prev_num_hashes = 0
+        self.visually_changed = True
+        self.update_amount(0)
  
  
     def increment_amount(self, add_amount = 1):
@@ -77,7 +79,13 @@ class ProgressBar:
         # figure the proper number of 'character' make up the bar 
         all_full = self.width - 2
         num_hashes = int(round((percent_done * all_full) / 100))
- 
+
+	if self.prev_num_hashes == num_hashes:
+            return
+        
+        self.visually_changed = True
+        self.prev_num_hashes = num_hashes
+        
         if self.mode == 'dynamic':
             # build a progress bar with self.char (to create a dynamic bar
             # where the percent string moves along with the bar progress.
@@ -94,6 +102,11 @@ class ProgressBar:
     def __str__(self):
         return str(self.bar)
  
+    def print_changed(self):
+        if self.visually_changed:
+            print self, "\r",
+            sys.stdout.flush()
+            self.visually_changed = False
  
 def main():
     print
@@ -101,25 +114,17 @@ def main():
  
     print 'Example 1: Fixed Bar'
     prog = ProgressBar(0, limit, mode='fixed')
-    oldprog = str(prog)
     for i in xrange(limit+1):
         prog.update_amount(i)
-        if oldprog != str(prog):
-            print prog, "\r",
-            sys.stdout.flush()
-            oldprog=str(prog)
+        prog.print_changed()
  
     print '\n\n'
  
     print 'Example 2: Dynamic Bar'
     prog = ProgressBar(0, limit, mode='dynamic', char='-')
-    oldprog = str(prog)
     for i in xrange(limit+1):
         prog.increment_amount()
-        if oldprog != str(prog):
-            print prog, "\r",
-            sys.stdout.flush()
-            oldprog=str(prog)
+        prog.print_changed()
  
     print '\n\n'
  
