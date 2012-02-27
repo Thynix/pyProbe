@@ -43,12 +43,18 @@ db = sqlite3.connect(args.databaseFile)
 cursor = db.cursor()
 
 db.execute("create table if not exists uids(uid, time)")
+#Index to speed up time-based UID analysis.
 db.execute("create index if not exists uid_index on uids(uid)")
 db.execute("create index if not exists time_index on uids(time)")
+
 #probeID is unique among probes
 db.execute("create table if not exists probes(probeID INTEGER PRIMARY KEY, time, target, closest)")
+
 #traceID is not unique among traces for a given probe; only one peer location or UID is stored per entry.
 db.execute("create table if not exists traces(probeID, traceNum, time, uid, location, peerLoc, peerUID)")
+#Index to speed up histogram generation. TODO: May want to remove any indicies that end up being misguided.
+db.execute("create index if not exists peerUIDs_index on traces(traceNum, uid)")
+db.execute("create index if not exists numProbes_index on traces(probeID, uid)")
 
 prompt="TMCI> "
 tn = telnetlib.Telnet(args.host, args.port)
