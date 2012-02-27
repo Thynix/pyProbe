@@ -35,7 +35,7 @@ parser.add_argument('--wait', dest="probeWait", default=30, type=int,\
 parser.add_argument('-d', dest="databaseFile", default="database.sql",\
                     help="Path to database file. Default \"database.sql\"")
 parser.add_argument('-v', dest="verbosity", action='count',\
-                   help="Increase verbosity level. First level probe start and stop, second adds probe results, third adds raw probe data. Default none.")
+                   help="Increase verbosity level. First level adds probe and database operation timing, second adds raw probe response. Default none.")
 
 args = parser.parse_args()
 
@@ -67,17 +67,18 @@ for _ in range(args.numProbes):
 		print("{0}: Starting probe to {1}.".format(datetime.datetime.now(), target))
 	
 	tn.write("PROBE: {0}\n".format(target))
+	
 	startProbe = datetime.datetime.utcnow()
 	raw = tn.read_until(prompt, args.probeTimeout)
+	currentTime = datetime.datetime.utcnow()
+	
 	#TODO: What if timeout elapses? Need to skip parsing attempt.
 	if args.verbosity > 0:
 		print("{0}: Probe finished. Took {1} sec. Saving traces.".format(datetime.datetime.now(), (datetime.datetime.utcnow() - startProbe).seconds))
 
-	if args.verbosity > 2:
+	if args.verbosity > 1:
 		#TODO: Reasonable to start and end block with newlines? Might be misleading for the end.
 		print("---Begin raw response---\n{0}\n---End raw response---".format(raw))
-
-	currentTime = datetime.datetime.utcnow()
 	
 	#Check for closest location to target location reached. If no such entry exists, insert NULL/None.
 	closest = None
@@ -102,9 +103,6 @@ for _ in range(args.numProbes):
 		for uid in peerUIDs + [UID]:
 			db.execute("insert into uids(uid, time) values (?, ?)", (uid, currentTime))
 		
-		if args.verbosity > 1:
-			print("Trace went through location {0} with UID {1} (previously through UID {2}) with peer locations:\n {3}\nand peer UIDs: \n{4}".format(location, UID, prevUID, peerLocs, peerUIDs))
-
 		assert len(peerLocs) == len(peerUIDs)
 		for i in range(len(peerLocs)):
 			db.execute("insert into traces(probeID, traceNum, time, uid, location, peerLoc, peerUID) values (?, ?, ?, ?, ?, ?, ?)", (probeID, traceID, currentTime, UID, location, peerLocs[i], peerUIDs[i]))
@@ -115,10 +113,11 @@ for _ in range(args.numProbes):
 	
 	#If the minimum wait time between probes has not elapsed, wait that long.
 	#TODO: http://twistedmatrix.com/documents/current/api/twisted.internet.task.LoopingCall.html
-	timeTaken = (datetime.datetime.utcnow() - startProbe).seconds
-	wait = args.probeWait - timeTaken
+	databaseTime = (datetime.datetime.utcnow() - currentTime).seconds
+	sinceProbe = (datetime.datetime.utcnow() - startProbe).seconds
+	wait = args.probeWait - sinceProbe
 	if args.verbosity > 0:
-		print("{0}: Database changes committed. {1} sec since probe. Waiting {2} sec.".format(datetime.datetime.now(), timeTaken, wait))
+		print("{0}: {1} traces committed to database in {1} seconds. {2} sec since probe. Waiting {3} sec.".format(datetime.datetime.now(), traceID, databaseTime, sinceProbe, wait))
 	if wait > 0:
 		time.sleep(wait)
 
