@@ -43,6 +43,8 @@ db = sqlite3.connect(args.databaseFile)
 cursor = db.cursor()
 
 db.execute("create table if not exists uids(uid, time)")
+db.execute("create index if not exists uid_index on uids(uid)")
+db.execute("create index if not exists time_index on uids(time)")
 #probeID is unique among probes
 db.execute("create table if not exists probes(probeID INTEGER PRIMARY KEY, time, target, closest)")
 #traceID is not unique among traces for a given probe; only one peer location or UID is stored per entry.
