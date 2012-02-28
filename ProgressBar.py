@@ -39,8 +39,8 @@ class ProgressBar:
         self.span = max_value - min_value
         self.width = width
         self.amount = 0       # When amount == max, we are 100% done 
-        self.prev_num_hashes = 0
-        self.visually_changed = True
+        self.prev_num_hashes = -1
+        self.visually_changed = False
         self.update_amount(0)
  
  
