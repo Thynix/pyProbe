@@ -29,12 +29,8 @@ db = sqlite3.connect(args.databaseFile)
 
 timeSpans = [[0, "-1 hours"], [0, "-1 days"], [0, "-5 days"], [0, "-7 days"], [0, "-15 days"]]
 for span in timeSpans:
-	#TODO: When to fetch only distinct?
 	#string concatination because sqlite will not substitute paramters in strings.
-	#TODO: SQL count()? Doesn't seem supported by sqlite?
-	span[0] = len(db.execute("select distinct uid from uids where time > datetime('now',?)", [span[1]]).fetchall())
-	#http://piratepad.net/ucUdssLhyE
-	#http://www.sqlite.org/lang.html
+	span[0] = db.execute("select count(distinct uid) from uids where time > datetime('now',?)", [span[1]]).fetchone()[0]
 
 new = db.execute("select count(firstSeen) from (select min(time) as firstSeen from uids group by uid) where firstSeen > datetime('now','-{0} seconds')".format(args.recentSeconds)).fetchone()[0]
 
