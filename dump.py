@@ -1,7 +1,6 @@
 import sqlite3
 from array import array
 from sys import exit
-from ProgressBar import ProgressBar
 from subprocess import call
 
 print("Connecting to database.")
@@ -38,15 +37,11 @@ histogram = array('I')
 for _ in range(histogramMax):
 	histogram.append(0)
 
-numUIDs = db.execute("select count(distinct uid) from traces").fetchone()[0]
-bar = ProgressBar(0, numUIDs)
-
-print("Querying database for traces through {0} distinct UIDs.".format(numUIDs))
+print("Querying database for traces through {0} distinct UIDs.".format(db.execute("select count(distinct uid) from traces").fetchone()[0]))
 probeStats = db.execute("select count(traceNum), count(distinct probeID) from traces group by uid").fetchall() 
-print("Analyzing results")
+print("Analyzing results.")
 
 for traceAggregate in probeStats:
-	bar.print_changed()
 	peerUIDs = traceAggregate[0]
 	probes = traceAggregate[1]
 	if probes > 0:
@@ -55,15 +50,13 @@ for traceAggregate in probeStats:
 			histogram[histogramMax - 1] += 1
 		else:
 			histogram[avgPeers] += 1
-	bar.increment_amount()
 
-#Newline so progress bar doesn't take up part of prompt on exit.
-print("")
-
+print("Analysis complete, writing results.")
 with open("peerDist.dat", 'w') as output:
 	numberOfPeers = 0
 	for nodeCount in histogram:
 		output.write("{0} {1}\n".format(numberOfPeers, nodeCount))
 		numberOfPeers += 1
 
+print("Graphing.")
 call(["gnuplot","peer_dist.gnu"])
