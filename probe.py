@@ -5,7 +5,7 @@ import re
 import sqlite3
 import datetime
 import time
-
+#TODO: function to print line appended to current timestamp
 rand = random.SystemRandom()
 #Not much use; stored anyway.
 closestGreater = re.compile(r"Completed probe request: 0\.\d+ -> (0\.\d+)")
@@ -40,6 +40,7 @@ parser.add_argument('-v', dest="verbosity", action='count',\
 args = parser.parse_args()
 
 db = sqlite3.connect(args.databaseFile)
+#Cursor needed for lastrowid so that traces can be inserted under the correct ProbeID.
 cursor = db.cursor()
 
 db.execute("create table if not exists uids(uid, time)")
@@ -51,10 +52,10 @@ db.execute("create index if not exists time_index on uids(time)")
 db.execute("create table if not exists probes(probeID INTEGER PRIMARY KEY, time, target, closest)")
 
 #traceID is not unique among traces for a given probe; only one peer location or UID is stored per entry.
-db.execute("create table if not exists traces(probeID, traceNum, time, uid, location, peerLoc, peerUID)")
+db.execute("create table if not exists traces(probeID, traceNum, uid, location, peerLoc, peerUID)")
 #Index to speed up histogram generation. TODO: May want to remove any indicies that end up being misguided.
-db.execute("create index if not exists peerUIDs_index on traces(traceNum, uid)")
-db.execute("create index if not exists numProbes_index on traces(probeID, uid)")
+db.execute("create index if not exists probeID_index on traces(traceNum, probeID)")
+db.execute("create index if not exists UID_index on traces(uid)")
 
 prompt="TMCI> "
 tn = telnetlib.Telnet(args.host, args.port)
@@ -109,7 +110,7 @@ for _ in range(args.numProbes):
 		
 		assert len(peerLocs) == len(peerUIDs)
 		for i in range(len(peerLocs)):
-			db.execute("insert into traces(probeID, traceNum, time, uid, location, peerLoc, peerUID) values (?, ?, ?, ?, ?, ?, ?)", (probeID, traceID, afterProbe, UID, location, peerLocs[i], peerUIDs[i]))
+			db.execute("insert into traces(probeID, traceNum, uid, location, peerLoc, peerUID) values (?, ?, ?, ?, ?, ?)", (probeID, traceID, UID, location, peerLocs[i], peerUIDs[i]))
 		traceID += 1
 	
 	#Commit after inserting each probe and before waiting.
