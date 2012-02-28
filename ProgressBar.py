@@ -110,26 +110,26 @@ def main():
     print
     limit = 1000000
  
-    print 'Example 1: Fixed Bar'
+    print 'Example 1: Zero After Initialization'
+    
+    prog = ProgressBar(0, limit)
+    prog.print_changed()
+ 
+    print '\n\n'
+ 
+    print 'Example 2: Fixed Bar'
     prog = ProgressBar(0, limit, mode='fixed')
     for i in xrange(limit+1):
         prog.print_changed()
         prog.update_amount(i)
  
     print '\n\n'
- 
-    print 'Example 2: Dynamic Bar'
+    
+    print 'Example 3: Dynamic Bar'
     prog = ProgressBar(0, limit, mode='dynamic', char='-')
     for i in xrange(limit+1):
         prog.print_changed()
         prog.increment_amount()
- 
-    print '\n\n'
-    
-    print 'Example 3: Zero After Initialization'
-    
-    prog = ProgressBar(0, limit)
-    prog.print_changed()
     
     print '\n'
  
