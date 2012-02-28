@@ -84,6 +84,9 @@ class ProgressBar:
         self.visually_changed = self.prev_percent_done != percent_done or self.prev_num_hashes != num_hashes
         if not self.visually_changed:
             return
+        
+        self.prev_percent_done = percent_done
+        self.prev_num_hashes = num_hashes
 
         if self.mode == 'dynamic':
             # build a progress bar with self.char (to create a dynamic bar
