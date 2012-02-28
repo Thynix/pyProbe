@@ -29,17 +29,17 @@ import sys,os
 class ProgressBar:
     def __init__(self, min_value = 0, max_value = 100, width=73,**kwargs):
         self.char = kwargs.get('char', '#')
-        self.mode = kwargs.get('mode', 'dynamic') # fixed or dynamic
+        self.mode = kwargs.get('mode', 'fixed') # fixed or dynamic
         if not self.mode in ['fixed', 'dynamic']:
             self.mode = 'fixed'
  
         self.bar = ''
+        self.prev_bar = ' '
         self.min = min_value
         self.max = max_value
         self.span = max_value - min_value
         self.width = width
         self.amount = 0       # When amount == max, we are 100% done 
-        self.prev_num_hashes = -1
         self.visually_changed = False
         self.update_amount(0)
  
@@ -80,12 +80,6 @@ class ProgressBar:
         all_full = self.width - 2
         num_hashes = int(round((percent_done * all_full) / 100))
 
-	if self.prev_num_hashes == num_hashes:
-            return
-        
-        self.visually_changed = True
-        self.prev_num_hashes = num_hashes
-        
         if self.mode == 'dynamic':
             # build a progress bar with self.char (to create a dynamic bar
             # where the percent string moves along with the bar progress.
@@ -97,6 +91,9 @@ class ProgressBar:
  
         percent_str = str(percent_done) + "%"
         self.bar = '[ ' + self.bar + ' ] ' + percent_str
+        
+        self.visually_changed = self.bar != self.prev_bar
+        self.prev_bar = self.bar
  
  
     def __str__(self):
@@ -115,19 +112,25 @@ def main():
     print 'Example 1: Fixed Bar'
     prog = ProgressBar(0, limit, mode='fixed')
     for i in xrange(limit+1):
-        prog.update_amount(i)
         prog.print_changed()
+        prog.update_amount(i)
  
     print '\n\n'
  
     print 'Example 2: Dynamic Bar'
     prog = ProgressBar(0, limit, mode='dynamic', char='-')
     for i in xrange(limit+1):
-        prog.increment_amount()
         prog.print_changed()
+        prog.increment_amount()
  
     print '\n\n'
- 
+    
+    print 'Example 3: Zero After Initialization'
+    
+    prog = ProgressBar(0, limit)
+    prog.print_changed()
+    
+    print '\n'
  
 if __name__ == '__main__':
     main()
