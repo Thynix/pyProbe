@@ -34,7 +34,8 @@ class ProgressBar:
             self.mode = 'fixed'
  
         self.bar = ''
-        self.prev_bar = ' '
+        self.prev_num_hashes = -1
+        self.prev_percent_done = -1
         self.min = min_value
         self.max = max_value
         self.span = max_value - min_value
@@ -79,6 +80,10 @@ class ProgressBar:
         # figure the proper number of 'character' make up the bar 
         all_full = self.width - 2
         num_hashes = int(round((percent_done * all_full) / 100))
+        
+        self.visually_changed = self.prev_percent_done != percent_done or self.prev_num_hashes != num_hashes
+        if not self.visually_changed:
+            return
 
         if self.mode == 'dynamic':
             # build a progress bar with self.char (to create a dynamic bar
@@ -91,10 +96,6 @@ class ProgressBar:
  
         percent_str = str(percent_done) + "%"
         self.bar = '[ ' + self.bar + ' ] ' + percent_str
-        
-        self.visually_changed = self.bar != self.prev_bar
-        self.prev_bar = self.bar
- 
  
     def __str__(self):
         return str(self.bar)
