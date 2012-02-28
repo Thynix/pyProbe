@@ -8,8 +8,7 @@ print("Connecting to database.")
 db = sqlite3.connect("database.sql")
 
 print("Database contains:")
-numUIDs = db.execute("select count(distinct uid) from uids").fetchone()[0]
-print("* {0} distinct UIDs".format(numUIDs))
+print("* {0} distinct UIDs".format(db.execute("select count(distinct uid) from uids").fetchone()[0]))
 print("* {0} probes".format(db.execute("select count(probeID) from probes").fetchone()[0]))
 print("* {0} traces".format(db.execute("select count(traceNum) from traces").fetchone()[0]))
 
@@ -39,13 +38,17 @@ histogram = array('I')
 for _ in range(histogramMax):
 	histogram.append(0)
 
-print("Processing {0} unique UIDs.".format(numUIDs))
-bar = ProgressBar(0, numUIDs, format='fixed')
+numUIDs = db.execute("select count(distinct uid) from traces").fetchone()[0]
+bar = ProgressBar(0, numUIDs)
 
-for uid in db.execute("select distinct uid from uids").fetchall():
+print("Querying database for traces through {0} distinct UIDs.".format(numUIDs))
+probeStats = db.execute("select count(traceNum), count(distinct probeID) from traces group by uid").fetchall() 
+print("Analyzing results")
+
+for traceAggregate in probeStats:
 	bar.print_changed()
-	probes = db.execute("select count(distinct probeID) from traces where uid == ?", uid).fetchone()[0]
-	peerUIDs = db.execute("select count(traceNum) from traces where uid == ?", uid).fetchone()[0]
+	peerUIDs = traceAggregate[0]
+	probes = traceAggregate[1]
 	if probes > 0:
 		avgPeers = peerUIDs/probes
 		if avgPeers >= histogramMax:
@@ -54,9 +57,13 @@ for uid in db.execute("select distinct uid from uids").fetchall():
 			histogram[avgPeers] += 1
 	bar.increment_amount()
 
+#Newline so progress bar doesn't take up part of prompt on exit.
+print("")
+
 with open("peerDist.dat", 'w') as output:
 	numberOfPeers = 0
 	for nodeCount in histogram:
 		output.write("{0} {1}\n".format(numberOfPeers, nodeCount))
+		numberOfPeers += 1
 
 call(["gnuplot","peer_dist.gnu"])
