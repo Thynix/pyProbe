@@ -1,4 +1,11 @@
+*.png
+*.pyc
+*.dat
+/todo.txt
+/full_data
 /database.sql
 /output
+/MenuSystem-1.3.tar.gz
+/MenuSystem-1.3/
 /pysqlite-2.6.3.tar.gz
 /pysqlite-2.6.3/
