@@ -5,6 +5,9 @@ import re
 import sqlite3
 import datetime
 import time
+import shlex
+from sys import executable, exit
+from subprocess import Popen
 #TODO: function to print line appended to current timestamp
 rand = random.SystemRandom()
 #Not much use; stored anyway.
@@ -19,14 +22,13 @@ closestGreater = re.compile(r"Completed probe request: 0\.\d+ -> (0\.\d+)")
 parseTrace = re.compile(r"location=(0\.\d+)node UID=([-\d]*) prev UID=[-\d]* peer locs=\[([-\d ,.]*)\] peer UIDs=\[([-\d ,]*)\]")
 
 parser = argparse.ArgumentParser(description="Make probes to random network locations, saving the results to the specified database.")
+
 parser.add_argument('-t', dest="numThreads", default=5, type=int,\
                     help="Number of simultanious probe threads to run. Default 5 threads.")
 parser.add_argument('--host', dest="host", default="127.0.0.1",\
                     help="Telnet host; Freenet node to connect to. Default 127.0.0.1.")
 parser.add_argument('-p', dest="port", default=2323, type=int,\
                     help="Port the target node is running TMCI on. Default port 2323.")
-parser.add_argument('-N', dest="numProbes", default=120, type=int,\
-                    help="Number of total probes to make in each thread. Default 120 probes.")
 #TODO: How much do higher values affect results?
 parser.add_argument('--timeout', dest="probeTimeout", default=30, type=int,\
                     help="Number of seconds before timeout when waiting for probe. Default 30 seconds.")
@@ -38,6 +40,31 @@ parser.add_argument('-v', dest="verbosity", action='count',\
                    help="Increase verbosity level. First level adds probe and database operation timing, second adds raw probe response. Default none.")
 
 args = parser.parse_args()
+
+#Uses thread option to spawn more copies of this script to total the requested number of threads.
+#TODO: Is there a more sane way to handle this? Are forks something different than this?
+if args.numThreads > 1:
+	argString = executable+" "+__file__+" "
+	argString += "-t 1 --host {0} -p {1} --timeout {2} --wait {3} -d {4}".format(args.host, args.port, args.probeTimeout, args.probeWait, args.databaseFile)
+	if args.verbosity > 0:
+		argString += "-"
+		argString += "v"*args.verbosity
+	
+	subprocessArguments = shlex.split(argString)
+	
+	#TODO: Take output from subprocesses (if verbose). Is there any way to do this without waiting until the threads terminate? May have to log to a file then.
+	threads = [Popen(subprocessArguments)] * args.numThreads
+	#TODO: Cleaner way to just wait until sigterm? Is it required to pass this on to subprocesses, or does the OS do that?
+	#TODO: Once the probe is a class, the signal handler should roll back changes.
+		#TODO: Arg, hang on: "When threads are enabled, this function can only be called from the main thread; attempting to call it from other threads will cause a ValueError exception to be raised."
+	for thread in threads:
+		thread.communicate()
+	
+elif args.numThreads < 1:
+	print("Cannot run fewer than one thread.")
+	exit(1)
+
+#TODO: Consider moving things not needed to spawn subprocesses below this point, as well as moving this stuff into a class to make for easier signal handling.
 
 db = sqlite3.connect(args.databaseFile)
 #Cursor needed for lastrowid so that traces can be inserted under the correct ProbeID.
@@ -63,9 +90,7 @@ tn = telnetlib.Telnet(args.host, args.port)
 #Read through intial help message.
 tn.read_until(prompt)
 
-#TODO: Thread this out into requested number of processes.
-#Each thread will need its own sqlite and telnet connection.
-for _ in range(args.numProbes):
+while True:
 	target = rand.random()
 	
 	if args.verbosity > 0:
