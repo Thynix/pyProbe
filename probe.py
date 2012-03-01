@@ -138,23 +138,23 @@ def sigint_handler(signum, frame):
 def main():
 	parser = argparse.ArgumentParser(description="Make probes to random network locations, saving the results to the specified database.")
 
-	parser.add_argument('-t', dest="numThreads", default=5, type=int,\
+	parser.add_argument('--threads, -t', dest="numThreads", default=5, type=int,\
 			    help="Number of simultanious probe threads to run. Default 5 threads.")
 	parser.add_argument('--host', dest="host", default="127.0.0.1",\
 			    help="Telnet host; Freenet node to connect to. Default 127.0.0.1.")
-	parser.add_argument('-p', dest="port", default=2323, type=int,\
+	parser.add_argument('--port, -p', dest="port", default=2323, type=int,\
 			    help="Port the target node is running TMCI on. Default port 2323.")
 	#TODO: How much do higher values affect results?
 	parser.add_argument('--timeout', dest="probeTimeout", default=30, type=int,\
-			    help="Number of seconds before timeout when waiting for probe. Default 30 seconds.")
+			    help="Seconds before timeout when waiting for probe. Default 30 seconds.")
 	parser.add_argument('--wait', dest="probeWait", default=30, type=int,\
-			    help="Minimum amount of time to wait between probes. Default 30 seconds.")
-	parser.add_argument('-d', dest="databaseFile", default="database.sql",\
+			    help="Minimum seconds to wait between probes. Per-thread. Default 30 seconds.")
+	parser.add_argument('--database, -d', dest="databaseFile", default="database.sql",\
 			    help="Path to database file. Default \"database.sql\"")
-	parser.add_argument('-v', dest="verbosity", action='count',\
-			   help="Increase verbosity level. First level adds probe and database operation timing, second adds raw probe response. Default none.")
-	parser.add_argument('-l', dest="logFile", default="probe.log",\
-                            help="Log to this file. Default probe.log")
+	parser.add_argument('-v', dest="verbosity", action='count',\{
+			   help="Verbosity level. One is INFO, two is DEBUG. Default WARNING.")
+	parser.add_argument('--log, -l', dest="logFile", default="probe.log",\
+                            help="File log is written to. Default probe.log")
 
 	args = parser.parse_args()
 
