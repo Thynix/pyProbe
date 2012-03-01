@@ -50,8 +50,8 @@ def insert(args, result):
 			db.execute("insert into traces(probeID, traceNum, uid, location, peerLoc, peerUID) values (?, ?, ?, ?, ?, ?)", (probeID, traceID, trace.UID, trace.location, trace.peerLocs[i], trace.peerUIDs[i]))	
 		traceID += 1
 
-	db.commit()
 	cursor.close()
+	db.commit()
 	db.close()
 	end = datetime.datetime.utcnow()
 	logging.info("Committed {0} traces in {1}.".format(traceID, end - start))
@@ -112,8 +112,8 @@ def probe(args, wait = 0):
 		#Parse for locations and UIDs of each trace's node and its peers.
 		for trace in parseTrace.findall(raw):
 			#Of node described by current trace.
-			location = trace[0]
-			UID = trace[1]
+			location = float(trace[0])
+			UID = long(trace[1])
 			peerLocs = []
 			for val in trace[2].split(','):
 				#Ignore empty string
