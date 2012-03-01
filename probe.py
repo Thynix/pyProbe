@@ -64,9 +64,10 @@ class traceResult:
 		self.peerUIDs = peerUIDs
 
 class probeResult:
-	def __init__(self, target, start=datetime.datetime.utcnow()):
+	def __init__(self, target, start=None):
 		self.target = target
-		self.start = start
+		if not start:
+			self.start = datetime.datetime.utcnow()
 		
 		#Should be updated.
 		self.closest = 0.0
