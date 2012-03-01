@@ -151,7 +151,7 @@ def main():
 			    help="Minimum seconds to wait between probes. Per-thread. Default 30 seconds.")
 	parser.add_argument('--database, -d', dest="databaseFile", default="database.sql",\
 			    help="Path to database file. Default \"database.sql\"")
-	parser.add_argument('-v', dest="verbosity", action='count',\{
+	parser.add_argument('-v', dest="verbosity", action='count',\
 			   help="Verbosity level. One is INFO, two is DEBUG. Default WARNING.")
 	parser.add_argument('--log, -l', dest="logFile", default="probe.log",\
                             help="File log is written to. Default probe.log")
