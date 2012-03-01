@@ -25,7 +25,7 @@ closestGreater = re.compile(r"Completed probe request: 0\.\d+ -> (0\.\d+)")
 #group 2: current UID
 #group 3: comma-separated peer locations
 #group 4: comma-separated peer UIDs
-parseTrace = re.compile(r"location=(0\.\d+)node UID=([-\d]*) prev UID=[-\d]* peer locs=\[([-\d ,.]*)\] peer UIDs=\[([-\d ,]*)\]")
+parseTrace = re.compile(r"location=(-?\d+\.\d+)node UID=(-?\d+) prev UID=-?\d+ peer locs=\[([-\d ,.]*)\] peer UIDs=\[([-\d ,]*)\]")
 
 class traceResult:
 	def __init__(self, location, UID, peerLocs, peerUIDs):
@@ -83,11 +83,19 @@ def probe(args, wait = 0):
 		#Of node described by current trace.
 		location = trace[0]
 		UID = trace[1]
-		#Remove whitespace so that numerically identical values aren't considered different.
-		peerLocs = filter(None, trace[2].split(','))
-		peerUIDs = filter(None, trace[3].split(','))
+		#TODO: Ideally there'd be a way to find just the numbers with the regex,
+		#but that's been difficult.
+		peerLocs = []
+		for val in trace[2].split(','):
+			#Ignore empty string
+			if val: 
+				peerLocs.append(float(val))
+		peerUIDs = []
+ 		for val in trace[3].split(','):
+			if val:
+				peerUIDs.append(long(val))
 		
-		result.traces += [traceResult(location, UID, peerLocs, peerUIDs)]
+		result.traces.append(traceResult(location, UID, peerLocs, peerUIDs))
 	
 	result.end = datetime.datetime.utcnow()
 	return result
