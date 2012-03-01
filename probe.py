@@ -10,7 +10,7 @@ from sys import exit
 from twisted.internet import reactor
 from signal import signal, SIGINT, SIG_DFL
 from threading import Thread
-#TODO: function to log line appended to current timestamp. Logger should be able to do that.
+import logging
 
 #Telnet prompt
 prompt="TMCI> "
@@ -54,7 +54,7 @@ def insert(args, result):
 	cursor.close()
 	db.close()
 	end = datetime.datetime.utcnow()
-	print("{0}: Committed {1} traces in {2} seconds.".format(end, traceID, (end - start).seconds))
+	logging.info("Committed {0} traces in {1}.".format(traceID, end - start))
 
 class traceResult:
 	def __init__(self, location, UID, peerLocs, peerUIDs):
@@ -78,8 +78,7 @@ class probeResult:
 def probe(args, wait = 0):
 	while True:
 		if wait > 0:
-			if args.verbosity > 0:
-				print("Waiting {0} seconds before starting probe.".format(wait))
+			logging.info("Waiting {0} seconds before starting probe.".format(wait))
 			time.sleep(wait)
 		
 		target = rand.random()	
@@ -89,8 +88,7 @@ def probe(args, wait = 0):
 		#Read through intial help message.
 		tn.read_until(prompt)
 		
-		if args.verbosity > 0:
-			print("{0}: Starting probe to {1}.".format(datetime.datetime.now(), target))
+		logging.info("Starting probe to {0}.".format(target))
 		
 		tn.write("PROBE: {0}\n".format(target))
 		
@@ -98,17 +96,16 @@ def probe(args, wait = 0):
 		raw = tn.read_until(prompt, args.probeTimeout)
 		
 		#TODO: What if timeout elapses? Need to skip parsing attempt.
-		if args.verbosity > 0:
-			print("{0}: Probe finished. Took {1} sec.".format(datetime.datetime.now(), (datetime.datetime.utcnow() - result.start).seconds))
+		logging.info("Probe finished. Took {0}.".format(datetime.datetime.utcnow() - result.start))
 
-		if args.verbosity > 1:
-			#TODO: Reasonable to start and end block with newlines? Might be misleading for the end.
-			print("---Begin raw response---\n{0}\n---End raw response---".format(raw))
+		logging.debug("---Begin raw response---\n{0}\n---End raw response---".format(raw))
 		
-		#Check for closest location to target location reached. If no such entry exists, insert NULL/None.
+		#Check for closest location to target location reached. Insert NULL/None if unspecified.
 		closest = closestGreater.search(raw)
 		if closest is not None:
 			closest = closest.group(1)
+		else:
+			logging.warning("Incomplete probe response. Consider increasing probe timeout.")
 		
 		result.closest = closest
 		
@@ -117,8 +114,6 @@ def probe(args, wait = 0):
 			#Of node described by current trace.
 			location = trace[0]
 			UID = trace[1]
-			#TODO: Ideally there'd be a way to find just the numbers with the regex,
-			#but that's been difficult.
 			peerLocs = []
 			for val in trace[2].split(','):
 				#Ignore empty string
@@ -134,6 +129,11 @@ def probe(args, wait = 0):
 		result.end = datetime.datetime.utcnow()
 		reactor.callFromThread(insert, args, result)
 		wait = args.probeWait - (result.end - result.start).seconds
+
+def sigint_handler(signum, frame):
+	logging.info("Got signal {0}. Shutting down.".format(signum))
+	signal(SIGINT, SIG_DFL)
+	reactor.stop()
 
 def main():
 	parser = argparse.ArgumentParser(description="Make probes to random network locations, saving the results to the specified database.")
@@ -153,8 +153,23 @@ def main():
 			    help="Path to database file. Default \"database.sql\"")
 	parser.add_argument('-v', dest="verbosity", action='count',\
 			   help="Increase verbosity level. First level adds probe and database operation timing, second adds raw probe response. Default none.")
+	parser.add_argument('-l', dest="logFile", default="probe.log",\
+                            help="Log to this file. Default probe.log")
 
 	args = parser.parse_args()
+
+	level = None
+	if args.verbosity == 0:
+		level = logging.WARNING
+	elif args.verbosity == 1:
+		level = logging.INFO
+	elif args.verbosity > 1:
+		level = logging.DEBUG
+
+	logging.basicConfig(format="%(asctime)s - %(threadName)s - %(levelname)s: %(message)s", level=level, filename=args.logFile)
+	logging.info("Starting up.")
+	#Logs that shutdown is occuring.
+	signal(SIGINT, sigint_handler)
 
 	#Ensure the database holds the required tables, columns, and indicies.
 	db = sqlite3.connect(args.databaseFile)
@@ -166,7 +181,7 @@ def main():
 	#probeID is unique among probes
 	db.execute("create table if not exists probes(probeID INTEGER PRIMARY KEY, time, target, closest)")
 
-	#traceID is not unique among traces for a given probe; only one peer location or UID is stored per entry.
+	#traceID is not unique among a probe's traces; only one peer location or UID is stored per entry.
 	db.execute("create table if not exists traces(probeID, traceNum, uid, location, peerLoc, peerUID)")
 	#Index to speed up histogram generation. TODO: Remove any indicies which end up being misguided.
 	db.execute("create index if not exists probeID_index on traces(traceNum, probeID)")
