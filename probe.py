@@ -11,11 +11,11 @@ from twisted.internet import reactor
 from signal import signal, SIGINT, SIG_DFL
 from threading import Thread
 #TODO: function to log line appended to current timestamp. Logger should be able to do that.
-#TODO: Move stuff that doesn't need to be global into a main()
 
 #Telnet prompt
 prompt="TMCI> "
 
+#Which random generator to use.
 rand = random.SystemRandom()
 
 #Not much use; stored anyway.
@@ -135,67 +135,64 @@ def probe(args, wait = 0):
 		reactor.callFromThread(insert, args, result)
 		wait = args.probeWait - (result.end - result.start).seconds
 
-parser = argparse.ArgumentParser(description="Make probes to random network locations, saving the results to the specified database.")
+def main():
+	parser = argparse.ArgumentParser(description="Make probes to random network locations, saving the results to the specified database.")
 
-parser.add_argument('-t', dest="numThreads", default=5, type=int,\
-                    help="Number of simultanious probe threads to run. Default 5 threads.")
-parser.add_argument('--host', dest="host", default="127.0.0.1",\
-                    help="Telnet host; Freenet node to connect to. Default 127.0.0.1.")
-parser.add_argument('-p', dest="port", default=2323, type=int,\
-                    help="Port the target node is running TMCI on. Default port 2323.")
-#TODO: How much do higher values affect results?
-parser.add_argument('--timeout', dest="probeTimeout", default=30, type=int,\
-                    help="Number of seconds before timeout when waiting for probe. Default 30 seconds.")
-parser.add_argument('--wait', dest="probeWait", default=30, type=int,\
-                    help="Minimum amount of time to wait between probes. Default 30 seconds.")
-parser.add_argument('-d', dest="databaseFile", default="database.sql",\
-                    help="Path to database file. Default \"database.sql\"")
-parser.add_argument('-v', dest="verbosity", action='count',\
-                   help="Increase verbosity level. First level adds probe and database operation timing, second adds raw probe response. Default none.")
+	parser.add_argument('-t', dest="numThreads", default=5, type=int,\
+			    help="Number of simultanious probe threads to run. Default 5 threads.")
+	parser.add_argument('--host', dest="host", default="127.0.0.1",\
+			    help="Telnet host; Freenet node to connect to. Default 127.0.0.1.")
+	parser.add_argument('-p', dest="port", default=2323, type=int,\
+			    help="Port the target node is running TMCI on. Default port 2323.")
+	#TODO: How much do higher values affect results?
+	parser.add_argument('--timeout', dest="probeTimeout", default=30, type=int,\
+			    help="Number of seconds before timeout when waiting for probe. Default 30 seconds.")
+	parser.add_argument('--wait', dest="probeWait", default=30, type=int,\
+			    help="Minimum amount of time to wait between probes. Default 30 seconds.")
+	parser.add_argument('-d', dest="databaseFile", default="database.sql",\
+			    help="Path to database file. Default \"database.sql\"")
+	parser.add_argument('-v', dest="verbosity", action='count',\
+			   help="Increase verbosity level. First level adds probe and database operation timing, second adds raw probe response. Default none.")
 
-args = parser.parse_args()
+	args = parser.parse_args()
 
-#Ensure the database holds the required tables, columns, and indicies. Better now than during each thread.
-db = sqlite3.connect(args.databaseFile)
-db.execute("create table if not exists uids(uid, time)")
-#Index to speed up time-based UID analysis.
-db.execute("create index if not exists uid_index on uids(uid)")
-db.execute("create index if not exists time_index on uids(time)")
+	#Ensure the database holds the required tables, columns, and indicies.
+	db = sqlite3.connect(args.databaseFile)
+	db.execute("create table if not exists uids(uid, time)")
+	#Index to speed up time-based UID analysis.
+	db.execute("create index if not exists uid_index on uids(uid)")
+	db.execute("create index if not exists time_index on uids(time)")
 
-#probeID is unique among probes
-db.execute("create table if not exists probes(probeID INTEGER PRIMARY KEY, time, target, closest)")
+	#probeID is unique among probes
+	db.execute("create table if not exists probes(probeID INTEGER PRIMARY KEY, time, target, closest)")
 
-#traceID is not unique among traces for a given probe; only one peer location or UID is stored per entry.
-db.execute("create table if not exists traces(probeID, traceNum, uid, location, peerLoc, peerUID)")
-#Index to speed up histogram generation. TODO: Remove any indicies which end up being misguided.
-db.execute("create index if not exists probeID_index on traces(traceNum, probeID)")
-db.execute("create index if not exists UID_index on traces(uid)")
+	#traceID is not unique among traces for a given probe; only one peer location or UID is stored per entry.
+	db.execute("create table if not exists traces(probeID, traceNum, uid, location, peerLoc, peerUID)")
+	#Index to speed up histogram generation. TODO: Remove any indicies which end up being misguided.
+	db.execute("create index if not exists probeID_index on traces(traceNum, probeID)")
+	db.execute("create index if not exists UID_index on traces(uid)")
 
-db.commit()
-db.close()
+	db.commit()
+	db.close()
 
-if args.numThreads < 1:
-	print("Cannot run fewer than one thread.")
-	exit(1)
+	if args.numThreads < 1:
+		print("Cannot run fewer than one thread.")
+		exit(1)
 
-def shutDown(num, frame):
-	#Restore default handler
-	signal(SIGINT, SIG_DFL)
-	print("Shutting down. Hit ctrl-c again to exit.")
-	reactor.stop()
+	def startThreads(threads):
+		for thread in threads:
+			thread.start()
 
-def startThreads(threads):
-	for thread in threads:
-		thread.start()
+	#Stagger starting time throughout wait period.
+	staggerTime = args.probeWait / args.numThreads
+	threads = []
+	for i in range(args.numThreads):
+		thread = Thread(target=probe, args=(args, i*staggerTime))
+		thread.daemon = True
+		threads.append(thread)
 
-#Stagger starting time throughout wait period.
-staggerTime = args.probeWait / args.numThreads
-threads = []
-for i in range(args.numThreads):
-	thread = Thread(target=probe, args=(args, i*staggerTime))
-	thread.daemon = True
-	threads.append(thread)
+	reactor.callWhenRunning(startThreads, threads)
+	reactor.run()
 
-reactor.callWhenRunning(signal, SIGINT, shutDown)
-reactor.callWhenRunning(startThreads, threads)
-reactor.run()
+if __name__ == "__main__":
+    main()
