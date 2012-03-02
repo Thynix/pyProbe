@@ -103,7 +103,7 @@ def probe(args, wait = 0):
 		#Check for closest location to target location reached. Insert NULL/None if unspecified.
 		closest = closestGreater.search(raw)
 		if closest is not None:
-			closest = closest.group(1)
+			closest = float(closest.group(1))
 		else:
 			logging.warning("Incomplete probe response. Consider increasing probe timeout.")
 		
