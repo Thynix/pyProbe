@@ -54,7 +54,7 @@ def insert(args, result):
 	db.commit()
 	db.close()
 	end = datetime.datetime.utcnow()
-	logging.info("Committed {0} traces in {1}.".format(traceID, end - start))
+	logging.info("Committed {0} traces in {1}.".format(len(result.traces), end - start))
 
 class traceResult:
 	def __init__(self, location, UID, peerLocs, peerUIDs):
