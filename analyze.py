@@ -25,11 +25,13 @@ parser.add_argument('-g', dest="graphFile", default="graph.gexf",
 
 args = parser.parse_args()
 
+print("Connecting to database.")
 db = sqlite3.connect(args.databaseFile)
 
 #TODO: Are comments needed? This seems pretty self-explanatory. Is it of concern that
 #the 'now' used by sqlite will drift slightly between subsequent lines?
 
+print("Querying database for node appearance data.")
 timeSpans = [[0, "-1 hours"], [0, "-1 days"], [0, "-5 days"], [0, "-7 days"], [0, "-15 days"]]
 for span in timeSpans:
 	#string concatination because sqlite will not substitute paramters in strings.
@@ -52,19 +54,22 @@ data = "{statHour} {hour} {day} {uniqueDay} {fiveDays} {unique5Days} {week} {uni
 dataFile = open(args.fullData, 'a')
 dataFile.close()
 
+print("Writing appearance data.")
+
 #Remove existing entry(/ies) for this hour and append updated one.
 call(['sed','-i', r'/^{0}.*$/d'.format(hour), args.fullData])
 
 with open(args.fullData, 'a') as dataFile:
 	dataFile.write("{0}\n".format(data))
 
+print("Plotting network size estimates.")
+
 call(['gnuplot','plot.gnu'])
 
-print("Initializing histogram")
 #Maximum: size one greater to account for zero.
 histogram = array('I', (0,)*(args.histogramMax + 1))
 
-print("Querying database for traces through distinct UIDs.")
+print("Querying database for peer distribution histogram.")
 probeStats = db.execute("select count(traceNum), count(distinct probeID) from traces group by uid").fetchall()
 print("Analyzing results.")
 
@@ -78,7 +83,7 @@ for traceAggregate in probeStats:
                 else:
                         histogram[avgPeers] += 1
 
-print("Analysis complete, writing results.")
+print("Writing results.")
 with open("peerDist.dat", 'w') as output:
         numberOfPeers = 0
         for nodeCount in histogram:
@@ -87,12 +92,11 @@ with open("peerDist.dat", 'w') as output:
 
 print("Plotting histogram.")
 call(["gnuplot","peer_dist.gnu"])
-print("Generating graph.")
 
 g = GEXF()
 graph = g.getUndirectedGraph()
 
-print("Querying database.")
+print("Querying database for network topology graph.")
 #Vertices: Retrieve all nodes.
 uids = db.execute("select distinct uid from uids").fetchall()
 
@@ -115,7 +119,7 @@ for node in nodes:
     graph.addEdge(str(i), str(node[0]), str(node[1]))
     i += 1
 
-print("Writing results.")
+print("Writing graph.")
 writer = FileWriter(args.graphFile, g)
 writer.write()
 
