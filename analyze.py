@@ -18,7 +18,7 @@ parser.add_argument('-f', dest="fullData", default="full_data",\
                     help="Path to file to save analysis to. Default \"full_data\"")
 parser.add_argument('-T', dest="recentSeconds", default=604800, type=long,\
                     help="A node is considered new if it was first seen after this many seconds in the past. A node is considered former if it was last seen before this many seconds in the past. Default 604800: one week.")
-parser.add_argument('--histogram-max', dest="histogramMax", default=100, type=int,\
+parser.add_argument('--histogram-max', dest="histogramMax", default=50, type=int,\
                     help="Maximum number of peers to consider for histogram generation; anything more than that is lumped into the highest category. Default 100.")
 parser.add_argument('-g', dest="graphFile", default="graph.gexf",
                     help="Path to file to save network graph to. Default \"graph.gexf\".")
