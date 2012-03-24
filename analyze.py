@@ -4,6 +4,7 @@ import datetime
 import re
 from subprocess import call
 from array import array
+from libgexf import GEXF, FileWriter
 
 parser = argparse.ArgumentParser(description="Analyze probe results for estimates of network size and interconnectedness, generate graphs with gnuplot, and optionally upload the results.")
 parser.add_argument('-u', dest="upload", default=False,\
@@ -19,6 +20,8 @@ parser.add_argument('-T', dest="recentSeconds", default=604800, type=long,\
                     help="A node is considered new if it was first seen after this many seconds in the past. A node is considered former if it was last seen before this many seconds in the past. Default 604800: one week.")
 parser.add_argument('--histogram-max', dest="histogramMax", default=100, type=int,\
                     help="Maximum number of peers to consider for histogram generation; anything more than that is lumped into the highest category. Default 100.")
+parser.add_argument('-g', dest="graphFile", default="graph.gexf",
+                    help="Path to file to save network graph (vertices and edges) to. Default \"graph.gexf\".")
 
 args = parser.parse_args()
 
@@ -82,8 +85,39 @@ with open("peerDist.dat", 'w') as output:
                 output.write("{0} {1}\n".format(numberOfPeers, nodeCount))
                 numberOfPeers += 1
 
-print("Graphing.")
+print("Graphing histogram.")
 call(["gnuplot","peer_dist.gnu"])
+print("Generating graph. (The verticies and edges type.)")
+
+g = GEXF()
+graph = g.getUndirectedGraph()
+
+print("Querying database.")
+#Vertices: Retrieve all nodes.
+uids = db.execute("select distinct uid from uids").fetchall()
+
+#Edges: Retrieve all nodes there are traces for and which nodes they're connected to.
+nodes = db.execute("select peerUID, uid from traces group by peerUID, uid").fetchall()
+
+print("Adding verticies.")
+#Build vertices.
+#TODO: Might be good to include as attributes things such as how many traces the node
+#is in, its location, when it was last and first seen.
+for vertex in uids:
+    graph.addNode(str(vertex[0]))
+
+print("Adding edges.")
+#Build edges.
+i = 0
+for node in nodes:
+    #Because results are grouped by peerUID, uid; duplicate edges should not be an issue.
+    #TODO: Is there something more useful to use as an edge ID?
+    graph.addEdge(str(i), str(node[0]), str(node[1]))
+    i += 1
+
+print("Writing results.")
+writer = FileWriter(args.graphFile, g)
+writer.write()
 
 print("Closing database.")
 db.close()
