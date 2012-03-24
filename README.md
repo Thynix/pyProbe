@@ -28,7 +28,7 @@ pyProbe is a collection of data gathering and analysis tools for [Freenet](https
 
 ### Enabling TMCI
 
-* Shut down Freenet.
+* Shut down Freenet. Freenet will write out its settings on shutdown so these changes cannot be made while the node is running.
 * In `freenet.ini`, set these options, or add them if they do not exist:
     * `console.enabled=true`
     * `console.directEnabled=true`
