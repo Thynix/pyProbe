@@ -22,16 +22,22 @@ parser.add_argument('--histogram-max', dest="histogramMax", default=50, type=int
                     help="Maximum number of peers to consider for histogram generation; anything more than that is lumped into the highest category. Default 100.")
 parser.add_argument('-g', dest="graphFile", default="graph.gexf",
                     help="Path to file to save network graph to. Default \"graph.gexf\".")
+parser.add_argument('-q', dest='quiet', default=False, action='store_true',
+                    help='Do not print status updates.')
 
 args = parser.parse_args()
 
-print("Connecting to database.")
+def log(msg):
+    if not args.quiet:
+        print("{0}: {1}".format(datetime.datetime.now(), msg))
+
+log("Connecting to database.")
 db = sqlite3.connect(args.databaseFile)
 
 #TODO: Are comments needed? This seems pretty self-explanatory. Is it of concern that
 #the 'now' used by sqlite will drift slightly between subsequent lines?
 
-print("Querying database for node appearance data.")
+log("Querying database for node appearance data.")
 timeSpans = [[0, "-1 hours"], [0, "-1 days"], [0, "-5 days"], [0, "-7 days"], [0, "-15 days"]]
 for span in timeSpans:
 	#string concatination because sqlite will not substitute paramters in strings.
@@ -54,7 +60,7 @@ data = "{statHour} {hour} {day} {uniqueDay} {fiveDays} {unique5Days} {week} {uni
 dataFile = open(args.fullData, 'a')
 dataFile.close()
 
-print("Writing appearance data.")
+log("Writing appearance data.")
 
 #Remove existing entry(/ies) for this hour and append updated one.
 call(['sed','-i', r'/^{0}.*$/d'.format(hour), args.fullData])
@@ -62,16 +68,16 @@ call(['sed','-i', r'/^{0}.*$/d'.format(hour), args.fullData])
 with open(args.fullData, 'a') as dataFile:
 	dataFile.write("{0}\n".format(data))
 
-print("Plotting network size estimates.")
+log("Plotting network size estimates.")
 
 call(['gnuplot','plot.gnu'])
 
 #Maximum: size one greater to account for zero.
 histogram = array('I', (0,)*(args.histogramMax + 1))
 
-print("Querying database for peer distribution histogram.")
+log("Querying database for peer distribution histogram.")
 probeStats = db.execute("select count(traceNum), count(distinct probeID) from traces group by uid").fetchall()
-print("Analyzing results.")
+log("Analyzing results.")
 
 for traceAggregate in probeStats:
         peerUIDs = traceAggregate[0]
@@ -83,34 +89,34 @@ for traceAggregate in probeStats:
                 else:
                         histogram[avgPeers] += 1
 
-print("Writing results.")
+log("Writing results.")
 with open("peerDist.dat", 'w') as output:
         numberOfPeers = 0
         for nodeCount in histogram:
                 output.write("{0} {1}\n".format(numberOfPeers, nodeCount))
                 numberOfPeers += 1
 
-print("Plotting histogram.")
+log("Plotting histogram.")
 call(["gnuplot","peer_dist.gnu"])
 
 g = GEXF()
 graph = g.getUndirectedGraph()
 
-print("Querying database for network topology graph.")
+log("Querying database for network topology graph.")
 #Vertices: Retrieve all nodes.
 uids = db.execute("select distinct uid from uids").fetchall()
 
 #Edges: Retrieve all nodes there are traces for and which nodes they're connected to.
 nodes = db.execute("select peerUID, uid from traces group by peerUID, uid").fetchall()
 
-print("Adding verticies.")
+log("Adding verticies.")
 #Build vertices.
 #TODO: Might be good to include as attributes things such as how many traces the node
 #is in, its location, when it was last and first seen.
 for vertex in uids:
     graph.addNode(str(vertex[0]))
 
-print("Adding edges.")
+log("Adding edges.")
 #Build edges.
 i = 0
 for node in nodes:
@@ -119,9 +125,9 @@ for node in nodes:
     graph.addEdge(str(i), str(node[0]), str(node[1]))
     i += 1
 
-print("Writing graph.")
+log("Writing graph.")
 writer = FileWriter(args.graphFile, g)
 writer.write()
 
-print("Closing database.")
+log("Closing database.")
 db.close()
