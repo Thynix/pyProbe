@@ -6,14 +6,14 @@ from subprocess import call
 from array import array
 from libgexf import GEXF, FileWriter
 
-parser = argparse.ArgumentParser(description="Analyze probe results for estimates of network size and interconnectedness, generate graphs with gnuplot, and optionally upload the results.")
+parser = argparse.ArgumentParser(description="Analyze probe results for estimates of network size and interconnectedness, generate plots with gnuplot, and optionally upload the results.")
 parser.add_argument('-u', dest="upload", default=False,\
                     action="store_true", help="Upload updated analysis. This is not done by default.")
 parser.add_argument('-d', dest="databaseFile", default="database.sql",\
                     help="Path to database file. Default \"database.sql\"")
 #TODO: graph hour zero should be first probe time; probably should get rid of this.
 parser.add_argument('-s', dest="startTime", default=1258866000, type=float,\
-                    help="Unix time for graph hour 0. Default 1258866000: 5 AM November 22, 2009")
+                    help="Unix time for plot hour 0. Default 1258866000: 5 AM November 22, 2009")
 parser.add_argument('-f', dest="fullData", default="full_data",\
                     help="Path to file to save analysis to. Default \"full_data\"")
 parser.add_argument('-T', dest="recentSeconds", default=604800, type=long,\
@@ -21,7 +21,7 @@ parser.add_argument('-T', dest="recentSeconds", default=604800, type=long,\
 parser.add_argument('--histogram-max', dest="histogramMax", default=100, type=int,\
                     help="Maximum number of peers to consider for histogram generation; anything more than that is lumped into the highest category. Default 100.")
 parser.add_argument('-g', dest="graphFile", default="graph.gexf",
-                    help="Path to file to save network graph (vertices and edges) to. Default \"graph.gexf\".")
+                    help="Path to file to save network graph to. Default \"graph.gexf\".")
 
 args = parser.parse_args()
 
@@ -85,9 +85,9 @@ with open("peerDist.dat", 'w') as output:
                 output.write("{0} {1}\n".format(numberOfPeers, nodeCount))
                 numberOfPeers += 1
 
-print("Graphing histogram.")
+print("Plotting histogram.")
 call(["gnuplot","peer_dist.gnu"])
-print("Generating graph. (The verticies and edges type.)")
+print("Generating graph.")
 
 g = GEXF()
 graph = g.getUndirectedGraph()
