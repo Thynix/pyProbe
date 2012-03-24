@@ -129,5 +129,49 @@ log("Writing graph.")
 writer = FileWriter(args.graphFile, g)
 writer.write()
 
+#Extracts a valid location from an overloaded location value.
+#Locations are [0,1), but additional information can be encoded,
+#as seen in freenet.node.LocationManager's extractLocs. (Line 1381 as of build 1405.)
+#
+#If the location is unknown, it will be set to -1 before the backed off encoding.
+#If not backed off, it will be subtracted from -1.
+#If backed off, it will be added to 1.
+#Due to overlap in these values:
+#  -1: either not backed off location 0 or an unknown location.
+#   0: either location 0 or backed off unknown location.
+#the meaning cannot be determined with certainty.
+def toLoc(loc):
+    loc = float(loc)
+    #Not backed off:
+    #result = -1 - loc
+    #loc = -result - 1
+    if loc < 0.0:
+        return -loc - 1.0
+    if loc >= 1.0:
+        return loc - 1.0
+    
+    return loc
+
+#Link length is difference in location between connected nodes.
+log("Querying database for link lengths.")
+links = db.execute("select location, peerLoc from traces").fetchall()
+
+log("Calculating and writing results.")
+linkFile = open('links_output', "w")
+
+for link in links:
+    nodeLoc = toLoc(link[0])
+    peerLoc = toLoc(link[1])
+    diff = abs(nodeLoc - peerLoc)
+    distance = min(diff, 1 - diff)
+    #Writing for GNUPlot smooth cumulative:
+    #x at location difference, y at 1 (so each entry is added as 1)
+    linkFile.write("{0} 1\n".format(distance))
+
+linkFile.close()
+
+#TODO: Call gnuplot on the script file, and have the script file be such that
+#it can be supplied with an argument of len(links) to normalize the y axis.
+
 log("Closing database.")
 db.close()
