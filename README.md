@@ -7,7 +7,8 @@ pyProbe is a collection of data gathering and analysis tools for [Freenet](https
 * Python 2.6.6-ish
 * [libGEXF](http://gexf.net/lib/)
 * [pysqlite](http://code.google.com/p/pysqlite/)
-* Freenet
+* [Freenet](https://freenetproject.org/)
+* [gnuplot](http://www.gnuplot.info/)
 
 ## Setup
 
