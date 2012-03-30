@@ -153,31 +153,38 @@ def toLoc(loc):
     return loc
 
 #Link length is difference in location between connected nodes.
-log("Querying database for link lengths.")
+log("Querying database for location pairs.")
 #Get location, peerLoc pairs for a time-limited period, with one entry for each pair.
 links = db.execute("select location, peerLoc from traces join probes on traces.probeID = probes.probeID where time > datetime('now','-{0} seconds') group by location, peerLoc".format(args.recentSeconds)).fetchall()
 
-log("Calculating and writing results.")
+log("Calculating lengths.")
 linkFile = open('links_output', "w")
 
-existing = set()
+uniqueLinks = set()
+duplicateLinks = 0
 for link in links:
     nodeLoc = toLoc(link[0])
     peerLoc = toLoc(link[1])
     diff = abs(nodeLoc - peerLoc)
     distance = min(diff, 1 - diff)
-    #Avoid adding duplicate link lengths.
-    if distance in existing:
-        continue
-    #Writing for GNUPlot smooth cumulative:
-    #x at location difference, y at 1 (so each entry is added as 1)
-    linkFile.write("{0} 1\n".format(distance))
-    existing.add(distance)
+    if distance in uniqueLinks:
+        duplicateLinks += 1
+    else:
+        uniqueLinks.add(distance)
+
+log("From {0} location pairs, {1} ({2}%) had duplicate link lengths."\
+    .format(len(links), duplicateLinks,1.0*duplicateLinks/len(links)*100))
+
+log("Writing results.")
+#GNUPlot cumulative adds y values, should add to 1.0 in total.
+y = 1.0/len(uniqueLinks)
+for link in uniqueLinks:
+    linkFile.write("{0} {1}\n".format(link, y))
 
 linkFile.close()
 
-#TODO: Call gnuplot on the script file, and have the script file be such that
-#it can be supplied with an argument of len(links) to normalize the y axis.
+log("Plotting.")
+call(["gnuplot","link_length.gnu"])
 
 log("Closing database.")
 db.close()
