@@ -154,19 +154,25 @@ def toLoc(loc):
 
 #Link length is difference in location between connected nodes.
 log("Querying database for link lengths.")
-links = db.execute("select location, peerLoc from traces").fetchall()
+#Get location, peerLoc pairs for a time-limited period, with one entry for each pair.
+links = db.execute("select location, peerLoc from traces join probes on traces.probeID = probes.probeID where time > datetime('now','-{0} seconds') group by location, peerLoc".format(args.recentSeconds)).fetchall()
 
 log("Calculating and writing results.")
 linkFile = open('links_output', "w")
 
+existing = set()
 for link in links:
     nodeLoc = toLoc(link[0])
     peerLoc = toLoc(link[1])
     diff = abs(nodeLoc - peerLoc)
     distance = min(diff, 1 - diff)
+    #Avoid adding duplicate link lengths.
+    if distance in existing:
+        continue
     #Writing for GNUPlot smooth cumulative:
     #x at location difference, y at 1 (so each entry is added as 1)
     linkFile.write("{0} 1\n".format(distance))
+    existing.add(distance)
 
 linkFile.close()
 
