@@ -4,7 +4,6 @@ import datetime
 import re
 from subprocess import call
 from array import array
-from libgexf import GEXF, FileWriter
 
 parser = argparse.ArgumentParser(description="Analyze probe results for estimates of network size and interconnectedness, generate plots with gnuplot, and optionally upload the results.")
 parser.add_argument('-u', dest="upload", default=False,\
@@ -20,10 +19,12 @@ parser.add_argument('-T', dest="recentSeconds", default=604800, type=long,\
                     help="A node is considered new if it was first seen after this many seconds in the past. A node is considered former if it was last seen before this many seconds in the past. Default 604800: one week.")
 parser.add_argument('--histogram-max', dest="histogramMax", default=50, type=int,\
                     help="Maximum number of peers to consider for histogram generation; anything more than that is lumped into the highest category. Default 100.")
-parser.add_argument('-g', dest="graphFile", default="graph.gexf",
+parser.add_argument('-g', dest="graphFile", default="graph.gexf",\
                     help="Path to file to save network graph to. Default \"graph.gexf\".")
-parser.add_argument('-q', dest='quiet', default=False, action='store_true',
+parser.add_argument('-q', dest='quiet', default=False, action='store_true',\
                     help='Do not print status updates.')
+parser.add_argument('--topology', dest='topology', default=False, action='store_true',\
+                    help='Output network topology. Requires libgexf.')
 
 args = parser.parse_args()
 
@@ -99,35 +100,37 @@ with open("peerDist.dat", 'w') as output:
 log("Plotting histogram.")
 call(["gnuplot","peer_dist.gnu"])
 
-g = GEXF()
-graph = g.getUndirectedGraph()
-
-log("Querying database for network topology graph.")
-#Vertices: Retrieve all nodes.
-uids = db.execute("select distinct uid from uids").fetchall()
-
-#Edges: Retrieve all nodes there are traces for and which nodes they're connected to.
-nodes = db.execute("select peerUID, uid from traces group by peerUID, uid").fetchall()
-
-log("Adding verticies.")
-#Build vertices.
-#TODO: Might be good to include as attributes things such as how many traces the node
-#is in, its location, when it was last and first seen.
-for vertex in uids:
-    graph.addNode(str(vertex[0]))
-
-log("Adding edges.")
-#Build edges.
-i = 0
-for node in nodes:
-    #Because results are grouped by peerUID, uid; duplicate edges should not be an issue.
-    #TODO: Is there something more useful to use as an edge ID?
-    graph.addEdge(str(i), str(node[0]), str(node[1]))
-    i += 1
-
-log("Writing graph.")
-writer = FileWriter(args.graphFile, g)
-writer.write()
+if args.topology:
+    from libgexf import GEXF, FileWriter
+    g = GEXF()
+    graph = g.getUndirectedGraph()
+    
+    log("Querying database for network topology graph.")
+    #Vertices: Retrieve all nodes.
+    uids = db.execute("select distinct uid from uids").fetchall()
+    
+    #Edges: Retrieve all nodes there are traces for and which nodes they're connected to.
+    nodes = db.execute("select peerUID, uid from traces group by peerUID, uid").fetchall()
+    
+    log("Adding verticies.")
+    #Build vertices.
+    #TODO: Might be good to include as attributes things such as how many traces the node
+    #is in, its location, when it was last and first seen.
+    for vertex in uids:
+        graph.addNode(str(vertex[0]))
+    
+    log("Adding edges.")
+    #Build edges.
+    i = 0
+    for node in nodes:
+        #Because results are grouped by peerUID, uid; duplicate edges should not be an issue.
+        #TODO: Is there something more useful to use as an edge ID?
+        graph.addEdge(str(i), str(node[0]), str(node[1]))
+        i += 1
+    
+    log("Writing graph.")
+    writer = FileWriter(args.graphFile, g)
+    writer.write()
 
 #Extracts a valid location from an overloaded location value.
 #Locations are [0,1), but additional information can be encoded,
