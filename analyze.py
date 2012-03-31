@@ -172,14 +172,17 @@ for link in links:
     else:
         uniqueLinks.add(distance)
 
+percentage = 0
+if len(links) > 0:
+    percentage = 1.0*duplicateLinks/len(links)*100
+
 log("From {0} location pairs, {1} ({2}%) had duplicate link lengths."\
-    .format(len(links), duplicateLinks,1.0*duplicateLinks/len(links)*100))
+    .format(len(links), duplicateLinks, percentage))
 
 log("Writing results.")
 #GNUPlot cumulative adds y values, should add to 1.0 in total.
-y = 1.0/len(uniqueLinks)
 for link in uniqueLinks:
-    linkFile.write("{0} {1}\n".format(link, y))
+    linkFile.write("{0} {1}\n".format(link, 1.0/len(uniqueLinks)))
 
 linkFile.close()
 
