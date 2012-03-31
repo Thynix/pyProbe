@@ -40,7 +40,7 @@ pyProbe is a collection of data gathering and analysis tools for [Freenet](https
 The three tools are:
 
 * `probe.py`: connects to a Freenet node and makes probe requests to random locations, storing the results in a database.
-* `analyze.py`: reads probe results from a database, generating plots of the data and a network topology graph.
+* `analyze.py`: reads probe results from a database, generating plots of the data and optionally a network topology graph.
 * `util.py`: provides statistics on the amount of information held by the database and allows easily running the `sqlite` commands `analyze` and `vacuum`.
 
 Help screens are available by running a tool with the `--help` or `-h` arguments.
