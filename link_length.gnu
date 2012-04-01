@@ -7,7 +7,7 @@ set ylabel 'Percent nodes with this length or less'
 set output "link_length_log.png"
 set logscale x
 #As location is circular and [0,1), largest difference is 0.5.
-plot [0.0001:0.5] [0:1] 'links_output' s cumul
+plot [0.00001:0.5] [0:1] 'links_output' s cumul
 
 
 set output 'link_length_linear.png'
