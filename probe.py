@@ -177,15 +177,15 @@ def main():
 	#Index to speed up time-based UID analysis.
 	db.execute("create index if not exists uid_index on uids(uid)")
 	db.execute("create index if not exists time_index on uids(time)")
+    #TODO: Indexes related to likely queries.
 
 	#probeID is unique among probes
 	db.execute("create table if not exists probes(probeID INTEGER PRIMARY KEY, time, target, closest)")
 
 	#traceID is not unique among a probe's traces; only one peer location or UID is stored per entry.
 	db.execute("create table if not exists traces(probeID, traceNum, uid, location, peerLoc, peerUID)")
-	#Index to speed up histogram generation. TODO: Remove any indicies which end up being misguided.
-	db.execute("create index if not exists probeID_index on traces(traceNum, probeID)")
-	db.execute("create index if not exists UID_index on traces(uid)")
+	#Index to speed up histogram generation.
+	db.execute("create index if not exists probeID_index on traces(uid, traceNum, probeID)")
 
 	db.commit()
 	db.close()
