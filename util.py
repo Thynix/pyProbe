@@ -10,19 +10,8 @@ parser.add_argument('-d, --database-file', dest="databaseFile", default="databas
 
 args = parser.parse_args()
 
+choice = str(raw_input("Enter:\n * a to analyze\n * s to view statistics\n * v to vaccuum (requires no open transactions or active SQL statements)\n * anything else to exit.\n> "))
 with sqlite3.connect(args.databaseFile) as db:
-        print("Database contains:")
-        print("* {0:n} distinct UIDs seen".format(db.execute("select count(distinct uid) from uids").fetchone()[0]))
-        print("* {0:n} distinct UIDs probes have passed through".format(db.execute("select count(distinct uid) from traces").fetchone()[0]))
-        print("* {0:n} probes".format(db.execute("select count(probeID) from probes").fetchone()[0]))
-        print("* {0:n} traces".format(len(db.execute("select uid from traces group by traceNum, probeID").fetchall())))
-        #Using uids because it has an index on time, unlike probes
-        print("* First trace taken {0}".format(db.execute("select min(time) from uids").fetchone()[0]))
-        print("* Most recent trace taken {0}".format(db.execute("select max(time) from uids").fetchone()[0]))
-
-#Don't have the database open while waiting for user input lest it cause other attempt to access it to timeout.
-choice = str(raw_input("\nEnter:\n * v to vaccuum (requires no open transactions or active SQL statements)\n * a to analyze\n * anything else to exit.\n> "))
-with sqlite3.connect(args.databaseFile):
     if choice == 'v':
         print("Vacuuming...")
         db.execute("vacuum")
@@ -31,5 +20,14 @@ with sqlite3.connect(args.databaseFile):
         print("Analyzing...")
         db.execute("analyze")
         db.commit()
+    elif choice == 's':
+        print("Database contains:")
+        print("* {0:n} distinct UIDs seen".format(db.execute("select count(distinct uid) from uids").fetchone()[0]))
+        print("* {0:n} distinct UIDs probes have passed through".format(db.execute("select count(distinct uid) from traces").fetchone()[0]))
+        print("* {0:n} probes".format(db.execute("select count(probeID) from probes").fetchone()[0]))
+        print("* {0:n} traces".format(len(db.execute("select uid from traces group by traceNum, probeID").fetchall())))
+        #Using uids because it has an index on time, unlike probes
+        print("* First trace taken {0}".format(db.execute("select min(time) from uids").fetchone()[0]))
+        print("* Most recent trace taken {0}".format(db.execute("select max(time) from uids").fetchone()[0]))
     
     print("Done.")
