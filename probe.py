@@ -11,6 +11,13 @@ from twisted.internet import reactor
 from signal import signal, SIGINT, SIG_DFL
 from threading import Thread
 import logging
+from twisted.application import service
+from ConfigParser import SafeConfigParser
+
+#log.startLogging(sys.stdout)
+
+__version__ = "0.1"
+application = service.Application("pyProbe")
 
 #Telnet prompt
 prompt="TMCI> "
@@ -135,41 +142,31 @@ def sigint_handler(signum, frame):
 	signal(SIGINT, SIG_DFL)
 	reactor.stop()
 
+#Inactive class for holding arguments in attributes so that the rest of the code
+#need not reflect a transition from command line arguments to a config file.
+class Arguments(object):
+	pass
+
 def main():
-	parser = argparse.ArgumentParser(description="Make probes to random network locations, saving the results to the specified database.")
+	config = SafeConfigParser()
+	#Case-sensitive to set args attributes correctly.
+	config.optionxform = str
+	config.read("probe.config")
+	defaults = config.defaults()
 
-	parser.add_argument('--threads', '-t', dest="numThreads", default=5, type=int,\
-			    help="Number of simultanious probe threads to run. Default 5 threads.")
-	parser.add_argument('--host', dest="host", default="127.0.0.1",\
-			    help="Telnet host; Freenet node to connect to. Default 127.0.0.1.")
-	parser.add_argument('--port', '-p', dest="port", default=2323, type=int,\
-			    help="Port the target node is running TMCI on. Default port 2323.")
-	#TODO: How much do higher values affect results?
-	parser.add_argument('--timeout', dest="probeTimeout", default=30, type=int,\
-			    help="Seconds before timeout when waiting for probe. Default 30 seconds.")
-	parser.add_argument('--wait', dest="probeWait", default=30, type=int,\
-			    help="Minimum seconds to wait between probes. Per-thread. Default 30 seconds.")
-	parser.add_argument('--database', '-d', dest="databaseFile", default="database.sql",\
-			    help="Path to database file. Default \"database.sql\"")
-	parser.add_argument('-v', dest="verbosity", action='count',\
-			   help="Verbosity level. One is INFO, two is DEBUG. Default WARNING.")
-	parser.add_argument('--log', '-l', dest="logFile", default="probe.log",\
-                            help="File log is written to. Default probe.log")
+	def get(option):
+		return config.get("OVERRIDE", option) or defaults[option]
 
-	args = parser.parse_args()
+	args = Arguments()
+	for arg in defaults.keys():
+		setattr(args, arg, get(arg))
 
-	level = None
-	if args.verbosity == 0:
-		level = logging.WARNING
-	elif args.verbosity == 1:
-		level = logging.INFO
-	elif args.verbosity > 1:
-		level = logging.DEBUG
+	#Convert integer options
+	for arg in [ "numThreads", "port", "probeTimeout", "probeWait" ]:
+		setattr(args, arg, int(getattr(args, arg)))
 
-	logging.basicConfig(format="%(asctime)s - %(threadName)s - %(levelname)s: %(message)s", level=level, filename=args.logFile)
+	logging.basicConfig(format="%(asctime)s - %(threadName)s - %(levelname)s: %(message)s", level=getattr(logging, args.verbosity), filename=args.logFile)
 	logging.info("Starting up.")
-	#Logs that shutdown is occuring.
-	signal(SIGINT, sigint_handler)
 
 	#Ensure the database holds the required tables, columns, and indicies.
 	db = sqlite3.connect(args.databaseFile)
@@ -177,7 +174,7 @@ def main():
 	#Index to speed up time-based UID analysis.
 	db.execute("create index if not exists uid_index on uids(uid)")
 	db.execute("create index if not exists time_index on uids(time)")
-    #TODO: Indexes related to likely queries.
+	#TODO: Indexes related to likely queries.
 
 	#probeID is unique among probes
 	db.execute("create table if not exists probes(probeID INTEGER PRIMARY KEY, time, target, closest)")
@@ -206,8 +203,9 @@ def main():
 		thread.daemon = True
 		threads.append(thread)
 
+	reactor.callWhenRunning(signal, SIGINT, sigint_handler)
 	reactor.callWhenRunning(startThreads, threads)
-	reactor.run()
 
-if __name__ == "__main__":
+#Main if run as script, builtin for twistd.
+if __name__ in ["__main__", "__builtin__"]:
     main()
