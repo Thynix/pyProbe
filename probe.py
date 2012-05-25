@@ -14,8 +14,6 @@ import logging
 from twisted.application import service
 from ConfigParser import SafeConfigParser
 
-#log.startLogging(sys.stdout)
-
 __version__ = "0.1"
 application = service.Application("pyProbe")
 
