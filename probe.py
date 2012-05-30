@@ -1,11 +1,8 @@
-import telnetlib
 import argparse
 import random
-import re
 import sqlite3
 import datetime
 import time
-import shlex
 from sys import exit
 from twisted.internet import reactor
 from signal import signal, SIGINT, SIG_DFL
