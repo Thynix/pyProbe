@@ -1,6 +1,8 @@
 set terminal png size 1200,800
 set key off
 
+set title 'Link Length Distribution'
+
 set xlabel 'Link Length (delta location)'
 set ylabel 'Percent nodes with this length or less'
 

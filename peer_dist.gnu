@@ -5,6 +5,8 @@ set output "peer_dist.png"
 set xrange [1:50]
 set xtics 5
 
+set title "Peer Count Distribution"
+
 set xlabel "Reported Peers"
 set ylabel "Nodes"
 
