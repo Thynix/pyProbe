@@ -13,132 +13,128 @@ from threading import Thread
 import logging
 from twisted.application import service
 from ConfigParser import SafeConfigParser
+import fcp
+from string import split
 
 __version__ = "0.1"
 application = service.Application("pyProbe")
 
-#Telnet prompt
-prompt="TMCI> "
-
 #Which random generator to use.
 rand = random.SystemRandom()
 
-#Not much use; stored anyway.
-closestGreater = re.compile(r"Completed probe request: 0\.\d+ -> (0\.\d+)")
+#FCP Message fields
+BANDWIDTH = "outputBandwidthUpperLimit"
+BUILD = "build"
+DESCRIPTION = "description"
+IDENTIFIER = "identifier"
+UPTIME_PERCENT = "uptimePercent"
+LINK_LENGTHS = "linkLengths"
+STORE_SIZE = "storeSize"
+TYPE = "type"
 
-#Parse current node's location and UID, previous UID, and peer locations and UIDs.
-#UIDs are integers, and locations are decimals.
-#group 1: current location
-#group 2: current UID
-#group 3: comma-separated peer locations
-#group 4: comma-separated peer UIDs
-parseTrace = re.compile(r"location=(-?\d+\.\d+)node UID=(-?\d+) prev UID=-?\d+ peer locs=\[([-\d ,.]*)\] peer UIDs=\[([-\d ,]*)\]")
-
-def insert(args, result):
+def insert(args, probe_type, result):
 	start = datetime.datetime.utcnow()
 	db = sqlite3.connect(args.databaseFile)
-	#Cursor needed for lastrowid so that traces can be inserted under the correct ProbeID.
-	cursor = db.cursor()
-	#NULL prompt the database to assign a key as probeID is an INTEGER PRIMARY KEY.
-	cursor.execute("insert into probes(probeID, time, target, closest) values (NULL, ?, ?, ?)", [result.end, result.target, result.closest])
-	
-	probeID = cursor.lastrowid
-	
-	traceID = 0
-	for trace in result.traces:
-		for uid in trace.peerUIDs + [trace.UID]:
-			db.execute("insert into uids(uid, time) values (?, ?)", (uid, result.end))
 
-		#TODO: Cleaner way to loop over two containers of the same length simultaniously?
-		assert len(trace.peerLocs) == len(trace.peerUIDs)
-		for i in range(len(trace.peerLocs)):
-			db.execute("insert into traces(probeID, traceNum, uid, location, peerLoc, peerUID) values (?, ?, ?, ?, ?, ?)", (probeID, traceID, trace.UID, trace.location, trace.peerLocs[i], trace.peerUIDs[i]))	
-		traceID += 1
+	header = result["header"]
+	htl = args.hopsToLive
+	now = datetime.datetime.utcnow()
+	if header == "ProbeError":
+		#type should always be defined, but description might not be.
+		db.execute("insert into error(time, htl, type, description) values(?, ?, ?, ?)", (now, htl, result[TYPE], result.get(DESCRIPTION, None)))
+	elif header == "ProbeRefused":
+		db.execute("insert into refused(time, htl) values(?, ?)", (now, htl))
+	elif probe_type == "BANDWIDTH":
+		db.execute("insert into bandwidth(time, htl, KiB) values(?, ?, ?)", (now, htl, result[BANDWIDTH]))
+	elif probe_type == "BUILD":
+		db.execute("insert into build(time, htl, build) values(?, ?, ?)", (now, htl, result[BUILD]))
+	elif probe_type == "IDENTIFIER":
+		db.execute("insert into identifier(time, htl, identifier, percent) values(?, ?, ?, ?)", (now, htl, result[IDENTIFIER], result[UPTIME_PERCENT]))
+	elif probe_type == "LINK_LENGTHS":
+		for length in result[LINK_LENGTHS]:
+			db.execute("insert into link_lengths(time, htl, length) values(?, ?, ?)", (now, htl, length))
+		db.execute("insert into peer_count(time, htl, peers) values(?, ?, ?)", (now, htl, len(result[LINK_LENGTHS])))
+	elif probe_type == "STORE_SIZE":
+		db.execute("insert into store_size(time, htl, GiB) values(?, ?, ?)", (now, htl, result[STORE_SIZE]))
+	elif probe_type == "UPTIME_48H":
+		db.execute("insert into uptime_48h(time, htl, percent) values(?, ?, ?)", (now, htl, result[UPTIME_PERCENT]))
+	elif probe_type == "UPTIME_7D":
+		db.execute("insert into uptime_7d(time, htl, percent) values(?, ?, ?)", (now, htl, result[UPTIME_PERCENT]))
 
-	cursor.close()
 	db.commit()
 	db.close()
-	end = datetime.datetime.utcnow()
-	logging.info("Committed {0} traces in {1}.".format(len(result.traces), end - start))
-
-class traceResult:
-	def __init__(self, location, UID, peerLocs, peerUIDs):
-		self.location = location
-		self.UID = UID
-		self.peerLocs = peerLocs
-		self.peerUIDs = peerUIDs
-
-class probeResult:
-	def __init__(self, target, start=None):
-		self.target = target
-		if not start:
-			self.start = datetime.datetime.utcnow()
-		
-		#Should be updated.
-		self.closest = 0.0
-		self.traces = []
-		#Time probe completed
-		self.end = datetime.datetime.utcnow()
+	logging.info("Committed {0} in {1}.".format(header, datetime.datetime.utcnow() - start))
 
 def probe(args, wait = 0):
+	node = fcp.node.FCPNode(host=args.host, port=args.port)
 	while True:
 		if wait > 0:
 			logging.info("Waiting {0} seconds before starting probe.".format(wait))
 			time.sleep(wait)
-		
-		target = rand.random()	
 
-		tn = telnetlib.Telnet(args.host, args.port)
-		
-		#Read through intial help message.
-		tn.read_until(prompt)
-		
-		logging.info("Starting probe to {0}.".format(target))
-		
-		tn.write("PROBE: {0}\n".format(target))
-		
-		result = probeResult(target)
-		raw = tn.read_until(prompt, args.probeTimeout)
-		
-		#TODO: What if timeout elapses? Need to skip parsing attempt.
-		logging.info("Probe finished. Took {0}.".format(datetime.datetime.utcnow() - result.start))
+		probe_type = rand.choice(args.types)
 
-		logging.debug("---Begin raw response---\n{0}\n---End raw response---".format(raw))
-		
-		#Check for closest location to target location reached. Insert NULL/None if unspecified.
-		closest = closestGreater.search(raw)
-		if closest is not None:
-			closest = float(closest.group(1))
-		else:
-			logging.warning("Incomplete probe response. Consider increasing probe timeout.")
-		
-		result.closest = closest
-		
-		#Parse for locations and UIDs of each trace's node and its peers.
-		for trace in parseTrace.findall(raw):
-			#Of node described by current trace.
-			location = float(trace[0])
-			UID = long(trace[1])
-			peerLocs = []
-			for val in trace[2].split(','):
-				#Ignore empty string
-				if val: 
-					peerLocs.append(float(val))
-			peerUIDs = []
-			for val in trace[3].split(','):
-				if val:
-					peerUIDs.append(long(val))
-			
-			result.traces.append(traceResult(location, UID, peerLocs, peerUIDs))
-		
-		result.end = datetime.datetime.utcnow()
-		reactor.callFromThread(insert, args, result)
-		wait = args.probeWait - (result.end - result.start).seconds
+		logging.info("Starting {0} probe.".format(probe_type))
+
+		start = datetime.datetime.utcnow()
+
+		#This will be a list of a dictionary of results.
+		result = node.probe(async=False, type=probe_type, hopsToLive=args.hopsToLive)
+
+		logging.info("Probe finished. Took {0}.".format(datetime.datetime.utcnow() - start))
+
+		#Should only be one result: the final one.
+		assert(len(result) == 1)
+		reactor.callFromThread(insert, args, probe_type, result[0])
+		wait = args.probeWait - (datetime.datetime.utcnow() - start).seconds
 
 def sigint_handler(signum, frame):
 	logging.info("Got signal {0}. Shutting down.".format(signum))
 	signal(SIGINT, SIG_DFL)
 	reactor.stop()
+
+def init_database(db):
+	#BANDWIDTH
+	db.execute("create table if not exists bandwidth(time, htl, KiB)")
+	db.execute("create index if not exists time_index on bandwidth(time)")
+
+	#BUILD
+	db.execute("create table if not exists build(time, htl, build)")
+	db.execute("create index if not exists time_index on build(time)")
+
+	#IDENTIFIER
+	db.execute("create table if not exists identifier(time, htl, identifier, percent)")
+	db.execute("create index if not exists time_index on identifier(time, identifier)")
+
+	#LINK_LENGTHS
+	db.execute("create table if not exists link_lengths(time, htl, length)")
+	db.execute("create index if not exists time_index on link_lengths(time)")
+
+	db.execute("create table if not exists peer_count(time, htl, peers)")
+	db.execute("create index if not exists time_index on peer_count(time)")
+
+	#STORE_SIZE
+	db.execute("create table if not exists store_size(time, htl, GiB)")
+	db.execute("create index if not exists time_index on peer_count(time)")
+
+	#UPTIME_48H
+	db.execute("create table if not exists uptime_48h(time, htl, percent)")
+	db.execute("create index if not exists time_index on uptime_48h(time)")
+
+	#UPTIME_7D
+	db.execute("create table if not exists uptime_7d(time, htl, percent)")
+	db.execute("create index if not exists time_index on uptime_7d(time)")
+
+	#Error
+	db.execute("create table if not exists error(time, htl, type, description)")
+	db.execute("create index if not exists time_index on error(time)")
+
+	#Refused
+	db.execute("create table if not exists refused(time, htl)")
+	db.execute("create index if not exists time_index on refused(time)")
+
+	db.commit()
+	db.close()
 
 #Inactive class for holding arguments in attributes so that the rest of the code
 #need not reflect a transition from command line arguments to a config file.
@@ -160,30 +156,17 @@ def main():
 		setattr(args, arg, get(arg))
 
 	#Convert integer options
-	for arg in [ "numThreads", "port", "probeTimeout", "probeWait" ]:
+	for arg in [ "numThreads", "port", "probeWait" ]:
 		setattr(args, arg, int(getattr(args, arg)))
+
+	#Convert types list to list
+	args.types = split(args.types, ",")
 
 	logging.basicConfig(format="%(asctime)s - %(threadName)s - %(levelname)s: %(message)s", level=getattr(logging, args.verbosity), filename=args.logFile)
 	logging.info("Starting up.")
 
 	#Ensure the database holds the required tables, columns, and indicies.
-	db = sqlite3.connect(args.databaseFile)
-	db.execute("create table if not exists uids(uid, time)")
-	#Index to speed up time-based UID analysis.
-	db.execute("create index if not exists uid_index on uids(uid)")
-	db.execute("create index if not exists time_index on uids(time)")
-	#TODO: Indexes related to likely queries.
-
-	#probeID is unique among probes
-	db.execute("create table if not exists probes(probeID INTEGER PRIMARY KEY, time, target, closest)")
-
-	#traceID is not unique among a probe's traces; only one peer location or UID is stored per entry.
-	db.execute("create table if not exists traces(probeID, traceNum, uid, location, peerLoc, peerUID)")
-	#Index to speed up histogram generation.
-	db.execute("create index if not exists probeID_index on traces(uid, traceNum, probeID)")
-
-	db.commit()
-	db.close()
+	init_database(sqlite3.connect(args.databaseFile))
 
 	if args.numThreads < 1:
 		print("Cannot run fewer than one thread.")
