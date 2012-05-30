@@ -8,7 +8,7 @@ set xtics 5
 set title "Peer Count Distribution"
 
 set xlabel "Reported Peers"
-set ylabel "Nodes"
+set ylabel "Percentage of Nodes"
 
 set style data histogram
 set style fill solid border -1
