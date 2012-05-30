@@ -21,12 +21,13 @@ with sqlite3.connect(args.databaseFile) as db:
         tables = [ "error", "refused", "bandwidth", "build", "identifier", "link_lengths", "store_size", "uptime_48h", "uptime_7d" ]
         #Use single quotes for values; double quotes for identifiers.
         print("Database contains:")
-        print("* {0:n} distinct UIDs seen.".format(db.execute("""select count(distinct "identifier") from "identifier" """).fetchone()[0]))
         total = 0
         print("* Responses stored:")
         for table in tables:
             count = db.execute("""select count(*) from "{0}" """.format(table)).fetchone()[0]
             print("*     {0}: {1:n}".format(table, count))
+            if table == "identifier":
+                print("*         {0:n} distinct identifiers seen.".format(db.execute("""select count(distinct "identifier") from "identifier" """).fetchone()[0]))
             total += count
         print("* {0:n} total probes sent.".format(total))
         print("* Error counts:")
