@@ -1,3 +1,4 @@
+from __future__ import division
 import sqlite3
 import argparse
 import locale
@@ -18,21 +19,28 @@ with sqlite3.connect(args.databaseFile) as db:
         db.execute("analyze")
         db.commit()
     elif choice == 's':
-        tables = [ "error", "refused", "bandwidth", "build", "identifier", "link_lengths", "store_size", "uptime_48h", "uptime_7d" ]
+        tables = [ "bandwidth", "build", "identifier", "link_lengths", "store_size", "uptime_48h", "uptime_7d", "refused", "error" ]
         #Use single quotes for values; double quotes for identifiers.
-        print("Database contains:")
-        total = 0
-        print("* Responses stored:")
+        counts = []
         for table in tables:
-            count = db.execute("""select count(*) from "{0}" """.format(table)).fetchone()[0]
-            print("*     {0}: {1:n}".format(table, count))
-            if table == "identifier":
-                print("*         {0:n} distinct identifiers seen.".format(db.execute("""select count(distinct "identifier") from "identifier" """).fetchone()[0]))
-            total += count
-        print("* {0:n} total probes sent.".format(total))
-        print("* Error counts:")
-        for error in db.execute("""select "type", count("type") from "error" group by "type" order by "type" """).fetchall():
-            print("*     {0}: {1:n}".format(error[0], error[1]))
+            counts.append(db.execute("""select count(*) from "{0}" """.format(table)).fetchone()[0])
+
+        total = sum(counts)
+
+        print("Responses stored: {0:n} total".format(total))
+
+        for table in zip(tables, counts):
+            #Don't include newline so that more information can be appended.
+            print(" * {0}: {1:n} ({2:.1f}%)".format(table[0], table[1], table[1]/total*100)),
+            if table[0] == "error":
+                print("")
+                for error in db.execute("""select "type", count("type") from "error" group by "type" order by "type" """).fetchall():
+                    print(" *     {0}: {1:n} ({2:.1f}%)".format(error[0], error[1], error[1]/table[1]*100))
+            elif table[0] == "identifier":
+                duplicate = db.execute("""select count(distinct "identifier") from "identifier" """).fetchone()[0]
+                print("- {0:n} distinct ({1:.1f}%)".format(duplicate, duplicate/table[1]*100))
+            else:
+                print("")
 
         def times(func):
             results = []
@@ -41,11 +49,9 @@ with sqlite3.connect(args.databaseFile) as db:
             #None evaluates to False; remove None.
             return filter(None, results)
 
-        print("* First response written {0}".format(min(times("min"))))
-        print("* Latest response written {0}".format(max(times("max"))))
+        print("Earliest response written {0}".format(min(times("min"))))
+        print("Latest response written {0}".format(max(times("max"))))
     elif choice == 'v':
         print("Vacuuming...")
         db.execute("vacuum")
         db.commit()
-
-    print("Done.")
