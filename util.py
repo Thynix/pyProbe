@@ -12,6 +12,14 @@ parser.add_argument('-d, --database-file', dest="databaseFile", default="databas
 
 args = parser.parse_args()
 
+#If something totals to zero, a subset will of course also be zero.
+#In that case, divide by something other than zero to not crash.
+def DivSafe(num):
+    if num == 0:
+        return 1
+    else:
+        return num
+
 choice = str(raw_input("Enter:\n * a to analyze\n * s to view statistics\n * v to vaccuum (requires no open transactions or active SQL statements)\n * anything else to exit.\n> "))
 with sqlite3.connect(args.databaseFile) as db:
     if choice == 'a':
@@ -31,14 +39,14 @@ with sqlite3.connect(args.databaseFile) as db:
 
         for table in zip(tables, counts):
             #Don't include newline so that more information can be appended.
-            print(" * {0}: {1:n} ({2:.1f}%)".format(table[0], table[1], table[1]/total*100)),
+            print(" * {0}: {1:n} ({2:.1f}%)".format(table[0], table[1], table[1]/DivSafe(total)*100)),
             if table[0] == "error":
                 print("")
                 for error in db.execute("""select "type", count("type") from "error" group by "type" order by "type" """).fetchall():
-                    print(" *     {0}: {1:n} ({2:.1f}%)".format(error[0], error[1], error[1]/table[1]*100))
+                    print(" *     {0}: {1:n} ({2:.1f}%)".format(error[0], error[1], error[1]/DivSafe(table[1])*100))
             elif table[0] == "identifier":
                 duplicate = db.execute("""select count(distinct "identifier") from "identifier" """).fetchone()[0]
-                print("- {0:n} distinct ({1:.1f}%)".format(duplicate, duplicate/table[1]*100))
+                print("- {0:n} distinct ({1:.1f}%)".format(duplicate, duplicate/DivSafe(table[1])*100))
             else:
                 print("")
 
