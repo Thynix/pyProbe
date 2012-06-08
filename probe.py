@@ -3,15 +3,16 @@ import random
 import sqlite3
 import datetime
 import time
-from sys import exit
-from twisted.internet import reactor
+from sys import exit, stderr
+from twisted.internet import reactor, protocol
 from signal import signal, SIGINT, SIG_DFL
-from threading import Thread
+import thread
 import logging
 from twisted.application import service
 from ConfigParser import SafeConfigParser
-import fcp
 from string import split
+from twistedfcp.protocol import FreenetClientProtocol, IdentifiedMessage
+from twistedfcp import message
 
 __version__ = "0.1"
 application = service.Application("pyProbe")
@@ -33,12 +34,15 @@ def insert(args, probe_type, result):
 	start = datetime.datetime.utcnow()
 	db = sqlite3.connect(args.databaseFile)
 
-	header = result["header"]
+	header = result.name
 	htl = args.hopsToLive
 	now = datetime.datetime.utcnow()
 	if header == "ProbeError":
 		#type should always be defined, but description might not be.
-		db.execute("insert into error(time, htl, type, description) values(?, ?, ?, ?)", (now, htl, result[TYPE], result.get(DESCRIPTION, None)))
+		description = None
+		if DESCRIPTION in result:
+			description = result[DESCRIPTION]
+		db.execute("insert into error(time, htl, type, description) values(?, ?, ?, ?)", (now, htl, result[TYPE], description))
 	elif header == "ProbeRefused":
 		db.execute("insert into refused(time, htl) values(?, ?)", (now, htl))
 	elif probe_type == "BANDWIDTH":
@@ -60,30 +64,7 @@ def insert(args, probe_type, result):
 
 	db.commit()
 	db.close()
-	logging.info("Committed {0} in {1}.".format(header, datetime.datetime.utcnow() - start))
-
-def probe(args, wait = 0):
-	node = fcp.node.FCPNode(host=args.host, port=args.port)
-	while True:
-		if wait > 0:
-			logging.info("Waiting {0} seconds before starting probe.".format(wait))
-			time.sleep(wait)
-
-		probe_type = rand.choice(args.types)
-
-		logging.info("Starting {0} probe.".format(probe_type))
-
-		start = datetime.datetime.utcnow()
-
-		#This will be a list of a dictionary of results.
-		result = node.probe(async=False, type=probe_type, hopsToLive=args.hopsToLive)
-
-		logging.info("Probe finished. Took {0}.".format(datetime.datetime.utcnow() - start))
-
-		#Should only be one result: the final one.
-		assert(len(result) == 1)
-		reactor.callFromThread(insert, args, probe_type, result[0])
-		wait = args.probeWait - (datetime.datetime.utcnow() - start).seconds
+	logging.info("Committed {0} ({1}) in {2}.".format(header, probe_type, datetime.datetime.utcnow() - start))
 
 def sigint_handler(signum, frame):
 	logging.info("Got signal {0}. Shutting down.".format(signum))
@@ -133,10 +114,78 @@ def init_database(db):
 	db.commit()
 	db.close()
 
-#Inactive class for holding arguments in attributes so that the rest of the code
-#need not reflect a transition from command line arguments to a config file.
+#Inactive class for holding arguments in attributes.
 class Arguments(object):
 	pass
+
+class ProbeCallback:
+	def __init__(self, proto, args):
+		"""Sends first probe request"""
+		self.args = args
+		self.proto = proto
+		self.probeType = random.choice(self.args.types)
+		self.proto.do_session(IdentifiedMessage("ProbeRequest",\
+							[("type", self.probeType), ("hopsToLive", self.args.hopsToLive)]), self)
+
+
+	def __call__(self, message):
+		#Commit results
+		reactor.callFromThread(insert, self.args, self.probeType, message)
+
+		#Send another probe
+		self.probeType = random.choice(self.args.types)
+		logging.info("Sending {0} in {1} seconds.".format(self.probeType, self.args.probeWait))
+		reactor.callLater(self.args.probeWait,\
+				  self.proto.do_session,\
+				  IdentifiedMessage("ProbeRequest", [("type", self.probeType), ("hopsToLive", self.args.hopsToLive)]),\
+				  self)
+
+		return True
+
+class Complain:
+	"""
+	Registered on ProtocolError. If the callback is hit, complains loudly
+	and exits, as it's an indication that probes are not supported on the
+	target node.
+	"""
+	def callback(self, message):
+		errStr = "Got ProtocolError - node does not support probes."
+		logging.error(errStr)
+		stderr.write(errStr + '\n')
+		#This is in a deferred, not in the main thread, so sys.exit()
+		#will throw an ineffective exception.
+		thread.interrupt_main()
+
+class FCPReconnectingFactory(protocol.ReconnectingClientFactory):
+	"A protocol factory that uses FCP."
+	protocol = FreenetClientProtocol
+
+	#Log disconnection and reconnection attempts
+	noisy = True
+
+	def __init__(self, args):
+		self.args = args
+
+	def buildProtocol(self, addr):
+		proto = FreenetClientProtocol()
+		proto.factory = self
+
+		#Register a callback for the NodeHello in order to send messages
+		#once the transport is established.
+		class StartProbes:
+			def __init__(self, proto, args):
+				self.proto = proto
+				self.args = args
+
+			def callback(self, message):
+				for i in range(self.args.numThreads):
+					logging.info("Starting probe instance {0}.".format(i))
+					ProbeCallback(self.proto, self.args)
+
+		proto.deferred['NodeHello'] = StartProbes(proto, self.args)
+		proto.deferred['ProtocolError'] = Complain()
+
+		return proto
 
 def main():
 	config = SafeConfigParser()
@@ -153,13 +202,13 @@ def main():
 		setattr(args, arg, get(arg))
 
 	#Convert integer options
-	for arg in [ "numThreads", "port", "probeWait" ]:
+	for arg in [ "numThreads", "port", "probeWait", "hopsToLive" ]:
 		setattr(args, arg, int(getattr(args, arg)))
 
 	#Convert types list to list
 	args.types = split(args.types, ",")
 
-	logging.basicConfig(format="%(asctime)s - %(threadName)s - %(levelname)s: %(message)s", level=getattr(logging, args.verbosity), filename=args.logFile)
+	logging.basicConfig(format="%(asctime)s - %(levelname)s: %(message)s", level=getattr(logging, args.verbosity), filename=args.logFile)
 	logging.info("Starting up.")
 
 	#Ensure the database holds the required tables, columns, and indicies.
@@ -169,20 +218,9 @@ def main():
 		print("Cannot run fewer than one thread.")
 		exit(1)
 
-	def startThreads(threads):
-		for thread in threads:
-			thread.start()
-
-	#Stagger starting time throughout wait period.
-	staggerTime = args.probeWait / args.numThreads
-	threads = []
-	for i in range(args.numThreads):
-		thread = Thread(target=probe, args=(args, i*staggerTime))
-		thread.daemon = True
-		threads.append(thread)
-
 	reactor.callWhenRunning(signal, SIGINT, sigint_handler)
-	reactor.callWhenRunning(startThreads, threads)
+	reactor.connectTCP(args.host, args.port, FCPReconnectingFactory(args))
+	reactor.run()
 
 #Main if run as script, builtin for twistd.
 if __name__ in ["__main__", "__builtin__"]:
