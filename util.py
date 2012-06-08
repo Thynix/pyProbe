@@ -30,8 +30,12 @@ with sqlite3.connect(args.databaseFile) as db:
         tables = [ "bandwidth", "build", "identifier", "link_lengths", "store_size", "uptime_48h", "uptime_7d", "refused", "error" ]
         #Use single quotes for values; double quotes for identifiers.
         counts = []
+        #link_lengths has one entry for each length, not each result.
         for table in tables:
-            counts.append(db.execute("""select count(*) from "{0}" """.format(table)).fetchone()[0])
+            if table == "link_lengths":
+                counts.append(db.execute("""select count(*) from (select "time" from "link_lengths" group by "time")""").fetchone()[0])
+            else:
+                counts.append(db.execute("""select count(*) from "{0}" """.format(table)).fetchone()[0])
 
         total = sum(counts)
 
