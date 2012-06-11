@@ -20,11 +20,21 @@ def log(msg):
     if not args.quiet:
         print("{0}: {1}".format(datetime.datetime.now(), msg))
 
+recent = datetime.datetime.utcnow() - datetime.timedelta(hours=args.recentHours)
+print("Recency boundary is {0}.".format(recent))
+
 log("Connecting to database.")
 db = sqlite3.connect(args.databaseFile)
 
+log("Querying database for network size estimates.")
+
+samples = db.execute("""select count("identifier") from identifier where "time" > datetime('{0}')""".format(recent)).fetchone()[0]
+duplicates = samples - db.execute("""select count(distinct "identifier") from identifier where "time" > datetime('{0}')""".format(recent)).fetchone()[0]
+
+print("Estimating network size as {0:n}.".format(samples**2 / (2 * duplicates)))
+
 log("Querying database for peer distribution histogram.")
-rawPeerCounts = db.execute("""select peers, count("peers") from "peer_count" where "time" > datetime('now','-{0} hours') group by "peers" order by "peers" """.format(args.recentHours)).fetchall()
+rawPeerCounts = db.execute("""select peers, count("peers") from "peer_count" where "time" > datetime('{0}') group by "peers" order by "peers" """.format(recent)).fetchall()
 
 peerCounts = [ 0, ] * (args.histogramMax + 1)
 
@@ -48,7 +58,7 @@ call(["gnuplot","peer_dist.gnu"])
 
 log("Querying database for link lengths.")
 #TODO: time-limited period?
-links = db.execute("""select "length" from "link_lengths" where "time" > datetime('now','-{0} hours')""".format(args.recentHours)).fetchall()
+links = db.execute("""select "length" from "link_lengths" where "time" > datetime('{0}')""".format(recent)).fetchall()
 
 log("Writing results.")
 with open('links_output', "w") as linkFile:
