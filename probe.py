@@ -42,9 +42,9 @@ def insert(args, probe_type, result):
 		description = None
 		if DESCRIPTION in result:
 			description = result[DESCRIPTION]
-		db.execute("insert into error(time, htl, type, description) values(?, ?, ?, ?)", (now, htl, result[TYPE], description))
+		db.execute("insert into error(time, htl, probe_type, error_type, description) values(?, ?, ?, ?, ?)", (now, htl, probe_type, result[TYPE], description))
 	elif header == "ProbeRefused":
-		db.execute("insert into refused(time, htl) values(?, ?)", (now, htl))
+		db.execute("insert into refused(time, htl, probe_type) values(?, ?, ?)", (now, htl, probe_type))
 	elif probe_type == "BANDWIDTH":
 		db.execute("insert into bandwidth(time, htl, KiB) values(?, ?, ?)", (now, htl, result[BANDWIDTH]))
 	elif probe_type == "BUILD":
@@ -103,12 +103,14 @@ def init_database(db):
 	db.execute("create table if not exists uptime_7d(time, htl, percent)")
 	db.execute("create index if not exists time_index on uptime_7d(time)")
 
+	#Type is included in error and refused to better inform possible
+	#estimates of error in probe results.
 	#Error
-	db.execute("create table if not exists error(time, htl, type, description)")
+	db.execute("create table if not exists error(time, htl, probe_type, error_type, description)")
 	db.execute("create index if not exists time_index on error(time)")
 
 	#Refused
-	db.execute("create table if not exists refused(time, htl)")
+	db.execute("create table if not exists refused(time, htl, probe_type)")
 	db.execute("create index if not exists time_index on refused(time)")
 
 	db.commit()

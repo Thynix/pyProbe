@@ -46,7 +46,7 @@ with sqlite3.connect(args.databaseFile) as db:
             print(" * {0}: {1:n} ({2:.1f}%)".format(table[0], table[1], table[1]/DivSafe(total)*100)),
             if table[0] == "error":
                 print("")
-                for error in db.execute("""select "type", count("type") from "error" group by "type" order by "type" """).fetchall():
+                for error in db.execute("""select "error_type", count("error_type") from "error" group by "error_type" order by "error_type" """).fetchall():
                     print(" *     {0}: {1:n} ({2:.1f}%)".format(error[0], error[1], error[1]/DivSafe(table[1])*100))
             elif table[0] == "identifier":
                 duplicate = db.execute("""select count(distinct "identifier") from "identifier" """).fetchone()[0]
