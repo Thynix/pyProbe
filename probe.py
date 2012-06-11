@@ -222,8 +222,12 @@ def main():
 
 	reactor.callWhenRunning(signal, SIGINT, sigint_handler)
 	reactor.connectTCP(args.host, args.port, FCPReconnectingFactory(args))
-	reactor.run()
 
-#Main if run as script, builtin for twistd.
-if __name__ in ["__main__", "__builtin__"]:
-    main()
+#run main if run with twistd: it will start the reactor.
+if __name__ == "__builtin__":
+	main()
+
+#Run main and start reactor if run as script
+if __name__ == '__main__':
+	main()
+	reactor.run()
