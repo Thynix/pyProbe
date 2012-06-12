@@ -52,7 +52,7 @@ def insert(args, probe_type, result):
 	elif probe_type == "IDENTIFIER":
 		db.execute("insert into identifier(time, htl, identifier, percent) values(?, ?, ?, ?)", (now, htl, result[IDENTIFIER], result[UPTIME_PERCENT]))
 	elif probe_type == "LINK_LENGTHS":
-		for length in result[LINK_LENGTHS]:
+		for length in split(result[LINK_LENGTHS], ';'):
 			db.execute("insert into link_lengths(time, htl, length) values(?, ?, ?)", (now, htl, length))
 		db.execute("insert into peer_count(time, htl, peers) values(?, ?, ?)", (now, htl, len(result[LINK_LENGTHS])))
 	elif probe_type == "STORE_SIZE":
