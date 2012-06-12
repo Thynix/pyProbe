@@ -28,10 +28,12 @@ db = sqlite3.connect(args.databaseFile)
 
 log("Querying database for network size estimates.")
 
-samples = db.execute("""select count("identifier") from identifier where "time" > datetime('{0}')""".format(recent)).fetchone()[0]
+samples = db.execute("""select count("identifier") from "identifier" where "time" > datetime('{0}')""".format(recent)).fetchone()[0]
+nonresponses = db.execute("""select count(*) from "error" where "time" > datetime('{0}') and "probe_type" == 'IDENTIFIER' """.format(recent)).fetchone()[0]
+nonresponses += db.execute("""select count(*) from "refused" where "time" > datetime('{0}') and "probe_type" == 'IDENTIFIER' """.format(recent)).fetchone()[0]
 duplicates = samples - db.execute("""select count(distinct "identifier") from identifier where "time" > datetime('{0}')""".format(recent)).fetchone()[0]
 
-print("Estimating network size as {0:n}.".format(samples**2 / (2 * duplicates)))
+print("Estimating network size as {0:n} to {1:n}. {2:n} nonresponses.".format( (samples**2 / (2 * duplicates)), ((samples + nonresponses)**2 / (2 * duplicates)), nonresponses ))
 
 log("Querying database for peer distribution histogram.")
 rawPeerCounts = db.execute("""select peers, count("peers") from "peer_count" where "time" > datetime('{0}') group by "peers" order by "peers" """.format(recent)).fetchall()
