@@ -32,7 +32,7 @@ stop() {
         if kill -0 `cat "$pidFile"`
         then
             echo "Stopping probe."
-            kill -INT `cat "$pidFile"`
+            kill -TERM `cat "$pidFile"`
             i=0
             #twistd removes the pid file on shutdown.
             while [ -e "$pidFile" ]
