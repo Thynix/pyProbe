@@ -5,7 +5,7 @@ import datetime
 import time
 from sys import exit, stderr
 from twisted.internet import reactor, protocol
-from signal import signal, SIGINT, SIG_DFL
+from signal import signal, SIGINT, SIGTERM, SIG_DFL
 import thread
 import logging
 from twisted.application import service
@@ -221,6 +221,7 @@ def main():
 		exit(1)
 
 	reactor.callWhenRunning(signal, SIGINT, sigint_handler)
+	reactor.callWhenRunning(signal, SIGTERM, sigint_handler)
 	reactor.connectTCP(args.host, args.port, FCPReconnectingFactory(args))
 
 #run main if run with twistd: it will start the reactor.
