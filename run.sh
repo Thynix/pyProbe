@@ -89,6 +89,7 @@ case "$1" in
 
     'console')
         start
+        trap stop EXIT
         log
         ;;
 
