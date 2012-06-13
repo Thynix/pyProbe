@@ -44,6 +44,7 @@ stop() {
                     i=0
                 fi
             done
+            echo "Probe stopped".
             return
         fi
     fi
@@ -64,7 +65,8 @@ status() {
 }
 
 log() {
-    tail -F "$logFile"
+    #3 to include twistd lines for starting probe but not previous run.
+    tail -F -n3 "$logFile"
 }
 
 case "$1" in
