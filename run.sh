@@ -1,7 +1,7 @@
 #!/bin/bash
 #Exit on error
 set -o errexit
-if [ "X`id -u`" = "X0" -a -z "$RUN_AS_USER" ]
+if [[ `id -u` = "0" ]] && [[ -z "$RUN_AS_USER" ]]
 then
     echo "Do not run this script as root."
     exit 1
@@ -11,7 +11,7 @@ pidFile="probe.pid"
 logFile="probe.log"
 
 start() {
-    if [ -e "$pidFile" ]
+    if [[ -e "$pidFile" ]]
     then
         if kill -0 `cat "$pidFile"`
         then
@@ -27,18 +27,18 @@ start() {
 }
 
 stop() {
-    if [ -e "$pidFile" ]
+    if [[ -e "$pidFile" ]]
     then
         if kill -0 `cat "$pidFile"`
         then
             echo "Stopping probe."
             kill -TERM `cat "$pidFile"`
-            i=0
+            (( i=0 ))
             #twistd removes the pid file on shutdown.
-            while [ -e "$pidFile" ]
+            while [[ -e "$pidFile" ]]
             do
-                let "i += 1"
-                if [ $i -eq "100" ]
+                (( i++ ))
+                if (( $i -eq 100 ))
                 then
                     echo "Waiting..."
                     i=0
@@ -52,7 +52,7 @@ stop() {
 }
 
 status() {
-    if [ -e "$pidFile" ]
+    if [[ -e "$pidFile" ]]
     then
         if kill -0 `cat "$pidFile"`
         then
