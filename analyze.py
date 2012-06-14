@@ -35,6 +35,17 @@ duplicates = samples - db.execute("""select count(distinct "identifier") from id
 
 print("Estimating network size as {0:n} to {1:n}. {2:n} nonresponses.".format( (samples**2 / (2 * duplicates)), ((samples + nonresponses)**2 / (2 * duplicates)), nonresponses ))
 
+log("Querying database for locations.")
+locations = db.execute("""select distinct "location" from "location" where "time" > datetime('{0}')""".format(recent)).fetchall()
+
+log("Writing results.")
+with open("locations_output", "w") as output:
+    for location in locations:
+        output.write("{0} {1}\n".format(location[0], 1/len(locations)))
+
+log("Plotting.")
+call(["gnuplot","location_dist.gnu"])
+
 log("Querying database for peer distribution histogram.")
 rawPeerCounts = db.execute("""select peers, count("peers") from "peer_count" where "time" > datetime('{0}') group by "peers" order by "peers" """.format(recent)).fetchall()
 

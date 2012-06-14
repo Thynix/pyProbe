@@ -29,7 +29,7 @@ with sqlite3.connect(args.databaseFile) as db:
         db.execute("analyze")
         db.commit()
     elif choice == 's':
-        tables = [ "bandwidth", "build", "identifier", "link_lengths", "store_size", "uptime_48h", "uptime_7d", "refused", "error" ]
+        tables = [ "bandwidth", "build", "identifier", "link_lengths", "location", "store_size", "uptime_48h", "uptime_7d", "refused", "error" ]
         #Use single quotes for values; double quotes for identifiers.
         counts = []
         refused = []
@@ -66,8 +66,8 @@ with sqlite3.connect(args.databaseFile) as db:
                 #If not an error or refused, print refusal statistics.
                 print("- {0:n} refused ({1:.1f}%)".format(table[2], table[2]/DivSafe(table[1])*100)),
 
-                if table[0] == "identifier":
-                    duplicate = db.execute("""select count(distinct "identifier") from "identifier" """).fetchone()[0]
+                if table[0] == "identifier" or table[0] == "location":
+                    duplicate = db.execute("""select count(distinct "{0}") from "{0}" """.format(table[0])).fetchone()[0]
                     print("- {0:n} distinct ({1:.1f}%)".format(duplicate, duplicate/DivSafe(table[1])*100))
                 else:
                     print("")

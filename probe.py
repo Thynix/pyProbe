@@ -27,6 +27,7 @@ DESCRIPTION = "description"
 IDENTIFIER = "identifier"
 UPTIME_PERCENT = "uptimePercent"
 LINK_LENGTHS = "linkLengths"
+LOCATION = "location"
 STORE_SIZE = "storeSize"
 TYPE = "type"
 
@@ -55,6 +56,8 @@ def insert(args, probe_type, result):
 		for length in split(result[LINK_LENGTHS], ';'):
 			db.execute("insert into link_lengths(time, htl, length) values(?, ?, ?)", (now, htl, length))
 		db.execute("insert into peer_count(time, htl, peers) values(?, ?, ?)", (now, htl, len(result[LINK_LENGTHS])))
+	elif probe_type == "LOCATION":
+		db.execute("insert into location(time, htl, location) values(?, ?, ?)", (now, htl, result[LOCATION]))
 	elif probe_type == "STORE_SIZE":
 		db.execute("insert into store_size(time, htl, GiB) values(?, ?, ?)", (now, htl, result[STORE_SIZE]))
 	elif probe_type == "UPTIME_48H":
@@ -90,6 +93,10 @@ def init_database(db):
 
 	db.execute("create table if not exists peer_count(time, htl, peers)")
 	db.execute("create index if not exists time_index on peer_count(time)")
+
+	#LOCATION
+	db.execute("create table if not exists location(time, htl, location)")
+	db.execute("create index if not exists time_index on location(time)")
 
 	#STORE_SIZE
 	db.execute("create table if not exists store_size(time, htl, GiB)")
