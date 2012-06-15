@@ -33,12 +33,11 @@ stop() {
         then
             echo "Stopping probe."
             kill -TERM `cat "$pidFile"`
-            (( i=0 ))
+            i=0
             #twistd removes the pid file on shutdown.
             while [[ -e "$pidFile" ]]
             do
-                (( i++ ))
-                if (( $i -eq 100 ))
+                if (( i++ == 100 ))
                 then
                     echo "Waiting..."
                     i=0
