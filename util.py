@@ -40,12 +40,6 @@ with sqlite3.connect(args.databaseFile) as db:
                 for error in self.error_list:
                     self.count += error[1]
 
-            def __enter__(self):
-                pass
-
-            def __exit__(self, type, value, traceback):
-                pass
-
         for probe_type in probe_types:
             errors[probe_type] = error_occurences(db.execute("""select "error_type", count(*) from "error" where "probe_type" == '{0}' group by "error_type" """.format(probe_type)).fetchall())
             total_count += errors[probe_type].count
