@@ -61,7 +61,7 @@ with sqlite3.connect(args.databaseFile) as db:
             count = 0
             if table == "link_lengths":
                 #NOTE: Assumes time is an identifier, which may not be the case. This is only useful for
-                count = db.execute("""select count(*) from (select "time" from "link_lengths" group by "time")""").fetchone()[0]
+                count = db.execute("""select count(*) from (select "time" from "link_lengths" group by "id")""").fetchone()[0]
             else:
                 count = db.execute("""select count(*) from "{0}" """.format(table)).fetchone()[0]
 

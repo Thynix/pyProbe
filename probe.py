@@ -53,8 +53,13 @@ def insert(args, probe_type, result):
 	elif probe_type == "IDENTIFIER":
 		db.execute("insert into identifier(time, htl, identifier, percent) values(?, ?, ?, ?)", (now, htl, result[IDENTIFIER], result[UPTIME_PERCENT]))
 	elif probe_type == "LINK_LENGTHS":
+		max_id = db.execute("select max(id) from link_lengths").fetchone()[0]
+		new_id = 0
+		if max_id is not None:
+			new_id = max_id + 1
+
 		for length in split(result[LINK_LENGTHS], ';'):
-			db.execute("insert into link_lengths(time, htl, length) values(?, ?, ?)", (now, htl, length))
+			db.execute("insert into link_lengths(time, htl, length, id) values(?, ?, ?, ?)", (now, htl, length, new_id))
 		db.execute("insert into peer_count(time, htl, peers) values(?, ?, ?)", (now, htl, len(result[LINK_LENGTHS])))
 	elif probe_type == "LOCATION":
 		db.execute("insert into location(time, htl, location) values(?, ?, ?)", (now, htl, result[LOCATION]))
@@ -88,7 +93,7 @@ def init_database(db):
 	db.execute("create index if not exists time_index on identifier(time, identifier)")
 
 	#LINK_LENGTHS
-	db.execute("create table if not exists link_lengths(time, htl, length)")
+	db.execute("create table if not exists link_lengths(time, htl, length, id)")
 	db.execute("create index if not exists time_index on link_lengths(time)")
 
 	db.execute("create table if not exists peer_count(time, htl, peers)")
