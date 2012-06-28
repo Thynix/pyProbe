@@ -192,9 +192,14 @@ class FCPReconnectingFactory(protocol.ReconnectingClientFactory):
 				self.args = args
 
 			def callback(self, message):
-				for i in range(self.args.numThreads):
+				delay_per = self.args.probeWait / self.args.numThreads
+
+				def start(i):
 					logging.info("Starting probe instance {0}.".format(i))
 					ProbeCallback(self.proto, self.args)
+
+				for i in range(self.args.numThreads):
+					reactor.callLater(delay_per * i, start, i)
 
 		proto.deferred['NodeHello'] = StartProbes(proto, self.args)
 		proto.deferred['ProtocolError'] = Complain()
