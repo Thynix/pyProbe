@@ -201,6 +201,16 @@ class FCPReconnectingFactory(protocol.ReconnectingClientFactory):
 
 		return proto
 
+	def clientConnectionLost(self, connector, reason):
+		logging.warning("Lost connection: {0}".format(reason))
+
+		#Stop pending probe requests - new requests will be started upon reconnection.
+		for delayed_call in reactor.getDelayedCalls():
+			delayed_call.cancel()
+
+		#Any connection loss is failure; reconnect.
+		protocol.ReconnectingClientFactory.clientConnectionFailed(self, connector, reason)
+
 def main():
 	config = SafeConfigParser()
 	#Case-sensitive to set args attributes correctly.
