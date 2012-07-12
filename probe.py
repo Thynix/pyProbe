@@ -13,9 +13,14 @@ from ConfigParser import SafeConfigParser
 from string import split
 from twistedfcp.protocol import FreenetClientProtocol, IdentifiedMessage
 from twistedfcp import message
+from twisted.python import log
 
 __version__ = "0.1"
 application = service.Application("pyProbe")
+
+#Log twisted events to Python's standard logging. This will log reconnection
+#information at INFO.
+log.PythonLoggingObserver().start()
 
 #Which random generator to use.
 rand = random.SystemRandom()
