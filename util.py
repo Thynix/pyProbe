@@ -52,49 +52,46 @@ with sqlite3.connect(args.databaseFile) as db:
                 print(" *     {0}: {1:n} ({2:.1f}%)".format(error_entry[0], error_entry[1], error_entry[1]/DivSafe(error.count)*100))
 
     elif choice == 's':
-        tables = [ "bandwidth", "build", "identifier", "link_lengths", "location", "store_size", "uptime_48h", "uptime_7d", "refused", "error" ]
+        tables = [ "bandwidth", "build", "identifier", "link_lengths", "location", "store_size", "uptime_48h", "uptime_7d" ]
         #Use single quotes for values; double quotes for identifiers.
-        counts = []
+        success = []
         refused = []
-        #link_lengths has one entry for each length, not each result.
+        error = []
+
         for table in tables:
-            count = 0
+            #link_lengths has one entry for each length, not each result.
             if table == "link_lengths":
-                #NOTE: Assumes time is an identifier, which may not be the case. This is only useful for
-                count = db.execute("""select count(*) from (select "time" from "link_lengths" group by "id")""").fetchone()[0]
+                success.append(db.execute("""select count(*) from (select "time" from "link_lengths" group by "id")""").fetchone()[0])
             else:
-                count = db.execute("""select count(*) from "{0}" """.format(table)).fetchone()[0]
+                success.append(db.execute("""select count(*) from "{0}" """.format(table)).fetchone()[0])
 
             #NOTE: Assumes probe_type value is uppercase table name.
-            if table != "refused" and table != "error":
-                refused.append(db.execute("""select count(*) from "refused" where "probe_type" == '{0}' """.format(upper(table))).fetchone()[0])
-                count += refused[-1]
-                count += db.execute("""select count(*) from "error" where "probe_type" == '{0}' """.format(upper(table))).fetchone()[0]
+            refused.append(db.execute("""select count(*) from "refused" where "probe_type" == '{0}' """.format(upper(table))).fetchone()[0])
+            error.append(db.execute("""select count(*) from "error" where "probe_type" == '{0}' """.format(upper(table))).fetchone()[0])
 
-            counts.append(count)
+        refusals = sum(refused)
+        errors = sum(error)
+        successes = sum(success)
+        total = successes + refusals + errors
 
-        total = sum(counts)
+        print("Responses stored: {0:n} total, of which {1:n} ({2:.1f}%) are successes".format(total, successes, successes/DivSafe(total)*100))
 
-        print("Responses stored: {0:n} total".format(total))
+        for table in zip(tables, success, refused, error):
+            responses = table[1] + table[2] + table[3]
+            print(" * {0}: {1:n} responses ({2:.1f}%), {3:n} successes ({4:.1f}%)".format(table[0], responses, responses/DivSafe(total)*100, table[1], table[1]/DivSafe(total)*100))
+            print("     * Of responses: {0:n} refused ({1:.1f}%), {2:n} error ({3:.1f}%)".format(table[2], table[2]/DivSafe(responses)*100, table[3], table[3]/DivSafe(responses)*100))
 
-        for table in izip_longest(tables, counts, refused):
-            #Don't include newline so that more information can be appended.
-            print(" * {0}: {1:n} ({2:.1f}%)".format(table[0], table[1], table[1]/DivSafe(total)*100)),
-            if table[0] == "error":
-                print("")
-                for error in db.execute("""select "error_type", count("error_type") from "error" group by "error_type" order by "error_type" """).fetchall():
-                    print(" *     {0}: {1:n} ({2:.1f}%)".format(error[0], error[1], error[1]/DivSafe(table[1])*100))
-            elif table[0] == "refused":
-                print("")
-            else:
-                #If not an error or refused, print refusal statistics.
-                print("- {0:n} refused ({1:.1f}%)".format(table[2], table[2]/DivSafe(table[1])*100)),
+            if table[0] == "identifier" or table[0] == "location":
+                duplicate = db.execute("""select count(distinct "{0}") from "{0}" """.format(table[0])).fetchone()[0]
+                print("     * {0:n} distinct successes ({1:.1f}%)".format(duplicate, duplicate/DivSafe(table[1])*100))
 
-                if table[0] == "identifier" or table[0] == "location":
-                    duplicate = db.execute("""select count(distinct "{0}") from "{0}" """.format(table[0])).fetchone()[0]
-                    print("- {0:n} distinct ({1:.1f}%)".format(duplicate, duplicate/DivSafe(table[1])*100))
-                else:
-                    print("")
+        print("Refusals stored: {0:n} total ({1:.1f}%)".format(refusals, refusals/DivSafe(total)*100))
+        for refusal in db.execute("""select "probe_type", count("probe_type") from "refused" group by "probe_type" order by "probe_type" """).fetchall():
+            print(" * {0}: {1:n} ({2:.1f}%)".format(refusal[0], refusal[1], refusal[1]/DivSafe(refusals)*100))
+
+        print("Errors stored: {0:n} total ({1:.1f}%)".format(errors, errors/DivSafe(total)*100))
+        for error in db.execute("""select "error_type", count("error_type") from "error" group by "error_type" order by "error_type" """).fetchall():
+            print(" * {0}: {1:n} ({2:.1f}%)".format(error[0], error[1], error[1]/DivSafe(errors)*100))
 
         def times(func):
             results = []
