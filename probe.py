@@ -29,7 +29,7 @@ rand = random.SystemRandom()
 BANDWIDTH = "outputBandwidthUpperLimit"
 BUILD = "build"
 DESCRIPTION = "description"
-IDENTIFIER = "identifier"
+PROBE_IDENTIFIER = "probeIdentifier"
 UPTIME_PERCENT = "uptimePercent"
 LINK_LENGTHS = "linkLengths"
 LOCATION = "location"
@@ -56,7 +56,7 @@ def insert(args, probe_type, result):
 	elif probe_type == "BUILD":
 		db.execute("insert into build(time, htl, build) values(?, ?, ?)", (now, htl, result[BUILD]))
 	elif probe_type == "IDENTIFIER":
-		db.execute("insert into identifier(time, htl, identifier, percent) values(?, ?, ?, ?)", (now, htl, result[IDENTIFIER], result[UPTIME_PERCENT]))
+		db.execute("insert into identifier(time, htl, identifier, percent) values(?, ?, ?, ?)", (now, htl, result[PROBE_IDENTIFIER], result[UPTIME_PERCENT]))
 	elif probe_type == "LINK_LENGTHS":
 		max_id = db.execute("select max(id) from link_lengths").fetchone()[0]
 		new_id = 0
