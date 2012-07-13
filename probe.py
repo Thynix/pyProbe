@@ -26,15 +26,16 @@ log.PythonLoggingObserver().start()
 rand = random.SystemRandom()
 
 #FCP Message fields
-BANDWIDTH = "outputBandwidthUpperLimit"
-BUILD = "build"
-DESCRIPTION = "description"
-PROBE_IDENTIFIER = "probeIdentifier"
-UPTIME_PERCENT = "uptimePercent"
-LINK_LENGTHS = "linkLengths"
-LOCATION = "location"
-STORE_SIZE = "storeSize"
-TYPE = "type"
+BANDWIDTH = "OutputBandwidth"
+BUILD = "Build"
+CODE = "Code"
+PROBE_IDENTIFIER = "ProbeIdentifier"
+UPTIME_PERCENT = "UptimePercent"
+LINK_LENGTHS = "LinkLengths"
+LOCATION = "Location"
+STORE_SIZE = "StoreSize"
+TYPE = "Type"
+HTL = "HopsToLive"
 
 def insert(args, probe_type, result):
 	start = datetime.datetime.utcnow()
@@ -44,11 +45,11 @@ def insert(args, probe_type, result):
 	htl = args.hopsToLive
 	now = datetime.datetime.utcnow()
 	if header == "ProbeError":
-		#type should always be defined, but description might not be.
-		description = None
-		if DESCRIPTION in result:
-			description = result[DESCRIPTION]
-		db.execute("insert into error(time, htl, probe_type, error_type, description) values(?, ?, ?, ?, ?)", (now, htl, probe_type, result[TYPE], description))
+		#type should always be defined, but the code might not be.
+		code = None
+		if CODE in result:
+			description = result[CODE]
+		db.execute("insert into error(time, htl, probe_type, error_type, code) values(?, ?, ?, ?, ?)", (now, htl, probe_type, result[TYPE], code))
 	elif header == "ProbeRefused":
 		db.execute("insert into refused(time, htl, probe_type) values(?, ?, ?)", (now, htl, probe_type))
 	elif probe_type == "BANDWIDTH":
@@ -123,7 +124,7 @@ def init_database(db):
 	#Type is included in error and refused to better inform possible
 	#estimates of error in probe results.
 	#Error
-	db.execute("create table if not exists error(time, htl, probe_type, error_type, description)")
+	db.execute("create table if not exists error(time, htl, probe_type, error_type, code)")
 	db.execute("create index if not exists time_index on error(time)")
 
 	#Refused
@@ -144,7 +145,7 @@ class ProbeCallback:
 		self.proto = proto
 		self.probeType = random.choice(self.args.types)
 		self.proto.do_session(IdentifiedMessage("ProbeRequest",\
-							[("type", self.probeType), ("hopsToLive", self.args.hopsToLive)]), self)
+							[(TYPE, self.probeType), (HTL, self.args.hopsToLive)]), self)
 
 
 	def __call__(self, message):
@@ -156,7 +157,7 @@ class ProbeCallback:
 		logging.info("Sending {0} in {1} seconds.".format(self.probeType, self.args.probeWait))
 		reactor.callLater(self.args.probeWait,\
 				  self.proto.do_session,\
-				  IdentifiedMessage("ProbeRequest", [("type", self.probeType), ("hopsToLive", self.args.hopsToLive)]),\
+				  IdentifiedMessage("ProbeRequest", [(TYPE, self.probeType), (HTL, self.args.hopsToLive)]),\
 				  self)
 
 		return True
