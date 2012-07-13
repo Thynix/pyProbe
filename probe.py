@@ -138,14 +138,17 @@ def init_database(db):
 class Arguments(object):
 	pass
 
+def MakeRequest(ProbeType, HopsToLive):
+	return IdentifiedMessage("ProbeRequest",\
+				 [(TYPE, ProbeType), (HTL, HopsToLive)])
+
 class ProbeCallback:
 	def __init__(self, proto, args):
 		"""Sends first probe request"""
 		self.args = args
 		self.proto = proto
 		self.probeType = random.choice(self.args.types)
-		self.proto.do_session(IdentifiedMessage("ProbeRequest",\
-							[(TYPE, self.probeType), (HTL, self.args.hopsToLive)]), self)
+		self.proto.do_session(MakeRequest(self.probeType, self.args.hopsToLive), self)
 
 
 	def __call__(self, message):
@@ -157,7 +160,7 @@ class ProbeCallback:
 		logging.info("Sending {0} in {1} seconds.".format(self.probeType, self.args.probeWait))
 		reactor.callLater(self.args.probeWait,\
 				  self.proto.do_session,\
-				  IdentifiedMessage("ProbeRequest", [(TYPE, self.probeType), (HTL, self.args.hopsToLive)]),\
+				  MakeRequest(self.probeType, self.args.hopsToLive),\
 				  self)
 
 		return True
