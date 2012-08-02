@@ -1,6 +1,6 @@
 # pyProbe
 
-pyProbe is a collection of data gathering and analysis tools for [Freenet](https://freenetproject.org/) network probes. Requires Freenet build 1408 or greater.
+pyProbe is a collection of data gathering and analysis tools for [Freenet](https://freenetproject.org/) network probes. Requires Freenet build 1409 or greater.
 
 ## Requirements
 
