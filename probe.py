@@ -143,15 +143,21 @@ def MakeRequest(ProbeType, HopsToLive):
 				 [(TYPE, ProbeType), (HTL, HopsToLive)])
 
 class ProbeCallback:
+	lastSent = None
+
 	def __init__(self, proto, args):
 		"""Sends first probe request"""
 		self.args = args
 		self.proto = proto
 		self.probeType = random.choice(self.args.types)
 		self.proto.do_session(MakeRequest(self.probeType, self.args.hopsToLive), self)
+		self.updateTime()
 
+	def updateTime(self):
+		self.lastSent = datetime.datetime.utcnow()
 
 	def __call__(self, message):
+		logging.info("Got results in {0}.".format(datetime.datetime.utcnow() - self.lastSent))
 		#Commit results
 		reactor.callFromThread(insert, self.args, self.probeType, message)
 
@@ -162,6 +168,7 @@ class ProbeCallback:
 				  self.proto.do_session,\
 				  MakeRequest(self.probeType, self.args.hopsToLive),\
 				  self)
+		reactor.callLater(self.args.probeWait, self.updateTime)
 
 		return True
 
