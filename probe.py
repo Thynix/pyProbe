@@ -139,7 +139,6 @@ class Arguments(object):
 	pass
 
 def MakeRequest(ProbeType, HopsToLive):
-	logging.info("Sending {0}.".format(ProbeType))
 	return IdentifiedMessage("ProbeRequest",\
 				 [(TYPE, ProbeType), (HTL, HopsToLive)])
 
