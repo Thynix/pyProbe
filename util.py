@@ -3,6 +3,7 @@ import sqlite3
 import argparse
 import locale
 import sys
+import datetime
 from string import upper
 from itertools import izip_longest
 
@@ -22,7 +23,6 @@ def DivSafe(num):
     else:
         return num
 
-choice = str(raw_input("Enter:\n * a to analyze\n * e to view per-type error breakdown\n * s to view overall statistics\n * v to vaccuum (requires no open transactions or active SQL statements)\n * anything else to exit\n> "))
 def times(func, tables):
     results = []
     for table in tables:
@@ -30,6 +30,7 @@ def times(func, tables):
     #None evaluates to False; remove None.
     return filter(None, results)
 
+choice = str(raw_input("Enter:\n * a to analyze\n * e to view per-type error breakdown\n * r to view mean response rate\n * s to view overall statistics\n * v to vaccuum (requires no open transactions or active SQL statements)\n * anything else to exit\n> "))
 with sqlite3.connect(args.databaseFile) as db:
     if choice == 'a':
         print("Analyzing...")
@@ -57,6 +58,26 @@ with sqlite3.connect(args.databaseFile) as db:
             print(" * {0}: {1:n} ({2:.1f}%)".format(probe_type, error.count, error.count/DivSafe(total_count)*100))
             for error_entry in error.error_list:
                 print(" *     {0}: {1:n} ({2:.1f}%)".format(error_entry[0], error_entry[1], error_entry[1]/DivSafe(error.count)*100))
+
+    elif choice == 'r':
+        tables = [ "bandwidth", "build", "identifier", "link_lengths", "location", "store_size", "uptime_48h", "uptime_7d", "error", "refused" ]
+        #TODO: It seems like there should be a function for
+        timestampFormat = u"%Y-%m-%d %H:%M:%S.%f"
+        first = datetime.datetime.strptime(min(times("min", tables)), timestampFormat)
+        last = datetime.datetime.strptime(max(times("max", tables)), timestampFormat)
+
+        count = 0
+
+        for table in tables:
+            if table == "link_lengths":
+                count += db.execute("""select count(*) from (select "time" from "link_lengths" group by "id")""").fetchone()[0]
+            else:
+                count += db.execute("""select count(*) from "{0}" """.format(table)).fetchone()[0]
+
+        minutes = (last - first).seconds / 60
+
+        print("{0:n} results with the earliest at {1} and latest at {2}. ({3:n} minutes)".format(count, first, last, minutes))
+        print("Average {0:.1f} results per minute.".format(count / minutes))
 
     elif choice == 's':
         tables = [ "bandwidth", "build", "identifier", "link_lengths", "location", "store_size", "uptime_48h", "uptime_7d" ]
