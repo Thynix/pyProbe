@@ -74,7 +74,7 @@ with sqlite3.connect(args.databaseFile) as db:
             else:
                 count += db.execute("""select count(*) from "{0}" """.format(table)).fetchone()[0]
 
-        minutes = (last - first).seconds / 60
+        minutes = (last - first).total_seconds() / 60
 
         print("{0:n} results with the earliest at {1} and latest at {2}. ({3:n} minutes)".format(count, first, last, minutes))
         print("Average {0:.1f} results per minute.".format(count / minutes))
