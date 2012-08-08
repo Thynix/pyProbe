@@ -23,6 +23,13 @@ def DivSafe(num):
         return num
 
 choice = str(raw_input("Enter:\n * a to analyze\n * e to view per-type error breakdown\n * s to view overall statistics\n * v to vaccuum (requires no open transactions or active SQL statements)\n * anything else to exit\n> "))
+def times(func, tables):
+    results = []
+    for table in tables:
+        results.append(db.execute("""select {0}("time") from "{1}" """.format(func, table)).fetchone()[0])
+    #None evaluates to False; remove None.
+    return filter(None, results)
+
 with sqlite3.connect(args.databaseFile) as db:
     if choice == 'a':
         print("Analyzing...")
@@ -93,15 +100,10 @@ with sqlite3.connect(args.databaseFile) as db:
         for error in db.execute("""select "error_type", count("error_type") from "error" group by "error_type" order by "error_type" """).fetchall():
             print(" * {0}: {1:n} ({2:.1f}%)".format(error[0], error[1], error[1]/DivSafe(errors)*100))
 
-        def times(func):
-            results = []
-            for table in tables:
-                results.append(db.execute("""select {0}("time") from "{1}" """.format(func, table)).fetchone()[0])
-            #None evaluates to False; remove None.
-            return filter(None, results)
 
-        print("Earliest response written {0}".format(min(times("min"))))
-        print("Latest response written {0}".format(max(times("max"))))
+        #TODO: This does not consider errors or refusals.
+        print("Earliest response written {0}".format(min(times("min", tables))))
+        print("Latest response written {0}".format(max(times("max", tables))))
     elif choice == 'v':
         print("Vacuuming...")
         db.execute("vacuum")
