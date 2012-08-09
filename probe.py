@@ -142,35 +142,37 @@ def MakeRequest(ProbeType, HopsToLive):
 	return IdentifiedMessage("ProbeRequest",\
 				 [(TYPE, ProbeType), (HTL, HopsToLive)])
 
-class ProbeCallback:
-	lastSent = None
+class CommitHook:
+	"""
+	Stores a probe type and commits a result to the database when called.
+	Assumes the time of its creation is when the probe request is sent.
+	"""
+	def __init__(self, args, probeType):
+		logging.info("Sending {0}.".format(probeType))
+		self.sent = datetime.datetime.utcnow()
+		self.args = args
+		self.probeType = probeType
 
+	def __call__(self, message):
+		logging.info("Got results in {0}.".format(datetime.datetime.utcnow() - self.sent))
+		#Commit results
+		reactor.callFromThread(insert, self.args, self.probeType, message)
+		return True
+
+class ProbeCallback:
 	def __init__(self, proto, args):
 		"""Sends first probe request"""
 		self.args = args
 		self.proto = proto
-		self.probeType = random.choice(self.args.types)
-		self.proto.do_session(MakeRequest(self.probeType, self.args.hopsToLive), self)
-		self.updateTime()
+		self.send()
 
-	def updateTime(self):
-		self.lastSent = datetime.datetime.utcnow()
+	def send(self):
+		"""Internal function to send a probe request and schedule the next.
+		   This begins a loop, and so need only be called once at startup."""
+		probeType = random.choice(self.args.types)
+		self.proto.do_session(MakeRequest(probeType, self.args.hopsToLive), CommitHook(self.args, probeType))
 
-	def __call__(self, message):
-		logging.info("Got results in {0}.".format(datetime.datetime.utcnow() - self.lastSent))
-		#Commit results
-		reactor.callFromThread(insert, self.args, self.probeType, message)
-
-		#Send another probe
-		self.probeType = random.choice(self.args.types)
-		logging.info("Sending {0} in {1} seconds.".format(self.probeType, self.args.probeWait))
-		reactor.callLater(self.args.probeWait,\
-				  self.proto.do_session,\
-				  MakeRequest(self.probeType, self.args.hopsToLive),\
-				  self)
-		reactor.callLater(self.args.probeWait, self.updateTime)
-
-		return True
+		reactor.callLater(self.args.probeWait, self.send)
 
 class Complain:
 	"""
