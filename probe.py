@@ -153,7 +153,7 @@ def init_database(db):
 		if version == 0:
 			logging.info("Upgrading from database version 0 to version 1.")
 			version_zero = [ "bandwidth", "build", "identifier", "peer_count",
-				         "location", "store_size", "uptime_48h", "uptime_7d" ]
+				         "location", "store_size", "uptime_48h", "uptime_7d", "error", "refused" ]
 			# Add the response time column to the relevant version 0 tables.
 			for table in version_zero:
 				db.execute("""alter table "{0}" add column duration""".format(table))
