@@ -74,7 +74,12 @@ with sqlite3.connect(args.databaseFile) as db:
             else:
                 count += db.execute("""select count(*) from "{0}" """.format(table)).fetchone()[0]
 
-        minutes = (last - first).total_seconds() / 60
+        # timedelta.total_seconds() was not added until 2.7. This is intended to run on 2.6 at least.
+        # Minutes per day: 24 hours in a day * 60 minutes in an hour = 1440
+        # Minutes per second: 1 minute / 60 seconds per minute = 1 / 60
+        # Minutes per microsecond: 1 minute / 60 seconds per minute / 1000000 microseconds per second = 1 / 60000000
+        delta = last - first
+        minutes = delta.days * 1440 + delta.seconds / 60 + delta.microseconds / 60000000
 
         print("{0:n} results with the earliest at {1} and latest at {2}. ({3:n} minutes)".format(count, first, last, minutes))
         print("Average {0:.1f} results per minute.".format(count / minutes))
