@@ -159,7 +159,7 @@ class CommitHook:
 		reactor.callFromThread(insert, self.args, self.probeType, message)
 		return True
 
-class ProbeCallback:
+class SendLoop:
 	def __init__(self, proto, args):
 		"""Sends first probe request"""
 		self.args = args
@@ -214,7 +214,7 @@ class FCPReconnectingFactory(protocol.ReconnectingClientFactory):
 
 				def start(i):
 					logging.info("Starting probe instance {0}.".format(i))
-					ProbeCallback(self.proto, self.args)
+					SendLoop(self.proto, self.args)
 
 				for i in range(self.args.numThreads):
 					reactor.callLater(delay_per * i, start, i)
