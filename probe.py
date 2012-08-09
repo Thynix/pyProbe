@@ -1,3 +1,4 @@
+from __future__ import division
 import argparse
 import random
 import sqlite3
@@ -37,7 +38,7 @@ STORE_SIZE = "StoreSize"
 TYPE = "Type"
 HTL = "HopsToLive"
 
-def insert(args, probe_type, result):
+def insert(args, probe_type, result, duration):
 	start = datetime.datetime.utcnow()
 	db = sqlite3.connect(args.databaseFile)
 
@@ -49,15 +50,15 @@ def insert(args, probe_type, result):
 		code = None
 		if CODE in result:
 			description = result[CODE]
-		db.execute("insert into error(time, htl, probe_type, error_type, code) values(?, ?, ?, ?, ?)", (now, htl, probe_type, result[TYPE], code))
+		db.execute("insert into error(time, htl, probe_type, error_type, code, duration) values(?, ?, ?, ?, ?, ?)", (now, htl, probe_type, result[TYPE], code, duration))
 	elif header == "ProbeRefused":
-		db.execute("insert into refused(time, htl, probe_type) values(?, ?, ?)", (now, htl, probe_type))
+		db.execute("insert into refused(time, htl, probe_type, duration) values(?, ?, ?, ?)", (now, htl, probe_type, duration))
 	elif probe_type == "BANDWIDTH":
-		db.execute("insert into bandwidth(time, htl, KiB) values(?, ?, ?)", (now, htl, result[BANDWIDTH]))
+		db.execute("insert into bandwidth(time, htl, KiB, duration) values(?, ?, ?, ?)", (now, htl, result[BANDWIDTH], duration))
 	elif probe_type == "BUILD":
-		db.execute("insert into build(time, htl, build) values(?, ?, ?)", (now, htl, result[BUILD]))
+		db.execute("insert into build(time, htl, build, duration) values(?, ?, ?, ?)", (now, htl, result[BUILD], duration))
 	elif probe_type == "IDENTIFIER":
-		db.execute("insert into identifier(time, htl, identifier, percent) values(?, ?, ?, ?)", (now, htl, result[PROBE_IDENTIFIER], result[UPTIME_PERCENT]))
+		db.execute("insert into identifier(time, htl, identifier, percent, duration) values(?, ?, ?, ?, ?)", (now, htl, result[PROBE_IDENTIFIER], result[UPTIME_PERCENT], duration))
 	elif probe_type == "LINK_LENGTHS":
 		max_id = db.execute("select max(id) from link_lengths").fetchone()[0]
 		new_id = 0
@@ -66,15 +67,15 @@ def insert(args, probe_type, result):
 
 		for length in split(result[LINK_LENGTHS], ';'):
 			db.execute("insert into link_lengths(time, htl, length, id) values(?, ?, ?, ?)", (now, htl, length, new_id))
-		db.execute("insert into peer_count(time, htl, peers) values(?, ?, ?)", (now, htl, len(result[LINK_LENGTHS])))
+		db.execute("insert into peer_count(time, htl, peers, duration) values(?, ?, ?, ?)", (now, htl, len(result[LINK_LENGTHS]), duration))
 	elif probe_type == "LOCATION":
-		db.execute("insert into location(time, htl, location) values(?, ?, ?)", (now, htl, result[LOCATION]))
+		db.execute("insert into location(time, htl, location, duration) values(?, ?, ?, ?)", (now, htl, result[LOCATION], duration))
 	elif probe_type == "STORE_SIZE":
-		db.execute("insert into store_size(time, htl, GiB) values(?, ?, ?)", (now, htl, result[STORE_SIZE]))
+		db.execute("insert into store_size(time, htl, GiB, duration) values(?, ?, ?, ?)", (now, htl, result[STORE_SIZE], duration))
 	elif probe_type == "UPTIME_48H":
-		db.execute("insert into uptime_48h(time, htl, percent) values(?, ?, ?)", (now, htl, result[UPTIME_PERCENT]))
+		db.execute("insert into uptime_48h(time, htl, percent, duration) values(?, ?, ?, ?)", (now, htl, result[UPTIME_PERCENT], duration))
 	elif probe_type == "UPTIME_7D":
-		db.execute("insert into uptime_7d(time, htl, percent) values(?, ?, ?)", (now, htl, result[UPTIME_PERCENT]))
+		db.execute("insert into uptime_7d(time, htl, percent, duration) values(?, ?, ?, ?)", (now, htl, result[UPTIME_PERCENT], duration))
 
 	db.commit()
 	db.close()
@@ -86,50 +87,78 @@ def sigint_handler(signum, frame):
 	reactor.stop()
 
 def init_database(db):
-	#BANDWIDTH
-	db.execute("create table if not exists bandwidth(time, htl, KiB)")
-	db.execute("create index if not exists time_index on bandwidth(time)")
+	# If there are no tables in this database, it is new, so set up the latest version.
+	if db.execute("""SELECT count(*) FROM "sqlite_master" WHERE type == 'table'""").fetchone()[0] == 0:
+		logging.info("Setting up new database.")
+		db.execute("PRAGMA user_version = 1")
 
-	#BUILD
-	db.execute("create table if not exists build(time, htl, build)")
-	db.execute("create index if not exists time_index on build(time)")
+		#BANDWIDTH
+		db.execute("create table if not exists bandwidth(time, htl, KiB, duration)")
+		db.execute("create index if not exists time_index on bandwidth(time)")
 
-	#IDENTIFIER
-	db.execute("create table if not exists identifier(time, htl, identifier, percent)")
-	db.execute("create index if not exists time_index on identifier(time, identifier)")
+		#BUILD
+		db.execute("create table if not exists build(time, htl, build, duration)")
+		db.execute("create index if not exists time_index on build(time)")
 
-	#LINK_LENGTHS
-	db.execute("create table if not exists link_lengths(time, htl, length, id)")
-	db.execute("create index if not exists time_index on link_lengths(time)")
+		#IDENTIFIER
+		db.execute("create table if not exists identifier(time, htl, identifier, percent, duration)")
+		db.execute("create index if not exists time_index on identifier(time, identifier)")
 
-	db.execute("create table if not exists peer_count(time, htl, peers)")
-	db.execute("create index if not exists time_index on peer_count(time)")
+		#LINK_LENGTHS
+		# link_lengths need not have duration because peer count will have it for
+		# all LINK_LENGTHS requests. Storing it on link_lengths would be needless
+		# duplication.
+		db.execute("create table if not exists link_lengths(time, htl, length, id)")
+		db.execute("create index if not exists time_index on link_lengths(time)")
 
-	#LOCATION
-	db.execute("create table if not exists location(time, htl, location)")
-	db.execute("create index if not exists time_index on location(time)")
+		db.execute("create table if not exists peer_count(time, htl, peers, duration)")
+		db.execute("create index if not exists time_index on peer_count(time)")
 
-	#STORE_SIZE
-	db.execute("create table if not exists store_size(time, htl, GiB)")
-	db.execute("create index if not exists time_index on peer_count(time)")
+		#LOCATION
+		db.execute("create table if not exists location(time, htl, location, duration)")
+		db.execute("create index if not exists time_index on location(time)")
 
-	#UPTIME_48H
-	db.execute("create table if not exists uptime_48h(time, htl, percent)")
-	db.execute("create index if not exists time_index on uptime_48h(time)")
+		#STORE_SIZE
+		db.execute("create table if not exists store_size(time, htl, GiB, duration)")
+		db.execute("create index if not exists time_index on peer_count(time)")
 
-	#UPTIME_7D
-	db.execute("create table if not exists uptime_7d(time, htl, percent)")
-	db.execute("create index if not exists time_index on uptime_7d(time)")
+		#UPTIME_48H
+		db.execute("create table if not exists uptime_48h(time, htl, percent, duration)")
+		db.execute("create index if not exists time_index on uptime_48h(time)")
 
-	#Type is included in error and refused to better inform possible
-	#estimates of error in probe results.
-	#Error
-	db.execute("create table if not exists error(time, htl, probe_type, error_type, code)")
-	db.execute("create index if not exists time_index on error(time)")
+		#UPTIME_7D
+		db.execute("create table if not exists uptime_7d(time, htl, percent, duration)")
+		db.execute("create index if not exists time_index on uptime_7d(time)")
 
-	#Refused
-	db.execute("create table if not exists refused(time, htl, probe_type)")
-	db.execute("create index if not exists time_index on refused(time)")
+		#Type is included in error and refused to better inform possible
+		#estimates of error in probe results.
+		#Error
+		db.execute("create table if not exists error(time, htl, probe_type, error_type, code, duration)")
+		db.execute("create index if not exists time_index on error(time)")
+
+		#Refused
+		db.execute("create table if not exists refused(time, htl, probe_type, duration)")
+		db.execute("create index if not exists time_index on refused(time)")
+
+	else:
+		# The database has already been set up; check that it is the latest version.
+
+		version = db.execute("PRAGMA user_version").fetchone()[0]
+		logging.info("Read database version {0}".format(version))
+
+		def update_version(new):
+			db.execute("PRAGMA user_version = {0}".format(new))
+			version = db.execute("PRAGMA user_version").fetchone()[0]
+
+		if version == 0:
+			logging.info("Upgrading from database version 0 to version 1.")
+			version_zero = [ "bandwidth", "build", "identifier", "peer_count",
+				         "location", "store_size", "uptime_48h", "uptime_7d" ]
+			# Add the response time column to the relevant version 0 tables.
+			for table in version_zero:
+				db.execute("""alter table "{0}" add column duration""".format(table))
+			update_version(1)
+			logging.info("Upgrade from 0 to 1 complete.")
 
 	db.commit()
 	db.close()
@@ -154,9 +183,14 @@ class CommitHook:
 		self.probeType = probeType
 
 	def __call__(self, message):
-		logging.info("Got results in {0}.".format(datetime.datetime.utcnow() - self.sent))
+		delta = datetime.datetime.utcnow() - self.sent
+		# Duration in seconds. Python 2.7 introduced timedelta.total_seconds()
+		# but this should run on Python 2.6. (Version in Debian Squeeze.)
+		# Seconds per day: 24 hours per day * 60 minutes per hour * 60 seconds per minute = 86400
+		# Seconds per microsecond: 1/1000000
+		duration = delta.days * 86400 + delta.seconds + delta.microseconds / 1000000
 		#Commit results
-		reactor.callFromThread(insert, self.args, self.probeType, message)
+		reactor.callFromThread(insert, self.args, self.probeType, message, duration)
 		return True
 
 class SendLoop:
