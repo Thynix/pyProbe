@@ -65,9 +65,10 @@ def insert(args, probe_type, result, duration):
 		if max_id is not None:
 			new_id = max_id + 1
 
-		for length in split(result[LINK_LENGTHS], ';'):
+		lengths = split(result[LINK_LENGTHS], ';')
+		for length in lengths:
 			db.execute("insert into link_lengths(time, htl, length, id) values(?, ?, ?, ?)", (now, htl, length, new_id))
-		db.execute("insert into peer_count(time, htl, peers, duration) values(?, ?, ?, ?)", (now, htl, len(result[LINK_LENGTHS]), duration))
+		db.execute("insert into peer_count(time, htl, peers, duration) values(?, ?, ?, ?)", (now, htl, len(lengths), duration))
 	elif probe_type == "LOCATION":
 		db.execute("insert into location(time, htl, location, duration) values(?, ?, ?, ?)", (now, htl, result[LOCATION], duration))
 	elif probe_type == "STORE_SIZE":
