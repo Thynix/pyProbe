@@ -126,6 +126,14 @@ with sqlite3.connect(args.databaseFile) as db:
         for error in db.execute("""select "error_type", count("error_type") from "error" group by "error_type" order by "error_type" """).fetchall():
             print(" * {0}: {1:n} ({2:.1f}%)".format(error[0], error[1], error[1]/DivSafe(errors)*100))
 
+        # NOTE: Locality information was added in database version 2.
+        localError = db.execute("""select count(*) from "error" where "local" == 'true'""").fetchone()[0]
+        remoteError = db.execute("""select count(*) from "error" where "local" == 'false'""").fetchone()[0]
+        noLocality = db.execute("""select count(*) from "error" where "local" is null""").fetchone()[0]
+        locality = localError + remoteError
+        print(" * {0:n} ({1:.1f}%) errors with locality information were local.".format(localError, localError / DivSafe(locality) * 100))
+        print(" * {0:n} ({1:.1f}%) errors have locality information.".format(locality, locality / DivSafe(errors) * 100))
+        print(" * {0:n} ({1:.1f}%) errors do not have locality information.".format(noLocality, noLocality / DivSafe(errors) * 100))
 
         #TODO: This does not consider errors or refusals.
         print("Earliest response written {0}".format(min(times("min", tables))))
