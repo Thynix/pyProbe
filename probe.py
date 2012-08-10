@@ -94,52 +94,52 @@ def init_database(db):
 		db.execute("PRAGMA user_version = 1")
 
 		#BANDWIDTH
-		db.execute("create table if not exists bandwidth(time, htl, KiB, duration)")
-		db.execute("create index if not exists time_index on bandwidth(time)")
+		db.execute("create table bandwidth(time, htl, KiB, duration)")
+		db.execute("create index time_index on bandwidth(time)")
 
 		#BUILD
-		db.execute("create table if not exists build(time, htl, build, duration)")
-		db.execute("create index if not exists time_index on build(time)")
+		db.execute("create table build(time, htl, build, duration)")
+		db.execute("create index time_index on build(time)")
 
 		#IDENTIFIER
-		db.execute("create table if not exists identifier(time, htl, identifier, percent, duration)")
-		db.execute("create index if not exists time_index on identifier(time, identifier)")
+		db.execute("create table identifier(time, htl, identifier, percent, duration)")
+		db.execute("create index time_index on identifier(time, identifier)")
 
 		#LINK_LENGTHS
 		# link_lengths need not have duration because peer count will have it for
 		# all LINK_LENGTHS requests. Storing it on link_lengths would be needless
 		# duplication.
-		db.execute("create table if not exists link_lengths(time, htl, length, id)")
-		db.execute("create index if not exists time_index on link_lengths(time)")
+		db.execute("create table link_lengths(time, htl, length, id)")
+		db.execute("create index time_index on link_lengths(time)")
 
-		db.execute("create table if not exists peer_count(time, htl, peers, duration)")
-		db.execute("create index if not exists time_index on peer_count(time)")
+		db.execute("create table peer_count(time, htl, peers, duration)")
+		db.execute("create index time_index on peer_count(time)")
 
 		#LOCATION
-		db.execute("create table if not exists location(time, htl, location, duration)")
-		db.execute("create index if not exists time_index on location(time)")
+		db.execute("create table location(time, htl, location, duration)")
+		db.execute("create index time_index on location(time)")
 
 		#STORE_SIZE
-		db.execute("create table if not exists store_size(time, htl, GiB, duration)")
-		db.execute("create index if not exists time_index on peer_count(time)")
+		db.execute("create table store_size(time, htl, GiB, duration)")
+		db.execute("create index time_index on peer_count(time)")
 
 		#UPTIME_48H
-		db.execute("create table if not exists uptime_48h(time, htl, percent, duration)")
-		db.execute("create index if not exists time_index on uptime_48h(time)")
+		db.execute("create table uptime_48h(time, htl, percent, duration)")
+		db.execute("create index time_index on uptime_48h(time)")
 
 		#UPTIME_7D
-		db.execute("create table if not exists uptime_7d(time, htl, percent, duration)")
-		db.execute("create index if not exists time_index on uptime_7d(time)")
+		db.execute("create table uptime_7d(time, htl, percent, duration)")
+		db.execute("create index time_index on uptime_7d(time)")
 
 		#Type is included in error and refused to better inform possible
 		#estimates of error in probe results.
 		#Error
-		db.execute("create table if not exists error(time, htl, probe_type, error_type, code, duration)")
-		db.execute("create index if not exists time_index on error(time)")
+		db.execute("create table error(time, htl, probe_type, error_type, code, duration)")
+		db.execute("create index time_index on error(time)")
 
 		#Refused
-		db.execute("create table if not exists refused(time, htl, probe_type, duration)")
-		db.execute("create index if not exists time_index on refused(time)")
+		db.execute("create table refused(time, htl, probe_type, duration)")
+		db.execute("create index time_index on refused(time)")
 
 	else:
 		# The database has already been set up; check that it is the latest version.
