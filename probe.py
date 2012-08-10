@@ -37,6 +37,7 @@ LOCATION = "Location"
 STORE_SIZE = "StoreSize"
 TYPE = "Type"
 HTL = "HopsToLive"
+LOCAL = "Local"
 
 def insert(args, probe_type, result, duration):
 	start = datetime.datetime.utcnow()
@@ -50,7 +51,7 @@ def insert(args, probe_type, result, duration):
 		code = None
 		if CODE in result:
 			description = result[CODE]
-		db.execute("insert into error(time, htl, probe_type, error_type, code, duration) values(?, ?, ?, ?, ?, ?)", (now, htl, probe_type, result[TYPE], code, duration))
+		db.execute("insert into error(time, htl, probe_type, error_type, code, duration, local) values(?, ?, ?, ?, ?, ?, ?)", (now, htl, probe_type, result[TYPE], code, duration, result[LOCAL]))
 	elif header == "ProbeRefused":
 		db.execute("insert into refused(time, htl, probe_type, duration) values(?, ?, ?, ?)", (now, htl, probe_type, duration))
 	elif probe_type == "BANDWIDTH":
@@ -91,7 +92,7 @@ def init_database(db):
 	# If there are no tables in this database, it is new, so set up the latest version.
 	if db.execute("""SELECT count(*) FROM "sqlite_master" WHERE type == 'table'""").fetchone()[0] == 0:
 		logging.info("Setting up new database.")
-		db.execute("PRAGMA user_version = 1")
+		db.execute("PRAGMA user_version = 2")
 
 		#BANDWIDTH
 		db.execute("create table bandwidth(time, htl, KiB, duration)")
@@ -134,7 +135,7 @@ def init_database(db):
 		#Type is included in error and refused to better inform possible
 		#estimates of error in probe results.
 		#Error
-		db.execute("create table error(time, htl, probe_type, error_type, code, duration)")
+		db.execute("create table error(time, htl, probe_type, error_type, code, duration, local)")
 		db.execute("create index time_index on error(time)")
 
 		#Refused
@@ -151,6 +152,7 @@ def init_database(db):
 			db.execute("PRAGMA user_version = {0}".format(new))
 			version = db.execute("PRAGMA user_version").fetchone()[0]
 
+		# In version 1: added a response time column "duration" to most tables.
 		if version == 0:
 			logging.info("Upgrading from database version 0 to version 1.")
 			version_zero = [ "bandwidth", "build", "identifier", "peer_count",
@@ -160,6 +162,13 @@ def init_database(db):
 				db.execute("""alter table "{0}" add column duration""".format(table))
 			update_version(1)
 			logging.info("Upgrade from 0 to 1 complete.")
+
+		# In version 2: Added a "local" column to the error table.
+		if version == 1:
+			logging.info("Upgrading from database version 1 to version 2.")
+			db.execute("""alter table error add column local""")
+			update_version(2)
+			logging.info("Upgrade from 1 to 2 complete.")
 
 	db.commit()
 	db.close()
