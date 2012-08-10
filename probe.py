@@ -81,17 +81,17 @@ def insert(args, probe_type, result, duration):
 
 	db.commit()
 	db.close()
-	logging.info("Committed {0} ({1}) in {2}.".format(header, probe_type, datetime.datetime.utcnow() - start))
+	logging.debug("Committed {0} ({1}) in {2}.".format(header, probe_type, datetime.datetime.utcnow() - start))
 
 def sigint_handler(signum, frame):
-	logging.info("Got signal {0}. Shutting down.".format(signum))
+	logging.warning("Got signal {0}. Shutting down.".format(signum))
 	signal(SIGINT, SIG_DFL)
 	reactor.stop()
 
 def init_database(db):
 	# If there are no tables in this database, it is new, so set up the latest version.
 	if db.execute("""SELECT count(*) FROM "sqlite_master" WHERE type == 'table'""").fetchone()[0] == 0:
-		logging.info("Setting up new database.")
+		logging.warning("Setting up new database.")
 		db.execute("PRAGMA user_version = 2")
 
 		#BANDWIDTH
@@ -146,7 +146,7 @@ def init_database(db):
 		# The database has already been set up; check that it is the latest version.
 
 		version = db.execute("PRAGMA user_version").fetchone()[0]
-		logging.info("Read database version {0}".format(version))
+		logging.debug("Read database version {0}".format(version))
 
 		def update_version(new):
 			db.execute("PRAGMA user_version = {0}".format(new))
@@ -154,21 +154,21 @@ def init_database(db):
 
 		# In version 1: added a response time column "duration" to most tables.
 		if version == 0:
-			logging.info("Upgrading from database version 0 to version 1.")
+			logging.warning("Upgrading from database version 0 to version 1.")
 			version_zero = [ "bandwidth", "build", "identifier", "peer_count",
 				         "location", "store_size", "uptime_48h", "uptime_7d", "error", "refused" ]
 			# Add the response time column to the relevant version 0 tables.
 			for table in version_zero:
 				db.execute("""alter table "{0}" add column duration""".format(table))
 			update_version(1)
-			logging.info("Upgrade from 0 to 1 complete.")
+			logging.warning("Upgrade from 0 to 1 complete.")
 
 		# In version 2: Added a "local" column to the error table.
 		if version == 1:
-			logging.info("Upgrading from database version 1 to version 2.")
+			logging.warning("Upgrading from database version 1 to version 2.")
 			db.execute("""alter table error add column local""")
 			update_version(2)
-			logging.info("Upgrade from 1 to 2 complete.")
+			logging.warning("Upgrade from 1 to 2 complete.")
 
 	db.commit()
 	db.close()
@@ -187,7 +187,7 @@ class CommitHook:
 	Assumes the time of its creation is when the probe request is sent.
 	"""
 	def __init__(self, args, probeType):
-		logging.info("Sending {0}.".format(probeType))
+		logging.debug("Sending {0}.".format(probeType))
 		self.sent = datetime.datetime.utcnow()
 		self.args = args
 		self.probeType = probeType
@@ -257,7 +257,7 @@ class FCPReconnectingFactory(protocol.ReconnectingClientFactory):
 				delay_per = self.args.probeWait / self.args.numThreads
 
 				def start(i):
-					logging.info("Starting probe instance {0}.".format(i))
+					logging.debug("Starting probe instance {0}.".format(i))
 					SendLoop(self.proto, self.args)
 
 				for i in range(self.args.numThreads):
