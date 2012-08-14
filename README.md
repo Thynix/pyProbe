@@ -1,22 +1,100 @@
 # pyProbe
 
-pyProbe is a collection of data gathering and analysis tools for [Freenet](https://freenetproject.org/) network probes. Requires Freenet build 1409 or greater.
+pyProbe is a collection of data gathering and analysis tools for [Freenet](https://freenetproject.org/) network probes. These probes report limited sets of information at once and apply random noise in order to reduce how identifiable information is while keeping it useful for network-wide statistics. Requires Freenet build 1409 or greater.
 
-## Requirements
-
-* Python 2.6.6-ish
-* [pysqlite](http://code.google.com/p/pysqlite/)
-* [Freenet](https://freenetproject.org/)
-* [gnuplot](http://www.gnuplot.info/)
-* [twisted](https://twistedmatrix.com/trac/)
-* [twistedfcp](https://github.com/AnIrishDuck/twistedfcp)
-
-## Usage
+## Parts
 
 The three tools are:
 
-* `probe.py`: connects to a Freenet node and makes probe requests, storing the results in a database. A config file allows changing parameters, such as how frequenty probes are sent, or what types of probes are sent. If the connection to the node is lost it will continue attempting to reconnect.
-* `analyze.py`: reads probe results from a database, analyses it, and generates plots of the data.
-* `util.py`: provides statistics on the information held by the database and allows easily running the `sqlite` commands `analyze` and `vacuum`.
+* `probe.py`: connects to a Freenet node to make probe requests, and stores the results.
+* `analyze.py`: analyses stored probe results, and generates plots of the data.
+* `util.py`: provides statistics on the stored probe results.
 
 Help screens are available by running a tool with the `--help` or `-h` arguments.
+
+## Requirements
+
+* [Python 2.6 or higher](http://www.python.org/download/releases/2.7.3/)
+* [pysqlite](http://code.google.com/p/pysqlite/)
+* [Freenet](https://freenetproject.org/)
+* [gnuplot](http://www.gnuplot.info/) (for analyze.py plots)
+* [Twisted](https://twistedmatrix.com/trac/)
+* [twistedfcp](https://github.com/AnIrishDuck/twistedfcp)
+
+## Installation
+
+Freenet, Python, gnuplot, and Twisted all have installation instructions on their respective sites.
+
+However, as of this writing, the current official builds of Freenet [differ](https://github.com/freenet/fred-official/blob/build01410/src/freenet/node/fcp/FCPMessage.java#L22) in their FCP field names from what was intended. This will mean all probes will run at `MAX_HTL` instead of the desired value, resulting in the vast majority of responses being errors. To work around this, change `probe.py` line 39 to read `HTL="HTL"`.
+
+### pysqlite
+
+* Available on the [Python Package Index](http://pypi.python.org/pypi/pip): `# pip install pysqlite`
+
+### twistedfcp
+
+* Clone [twistedfcp](https://github.com/AnIrishDuck/twistedfcp): `$ git clone https://github.com/AnIrishDuck/twistedfcp.git`
+* `$ cd twistedfcp`
+* `# python setup.py install`
+
+## Database Schema
+
+There are separate tables for each result type, errors, and refuals. The database is versioned, and previous versions will be upgraded. (`init_database()`) All table names but `error`, `refused`, and `peer_count` match the name of the result type with which they are updated. With the exception of `link_lengths` lacking a `duration` column, all tables have the following columns:
+
+* `time`: Timestamp of when the result was committed.
+* `htl`: Hops to live value the probe used.
+* `duration`: How long elapsed between sending the probe and receiving the response.
+
+Additional columns vary by table:
+
+### `bandwidth`
+
+* `KiB`: Outgoing bandwidth limit in KiB/s.
+
+### `build`
+
+* `build`: Freenet build number.
+
+### `identifier`
+
+* `identifier`: Randomly assigned (by default; can be set or randomized again at will) identifier.
+
+### `link_lengths`
+
+Each individual reported length has its own entry. This table does not have a `duration` column because the next table, `peer_count`, is based off the same probe result and has only one entry for each, which avoids storing that information multiple times for a single returned result.
+
+* `length`: Difference between the responding node's location and one of its peers' locations.
+* `id`: Each value is shared with the other entries resulting from the same probe result.
+
+### `peer count`
+
+Set from `LINK_LENGTHS` probes like `link_lengths`.
+
+* `peers`: Number of peers.
+
+### `location`
+
+* `location`: Network location.
+
+### `store_size`:
+
+* `GiB`: Datastore (cache and store) size in GiB.
+
+### `uptime_48h`
+
+* `percent`: Uptime percentage over the last 48 hours.
+
+### `uptime_7d`
+
+* `percent`: Uptime percentage over the last 7 days.
+
+### `error`
+
+* `probe_type`: The probe result which was requested.
+* `error_type`: The type of error which occurred.
+* `code`: If specified, the local node did not recognize this error code. In this case, the `error_type` will be `UNKNOWN`.
+* `local`: If `true` the error occurred locally and was not prompted by an error relayed from a remote node. If `false` the error was relayed from a remote node.
+
+### `refused`
+
+* `probe_type`: The probe result which was requested.
