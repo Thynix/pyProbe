@@ -39,10 +39,10 @@ The three tools are:
 
 Can be run directly with `python`, with `twistd`, or with the bash script `run`, which supports these operations:
 
-* `start`: Starts probe if not already running.
-* `stop`: Stops probe if running.
-* `restart`: Stops probe if it is running, then starts it again.
-* `console`: Starts probe and follows the log, then stops upon interrupt.
+* `start`: Starts the probe if it is not already running.
+* `stop`: Stops the probe if it is running.
+* `restart`: Stops the probe if it is running, then starts it again.
+* `console`: Starts the probe and follows the log, then stops the probe on interrupt.
 * `log`: Follows the log.
 
 Configured with the self-documenting [`probe.config`](https://github.com/Thynix/pyProbe/blob/master/probe.config).
