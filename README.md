@@ -32,7 +32,7 @@ However, as of this writing, the FCP field names in the current official build o
 The three tools are:
 
 * `probe.py`: connects to a Freenet node to make probe requests, and stores the results.
-* `analyze.py`: analyses stored probe results, and generates plots of the data.
+* `analyze.py`: analyzes stored probe results, and generates plots of the data.
 * `util.py`: provides statistics on the stored probe results.
 
 ### `probe.py`
