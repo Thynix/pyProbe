@@ -2,7 +2,7 @@
 
 pyProbe is a collection of data gathering and analysis tools for [Freenet](https://freenetproject.org/) network probes. These probes report limited sets of information at once and apply random noise in order to reduce how identifiable information is while keeping it useful for network-wide statistics. Requires Freenet build 1409 or greater.
 
-## Parts
+## Usage
 
 The three tools are:
 
@@ -10,7 +10,38 @@ The three tools are:
 * `analyze.py`: analyses stored probe results, and generates plots of the data.
 * `util.py`: provides statistics on the stored probe results.
 
-Help screens are available by running a tool with the `--help` or `-h` arguments.
+### `probe.py`
+
+Can be run directly with `python`, with `twistd`, or with the bash script `run`, which supports these operations:
+
+* `start`: Starts probe if not already running.
+* `stop`: Stops probe if running.
+* `restart`: Stops probe if it is running, then starts it again.
+* `console`: Starts probe and follows the log, then stops upon interrupt.
+* `log`: Follows the log.
+
+Configured with the self-documenting [`probe.config`](https://github.com/Thynix/pyProbe/blob/master/probe.config).
+
+### `analyze.py`
+
+When run without arguments, analyzes the past week of probe data to generate statistics:
+
+* Network size estimate
+* Plot of location distribution
+* Plot of peer count distribution
+* Plot of link length distribution
+
+For command line argument documentation run with `--help`.
+
+### `util.py`
+
+Presents a menu with sqlite utility functions and probe collection statistics:
+
+* Result collection rate
+* Distribution of error types over probe types
+* Success, refusal, and error percentages
+
+For command line argument documentation run with `--help`.
 
 ## Requirements
 
@@ -25,7 +56,7 @@ Help screens are available by running a tool with the `--help` or `-h` arguments
 
 Freenet, Python, gnuplot, and Twisted all have installation instructions on their respective sites.
 
-However, as of this writing, the current official builds of Freenet [differ](https://github.com/freenet/fred-official/blob/build01410/src/freenet/node/fcp/FCPMessage.java#L22) in their FCP field names from what was intended. This will mean all probes will run at `MAX_HTL` instead of the desired value, resulting in the vast majority of responses being errors. To work around this, change `probe.py` line 39 to read `HTL="HTL"`.
+However, as of this writing, the FCP field names in the current official build of Freenet [differ](https://github.com/freenet/fred-official/blob/build01410/src/freenet/node/fcp/FCPMessage.java#L22) from what was intended. This means all probes will run at `MAX_HTL` instead of the configured value, resulting in the vast majority of responses being errors due to the unworkably high HTL. To work around this, change `probe.py` line 39 to read `HTL="HTL"`.
 
 ### pysqlite
 
