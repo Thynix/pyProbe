@@ -2,6 +2,31 @@
 
 pyProbe is a collection of data gathering and analysis tools for [Freenet](https://freenetproject.org/) network probes. These probes report limited sets of information at once and apply random noise in order to reduce how identifiable information is while keeping it useful for network-wide statistics. Requires Freenet build 1409 or greater.
 
+## Requirements
+
+* [Python 2.6 or higher](http://www.python.org/download/releases/2.7.3/)
+* [pysqlite](http://code.google.com/p/pysqlite/)
+* [Freenet](https://freenetproject.org/)
+* [gnuplot](http://www.gnuplot.info/) (for analyze.py plots)
+* [Twisted](https://twistedmatrix.com/trac/)
+* [twistedfcp](https://github.com/AnIrishDuck/twistedfcp)
+
+## Installation
+
+Freenet, Python, gnuplot, and Twisted all have installation instructions on their respective sites.
+
+However, as of this writing, the FCP field names in the current official build of Freenet [differ](https://github.com/freenet/fred-official/blob/build01410/src/freenet/node/fcp/FCPMessage.java#L22) from what was intended. This means all probes will run at `MAX_HTL` instead of the configured value, resulting in the vast majority of responses being errors due to the unworkably high HTL. To work around this, change `probe.py` line 39 to read `HTL="HTL"`.
+
+### pysqlite
+
+* Available on the [Python Package Index](http://pypi.python.org/pypi/pip): `# pip install pysqlite`
+
+### twistedfcp
+
+* Clone [twistedfcp](https://github.com/AnIrishDuck/twistedfcp): `$ git clone https://github.com/AnIrishDuck/twistedfcp.git`
+* `$ cd twistedfcp`
+* `# python setup.py install`
+
 ## Usage
 
 The three tools are:
@@ -42,31 +67,6 @@ Presents a menu with sqlite utility functions and probe collection statistics:
 * Success, refusal, and error percentages
 
 For command line argument documentation run with `--help`.
-
-## Requirements
-
-* [Python 2.6 or higher](http://www.python.org/download/releases/2.7.3/)
-* [pysqlite](http://code.google.com/p/pysqlite/)
-* [Freenet](https://freenetproject.org/)
-* [gnuplot](http://www.gnuplot.info/) (for analyze.py plots)
-* [Twisted](https://twistedmatrix.com/trac/)
-* [twistedfcp](https://github.com/AnIrishDuck/twistedfcp)
-
-## Installation
-
-Freenet, Python, gnuplot, and Twisted all have installation instructions on their respective sites.
-
-However, as of this writing, the FCP field names in the current official build of Freenet [differ](https://github.com/freenet/fred-official/blob/build01410/src/freenet/node/fcp/FCPMessage.java#L22) from what was intended. This means all probes will run at `MAX_HTL` instead of the configured value, resulting in the vast majority of responses being errors due to the unworkably high HTL. To work around this, change `probe.py` line 39 to read `HTL="HTL"`.
-
-### pysqlite
-
-* Available on the [Python Package Index](http://pypi.python.org/pypi/pip): `# pip install pysqlite`
-
-### twistedfcp
-
-* Clone [twistedfcp](https://github.com/AnIrishDuck/twistedfcp): `$ git clone https://github.com/AnIrishDuck/twistedfcp.git`
-* `$ cd twistedfcp`
-* `# python setup.py install`
 
 ## Database Schema
 
