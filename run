@@ -64,8 +64,7 @@ status() {
 }
 
 log() {
-    #3 to include twistd lines for starting probe but not previous run.
-    tail -F -n3 "$logFile"
+    tail -F "$logFile"
 }
 
 case "$1" in
