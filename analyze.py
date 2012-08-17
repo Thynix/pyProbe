@@ -19,6 +19,8 @@ parser.add_argument('-q', dest='quiet', default=False, action='store_true',\
                     help='Do not print status updates.')
 parser.add_argument('--round-robin', dest='rrd', default='network-size.rrd',
                     help='Path to round robin database file.')
+parser.add_argument('--size-graph', dest='sizeGraph', default='network-size.png',
+                    help='Path to the network size graph.')
 
 args = parser.parse_args()
 
@@ -150,6 +152,21 @@ while latestIdentifier > toTime:
 
     fromTime = toTime
     toTime = fromTime + day
+
+# Graph all available information with a 2-pixel red line.
+# TODO: RRD isn't starting when intended - querying the database like so
+#       will mean that the database will have to maintain the time of the first
+#       sample, which is not desirable.
+#
+start = toPosix(timestamp(db.execute(""" select min("time") from "identifier" """).fetchone()[0]))
+end = rrdtool.last(args.rrd)
+rrdtool.graph(  args.sizeGraph,
+                '--start', str(start),
+                '--end', str(end),
+                'DEF:size=network-size.rrd:size:AVERAGE',
+                'LINE2:size#FF0000',
+                '-v', 'Size Estimate'
+             )
 
 log("Querying database for locations.")
 locations = db.execute("""select distinct "location" from "location" where "time" > datetime('{0}')""".format(recent)).fetchall()
