@@ -59,7 +59,7 @@ toTime = fromTime + day
 latestIdentifier = timestamp(db.execute("""select max("time") from "identifier" """).fetchone()[0])
 
 def toPosix(dt):
-    return int(time.mktime(dt.timetuple()))
+    return int(calendar.timegm(dt.utctimetuple()))
 
 try:
     f = open(args.rrd, "r")
