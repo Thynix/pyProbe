@@ -51,8 +51,9 @@ def timestamp(string):
     return datetime.datetime.strptime(string, timestampFormat)
 
 fromTime = timestamp(db.execute("""select min("time") from "identifier" """).fetchone()[0])
-day = datetime.timedelta(hours=24)
-toTime = fromTime + day
+# Period of time to consider samples in a group for an estimate.
+period = datetime.timedelta(hours=1)
+toTime = fromTime + period
 
 #
 # Latest stored identifier result. A time period including this time is
@@ -73,14 +74,15 @@ except:
                 # If the database already exists don't overwrite it.
                 '--no-overwrite',
                 '--start', str(toPosix(toTime) - 1),
-                # Once each day.
-                '--step', '86400',
+                # Once each hour. TODO: Fill in based on period.
+                '--step', '3600',
                 # Data source once each hour; values greater than zero.
-                'DS:size:GAUGE:87400:0:U',
-                # Lossless for a year. No unknowns allowed. (TODO: What about hours the node is down?)
-                'RRA:AVERAGE:0:1:365',
-                # Weekly average for five years. (365 * 5 = 1825 days)
-                'RRA:AVERAGE:0:7:1825'
+                # TODO: Fill in step based on period value in seconds.
+                'DS:size:GAUGE:3600:0:U',
+                # Lossless for a year. No unknowns allowed. (24 * 365 = 8760 hours)
+                'RRA:AVERAGE:0:1:8760',
+                # Daily average for five years. (365 * 5 = 1825 days)
+                'RRA:AVERAGE:0:24:1825'
               )
 
 #
@@ -89,7 +91,7 @@ except:
 #
 if rrdtool.last(args.rrd) is not None:
     fromTime = datetime.datetime.utcfromtimestamp(int(rrdtool.last(args.rrd)))
-    toTime = fromTime + day
+    toTime = fromTime + period
     log("Resuming network size computation at {0}. {1}".format(fromTime, toPosix(fromTime)))
 
 
@@ -145,13 +147,13 @@ while latestIdentifier > toTime:
         print("Zero distinct samples from {0} to {1}. {2} samples.".format(fromTime, toTime, samples))
 
     size = binarySearch(distinctSamples, samples)
-    print(size)
+    print("{0}: {1} samples | {2} distinct samples | {3} estimated size".format(toTime, samples, distinctSamples, size))
     rrdtool.update( args.rrd,
                     '{0}:{1}'.format(toPosix(toTime), size))
     #                '{0}:{1}'.format(toPosix(toTime), binarySearch(distinctSamples, samples)))
 
     fromTime = toTime
-    toTime = fromTime + day
+    toTime = fromTime + period
 
 # Graph all available information with a 2-pixel red line.
 # TODO: RRD isn't starting when intended - querying the database like so
