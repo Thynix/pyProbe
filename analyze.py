@@ -170,7 +170,9 @@ rrdtool.graph(  args.sizeGraph,
                 '--end', str(end),
                 'DEF:size=network-size.rrd:size:AVERAGE',
                 'LINE2:size#FF0000',
-                '-v', 'Size Estimate'
+                '-v', 'Size Estimate',
+                '--width', '1200',
+                '--height', '300'
              )
 
 log("Querying database for locations.")
