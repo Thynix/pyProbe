@@ -87,12 +87,11 @@ except:
 
 #
 # Start computation where the stored values left off, provided there are any.
-# If not, computation starts at the first stored identifier.
 #
-if rrdtool.last(args.rrd) is not None:
-    fromTime = datetime.datetime.utcfromtimestamp(int(rrdtool.last(args.rrd)))
-    toTime = fromTime + period
-    log("Resuming network size computation at {0}. {1}".format(fromTime, toPosix(fromTime)))
+last = rrdtool.last(args.rrd)
+fromTime = datetime.datetime.utcfromtimestamp(int(last))
+toTime = fromTime + period
+log("Resuming network size computation for {0}.".format(toTime))
 
 
 def formula(samples, networkSize):
