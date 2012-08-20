@@ -98,8 +98,6 @@ def formula(samples, networkSize):
     return networkSize * (1 - math.e**(-samples/networkSize))
 
 def binarySearch(distinctSamples, samples):
-    if distinctSamples == 0 or samples == 0:
-        return 0
     if math.fabs(samples - distinctSamples) < 3:
         """Not enough information to make an estimate."""
         return float('NaN')
