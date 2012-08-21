@@ -51,6 +51,8 @@ def timestamp(string):
     return datetime.datetime.strptime(string, timestampFormat)
 
 # Period of time to consider samples in a group for an estimate.
+# Must be a day or less. If it is more than a day the RRDTool
+# 5-year daily archive will not be valid.
 period = datetime.timedelta(hours=1)
 
 #
@@ -62,6 +64,13 @@ latestIdentifier = timestamp(db.execute("""select max("time") from "identifier" 
 def toPosix(dt):
     return int(calendar.timegm(dt.utctimetuple()))
 
+def totalSeconds(delta):
+    # Duration in seconds. Python 2.7 introduced timedelta.total_seconds()
+    # but this should run on Python 2.6. (Version in Debian Squeeze.)
+    # Seconds per day: 24 hours per day * 60 minutes per hour * 60 seconds per minute = 86400
+    # Seconds per microsecond: 1/1000000
+    return delta.days * 86400 + delta.seconds + delta.microseconds / 1000000
+
 try:
     f = open(args.rrd, "r")
     f.close()
@@ -69,20 +78,20 @@ except:
     # Database does not exist - create it.
     fromTime = timestamp(db.execute("""select min("time") from "identifier" """).fetchone()[0])
     toTime = fromTime + period
+    periodSeconds = int(totalSeconds(period))
     log("Creating round robin network size database.")
     rrdtool.create( args.rrd,
                 # If the database already exists don't overwrite it.
                 '--no-overwrite',
                 '--start', str(toPosix(toTime) - 1),
-                # Once each hour. TODO: Fill in based on period.
-                '--step', '3600',
+                # Once each hour.
+                '--step', '{0}'.format(periodSeconds),
                 # Data source once each hour; values greater than zero.
-                # TODO: Fill in step based on period value in seconds.
-                'DS:size:GAUGE:3600:0:U',
-                # Lossless for a year. No unknowns allowed. (24 * 365 = 8760 hours)
-                'RRA:AVERAGE:0:1:8760',
-                # Daily average for five years. (365 * 5 = 1825 days)
-                'RRA:AVERAGE:0:24:1825'
+                'DS:size:GAUGE:{0}:0:U'.format(periodSeconds),
+                # Lossless for a year. No unknowns allowed. (60 * 60 * 24 * 365 = 31536000 seconds per year)
+                'RRA:AVERAGE:0:1:{0}'.format(int(31536000/periodSeconds)),
+                # Daily average for five years. (3600 * 24 = 86400 seconds in a day;365 * 5 = 1825 days)
+                'RRA:AVERAGE:0:{0}:1825'.format(int(86400/periodSeconds))
               )
 
 #
