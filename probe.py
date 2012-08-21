@@ -245,6 +245,7 @@ class FCPReconnectingFactory(protocol.ReconnectingClientFactory):
 	def buildProtocol(self, addr):
 		proto = FreenetClientProtocol()
 		proto.factory = self
+		proto.timeout = self.args.timeout
 
 		#Register a callback for the NodeHello in order to send messages
 		#once the transport is established.
@@ -295,6 +296,10 @@ def main():
 	#Convert integer options
 	for arg in [ "numThreads", "port", "probeWait", "hopsToLive" ]:
 		setattr(args, arg, int(getattr(args, arg)))
+
+	#Convert floating point options.
+	for arg in [ "timeout" ]:
+		setattr(args, arg, float(getattr(args, arg)))
 
 	#Convert types list to list
 	args.types = split(args.types, ",")
