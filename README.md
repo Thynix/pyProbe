@@ -89,6 +89,7 @@ Additional columns vary by table:
 ### `identifier`
 
 * `identifier`: Randomly assigned (by default; can be set or randomized again at will) identifier.
+* `percent`: Very low-precision uptime percentage over the last 7 days.
 
 ### `link_lengths`
 
