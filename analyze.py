@@ -50,10 +50,8 @@ def timestamp(string):
     """
     return datetime.datetime.strptime(string, timestampFormat)
 
-fromTime = timestamp(db.execute("""select min("time") from "identifier" """).fetchone()[0])
 # Period of time to consider samples in a group for an estimate.
 period = datetime.timedelta(hours=1)
-toTime = fromTime + period
 
 #
 # Latest stored identifier result. A time period including this time is
@@ -69,6 +67,8 @@ try:
     f.close()
 except:
     # Database does not exist - create it.
+    fromTime = timestamp(db.execute("""select min("time") from "identifier" """).fetchone()[0])
+    toTime = fromTime + period
     log("Creating round robin network size database.")
     rrdtool.create( args.rrd,
                 # If the database already exists don't overwrite it.
