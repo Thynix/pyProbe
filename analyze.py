@@ -152,14 +152,11 @@ while latestIdentifier > toTime:
     distinctSamples = db.execute("""select count(distinct "identifier") from "identifier" where "time" >= datetime('{0}') and "time" < datetime('{1}')""".format(fromTime, toTime)).fetchone()[0]
     samples = db.execute("""select count("identifier") from "identifier" where "time" >= datetime('{0}') and "time" < datetime('{1}')""".format(fromTime, toTime)).fetchone()[0]
 
-    if distinctSamples == 0:
-        print("Zero distinct samples from {0} to {1}. {2} samples.".format(fromTime, toTime, samples))
 
     size = binarySearch(distinctSamples, samples)
     print("{0}: {1} samples | {2} distinct samples | {3} estimated size".format(toTime, samples, distinctSamples, size))
     rrdtool.update( args.rrd,
                     '{0}:{1}'.format(toPosix(toTime), size))
-    #                '{0}:{1}'.format(toPosix(toTime), binarySearch(distinctSamples, samples)))
 
     fromTime = toTime
     toTime = fromTime + period
