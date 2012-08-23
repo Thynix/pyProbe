@@ -207,6 +207,7 @@ rrdtool.graph(  args.sizeGraph,
                 'LINE2:instantaneous-size#FF0000:Hourly Instantaneous',
                 'LINE2:effective-size#0000FF:Weekly Effective',
                 '-v', 'Size Estimate',
+                '--right-axis', '1:0',
                 '--width', '1200',
                 '--height', '300'
              )
