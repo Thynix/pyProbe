@@ -252,8 +252,9 @@ links = db.execute("""select "length" from "link_lengths" where "time" > datetim
 log("Writing results.")
 with open('links_output', "w") as linkFile:
     #GNUPlot cumulative adds y values, should add to 1.0 in total.
-    for link in links:
-        linkFile.write("{0} {1}\n".format(link[0], 1.0/len(links)))
+    # Lambda: get result out of singleton list so it can be sorted as a number.
+    for link in sorted(map(lambda link: link[0], links)):
+        linkFile.write("{0} {1}\n".format(link, 1.0/len(links)))
 
 log("Plotting.")
 call(["gnuplot","link_length.gnu"])
