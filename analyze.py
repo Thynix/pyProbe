@@ -50,13 +50,20 @@ def timestamp(string):
     """
     return datetime.datetime.strptime(string, timestampFormat)
 
-# Period of time to consider samples in a group for an estimate.
-# Must be a day or less. If it is more than a day the RRDTool
-# 5-year daily archive will not be valid.
-period = datetime.timedelta(hours=1)
+# Period of time to consider samples in a group for an instantaneous estimate.
+# Must be a day or less. If it is more than a day the RRDTool 5-year daily
+# archive will not be valid.
+shortPeriod = datetime.timedelta(hours=1)
+
+# Period of time to consider samples in a group for an effective size estimate.
+# The thought is that while nodes may not be online all the time, many will be
+# online regularly enough that they still contribute to the network's capacity.
+# Despite considering a longer period, it is still made every shortPeriod.
+# One week: 24 hours/day * 7 days = 168 hours.
+longPeriod = datetime.timedelta(hours=168)
 
 #
-# Latest stored identifier result. A time period including this time is
+# Latest stored identifier result. A time shortPeriod including this time is
 # incomplete and will not be computed.
 #
 latestIdentifier = timestamp(db.execute("""select max("time") from "identifier" """).fetchone()[0])
@@ -77,21 +84,25 @@ try:
 except:
     # Database does not exist - create it.
     fromTime = timestamp(db.execute("""select min("time") from "identifier" """).fetchone()[0])
-    toTime = fromTime + period
-    periodSeconds = int(totalSeconds(period))
+    toTime = fromTime + shortPeriod
+    shortPeriodSeconds = int(totalSeconds(shortPeriod))
     log("Creating round robin network size database.")
     rrdtool.create( args.rrd,
                 # If the database already exists don't overwrite it.
                 '--no-overwrite',
                 '--start', str(toPosix(toTime) - 1),
                 # Once each hour.
-                '--step', '{0}'.format(periodSeconds),
-                # Data source once each hour; values greater than zero.
-                'DS:size:GAUGE:{0}:0:U'.format(periodSeconds),
-                # Lossless for a year. No unknowns allowed. (60 * 60 * 24 * 365 = 31536000 seconds per year)
-                'RRA:AVERAGE:0:1:{0}'.format(int(31536000/periodSeconds)),
-                # Daily average for five years. (3600 * 24 = 86400 seconds in a day;365 * 5 = 1825 days)
-                'RRA:AVERAGE:0:{0}:1825'.format(int(86400/periodSeconds))
+                '--step', '{0}'.format(shortPeriodSeconds),
+                # Data source for instantaneous size once each shortPeriod; values greater than zero.
+                'DS:instantaneous-size:GAUGE:{0}:0:U'.format(shortPeriodSeconds),
+                # Data source for effective size estimate; greater than zero.
+                'DS:effective-size:GAUGE:{0}:0:U'.format(shortPeriodSeconds),
+                # Lossless for a year of instantanious; longer for effective estimate. No unknowns allowed.
+                # (60 * 60 * 24 * 365 = 31536000 seconds per year)
+                'RRA:AVERAGE:0:1:{0}'.format(int(31536000/shortPeriodSeconds)),
+                # Daily average for five years; longer for effective estimate.
+                # (3600 * 24 = 86400 seconds in a day;365 * 5 = 1825 days)
+                'RRA:AVERAGE:0:{0}:1825'.format(int(86400/shortPeriodSeconds))
               )
 
 #
@@ -99,7 +110,7 @@ except:
 #
 last = rrdtool.last(args.rrd)
 fromTime = datetime.datetime.utcfromtimestamp(int(last))
-toTime = fromTime + period
+toTime = fromTime + shortPeriod
 log("Resuming network size computation for {0}.".format(toTime))
 
 
@@ -145,21 +156,41 @@ log("Computing network size estimates. In-progress segement is {0}. ({1})".forma
 #
 # Perform binary search for network size in:
 # (distinct samples) = (network size) * (1 - e^(-1 * (samples)/(network size)))
-#
+# ----Effective size estimate:
+# Identifiers that appear in the current long time period in the past, as well as
+# the period of the same length farther back.
+# ----Instantaneous size estimate:
+# Identifiers that appear in the current short time period in the past.
 while latestIdentifier > toTime:
+
+    # Start of current effective size estimate period.
+    fromTimeEffective = toTime - longPeriod
+    # Start of previous effective size estimate period.
+    fromTimeEffectivePrevious = toTime - 2*longPeriod
+
+    distinctEffectiveSamples = db.execute("""select count(distinct "identifier") from (select "identifier" as "previous_identifier" from "identifier" where "time" >= datetime('{0}') and "time" < datetime('{1}')) join "identifier" on "previous_identifier" == "identifier" where "time" >= datetime('{1}') and "time" < datetime('{2}')""".format(fromTimeEffectivePrevious, fromTimeEffective, toTime)).fetchone()[0]
+    effectiveSamples = db.execute("""select count("identifier") from (select "identifier" as "previous_identifier" from "identifier" where "time" >= datetime('{0}') and "time" < datetime('{1}')) join "identifier" on "previous_identifier" == "identifier" where "time" >= datetime('{1}') and "time" < datetime('{2}')""".format(fromTimeEffectivePrevious, fromTimeEffective, toTime)).fetchone()[0]
+
+    effectiveSize = binarySearch(distinctEffectiveSamples, effectiveSamples)
+
+    print("{0}: {1} effective samples | {2} distinct effective samples | {3} estimated effective size"
+           .format(toTime, effectiveSamples, distinctEffectiveSamples, effectiveSize))
+
     # TODO: Add / remove / ignore refusals to provide error bars? More than that needs to be error bars though.
     # TODO: Take into account refuals for error bars.
-    distinctSamples = db.execute("""select count(distinct "identifier") from "identifier" where "time" >= datetime('{0}') and "time" < datetime('{1}')""".format(fromTime, toTime)).fetchone()[0]
-    samples = db.execute("""select count("identifier") from "identifier" where "time" >= datetime('{0}') and "time" < datetime('{1}')""".format(fromTime, toTime)).fetchone()[0]
+    distinctInstantaneousSamples = db.execute("""select count(distinct "identifier") from "identifier" where "time" >= datetime('{0}') and "time" < datetime('{1}')""".format(fromTime, toTime)).fetchone()[0]
+    instantaneousSamples = db.execute("""select count("identifier") from "identifier" where "time" >= datetime('{0}') and "time" < datetime('{1}')""".format(fromTime, toTime)).fetchone()[0]
 
+    instantaneousSize = binarySearch(distinctInstantaneousSamples, instantaneousSamples)
+    print("{0}: {1} instantaneous samples | {2} distinct instantaneous samples | {3} estimated instantaneous size"
+           .format(toTime, instantaneousSamples, distinctInstantaneousSamples, instantaneousSize))
 
-    size = binarySearch(distinctSamples, samples)
-    print("{0}: {1} samples | {2} distinct samples | {3} estimated size".format(toTime, samples, distinctSamples, size))
     rrdtool.update( args.rrd,
-                    '{0}:{1}'.format(toPosix(toTime), size))
+            '-t', 'instantaneous-size:effective-size',
+                    '{0}:{1}:{2}'.format(toPosix(toTime), instantaneousSize, effectiveSize))
 
     fromTime = toTime
-    toTime = fromTime + period
+    toTime = fromTime + shortPeriod
 
 # Graph all available information with a 2-pixel red line.
 # TODO: RRD isn't starting when intended - querying the database like so
@@ -171,8 +202,10 @@ end = rrdtool.last(args.rrd)
 rrdtool.graph(  args.sizeGraph,
                 '--start', str(start),
                 '--end', str(end),
-                'DEF:size=network-size.rrd:size:AVERAGE',
-                'LINE2:size#FF0000',
+                'DEF:instantaneous-size=network-size.rrd:instantaneous-size:AVERAGE:step={0}'.format(int(totalSeconds(shortPeriod))),
+                'DEF:effective-size=network-size.rrd:effective-size:AVERAGE:step={0}'.format(int(totalSeconds(shortPeriod))),
+                'LINE2:instantaneous-size#FF0000:Hourly Instantaneous',
+                'LINE2:effective-size#0000FF:Weekly Effective',
                 '-v', 'Size Estimate',
                 '--width', '1200',
                 '--height', '300'
