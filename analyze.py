@@ -168,8 +168,30 @@ while latestIdentifier > toTime:
     # Start of previous effective size estimate period.
     fromTimeEffectivePrevious = toTime - 2*longPeriod
 
-    distinctEffectiveSamples = db.execute("""select count(distinct "identifier") from (select "identifier" as "previous_identifier" from "identifier" where "time" >= datetime('{0}') and "time" < datetime('{1}')) join "identifier" on "previous_identifier" == "identifier" where "time" >= datetime('{1}') and "time" < datetime('{2}')""".format(fromTimeEffectivePrevious, fromTimeEffective, toTime)).fetchone()[0]
     effectiveSamples = db.execute("""select count("identifier") from (select "identifier" as "previous_identifier" from "identifier" where "time" >= datetime('{0}') and "time" < datetime('{1}')) join "identifier" on "previous_identifier" == "identifier" where "time" >= datetime('{1}') and "time" < datetime('{2}')""".format(fromTimeEffectivePrevious, fromTimeEffective, toTime)).fetchone()[0]
+    distinctEffectiveSamples = db.execute("""
+    select
+      count ("identifier")
+    from
+      (
+        select
+          distinct "identifier"
+        from
+          "identifier"
+        where
+          "time" >= datetime('{0}') and
+          "time" <  datetime('{1}')
+      intersect
+        select
+          distinct "identifier"
+        from
+          "identifier"
+        where
+          "time" >= datetime('{1}') and
+          "time" <  datetime('{2}')
+      );
+    """.format(fromTimeEffectivePrevious, fromTimeEffective, toTime)).fetchone()[0]
+
 
     effectiveSize = binarySearch(distinctEffectiveSamples, effectiveSamples)
 
