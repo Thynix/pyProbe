@@ -17,8 +17,8 @@ parser.add_argument('--histogram-max', dest="histogramMax", default=50, type=int
                     help="Maximum number of peers to consider for histogram generation; anything more than that is included in the maximum. Default 50.")
 parser.add_argument('-q', dest='quiet', default=False, action='store_true',\
                     help='Do not print status updates.')
-parser.add_argument('--round-robin', dest='rrd', default='network-size.rrd',
-                    help='Path to round robin database file.')
+parser.add_argument('--round-robin', dest='rrd', default='size.rrd',
+                    help='Path to round robin network and store size database file.')
 parser.add_argument('--size-graph', dest='sizeGraph', default='plot_network_size.png',
                     help='Path to the network size graph.')
 parser.add_argument('--store-graph', dest='storeGraph', default='plot_store_capacity.png',
@@ -285,8 +285,8 @@ end = rrdtool.last(args.rrd)
 rrdtool.graph(  args.sizeGraph,
                 '--start', str(start),
                 '--end', str(end),
-                'DEF:instantaneous-size=network-size.rrd:instantaneous-size:AVERAGE:step={0}'.format(int(totalSeconds(shortPeriod))),
-                'DEF:effective-size=network-size.rrd:effective-size:AVERAGE:step={0}'.format(int(totalSeconds(shortPeriod))),
+                'DEF:instantaneous-size={0}:instantaneous-size:AVERAGE:step={1}'.format(args.rrd, int(totalSeconds(shortPeriod))),
+                'DEF:effective-size={0}:effective-size:AVERAGE:step={1}'.format(args.rrd, int(totalSeconds(shortPeriod))),
                 'LINE2:instantaneous-size#FF0000:Hourly Instantaneous',
                 'LINE2:effective-size#0000FF:Weekly Effective',
                 '-v', 'Size Estimate',
