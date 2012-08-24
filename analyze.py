@@ -21,6 +21,8 @@ parser.add_argument('--round-robin', dest='rrd', default='network-size.rrd',
                     help='Path to round robin database file.')
 parser.add_argument('--size-graph', dest='sizeGraph', default='network-size.png',
                     help='Path to the network size graph.')
+parser.add_argument('--store-graph', dest='storeGraph', default='plot_store_capacity.png',
+                    help='Path to the store capacity graph.')
 
 args = parser.parse_args()
 
@@ -97,6 +99,8 @@ except:
                 'DS:instantaneous-size:GAUGE:{0}:0:U'.format(shortPeriodSeconds),
                 # Data source for effective size estimate; greater than zero.
                 'DS:effective-size:GAUGE:{0}:0:U'.format(shortPeriodSeconds),
+                # Data source for usable store capacity estimate. Size in bytes, so RRDTool can use prefixes. Greater than zero.
+                'DS:store-capacity:GAUGE:{0}:0:U'.format(shortPeriodSeconds),
                 # Lossless for a year of instantanious; longer for effective estimate. No unknowns allowed.
                 # (60 * 60 * 24 * 365 = 31536000 seconds per year)
                 'RRA:AVERAGE:0:1:{0}'.format(int(31536000/shortPeriodSeconds)),
@@ -245,9 +249,28 @@ while latestIdentifier > toTime:
     print("{0}: {1} instantaneous samples | {2} distinct instantaneous samples | {3} estimated instantaneous size"
            .format(toTime, instantaneousSamples, distinctInstantaneousSamples, instantaneousSize))
 
+    # Past week of datastore sizes.
+    sizeResult = db.execute("""
+    select
+      sum("GiB"), count("GiB")
+    from
+      "store_size"
+    where
+      "time" >= datetime('{0}') and
+      "time" <  datetime('{1}')
+    """.format(fromTimeEffective, toTime)).fetchone()
+
+    storeCapacity = float('nan')
+    if sizeResult[1] != 0:
+        meanDatastoreSize = sizeResult[0] / sizeResult[1]
+        # Half of datastore is store; blocks are doubled for FEC, then each
+        # stored ~3 times for redundancy. 1073741824 bytes per GiB, 1/12 of
+        # datastore size is store capacity.
+        storeCapacity = meanDatastoreSize * effectiveSize * 1073741824 / 12
+
     rrdtool.update( args.rrd,
-            '-t', 'instantaneous-size:effective-size',
-                    '{0}:{1}:{2}'.format(toPosix(toTime), instantaneousSize, effectiveSize))
+            '-t', 'instantaneous-size:effective-size:store-capacity',
+            '{0}:{1}:{2}:{3}'.format(toPosix(toTime), instantaneousSize, effectiveSize, storeCapacity))
 
     fromTime = toTime
     toTime = fromTime + shortPeriod
@@ -267,6 +290,18 @@ rrdtool.graph(  args.sizeGraph,
                 'LINE2:instantaneous-size#FF0000:Hourly Instantaneous',
                 'LINE2:effective-size#0000FF:Weekly Effective',
                 '-v', 'Size Estimate',
+                '--right-axis', '1:0',
+                '--full-size-mode',
+                '--width', '1200',
+                '--height', '300'
+             )
+
+rrdtool.graph(  args.storeGraph,
+                '--start', str(start),
+                '--end', str(end),
+                'DEF:store-capacity={0}:store-capacity:AVERAGE:step={1}'.format(args.rrd, int(totalSeconds(shortPeriod))),
+                'AREA:store-capacity#0000FF',
+                '-v', 'Store Capacity',
                 '--right-axis', '1:0',
                 '--full-size-mode',
                 '--width', '1200',
