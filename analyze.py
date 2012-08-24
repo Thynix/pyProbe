@@ -19,7 +19,7 @@ parser.add_argument('-q', dest='quiet', default=False, action='store_true',\
                     help='Do not print status updates.')
 parser.add_argument('--round-robin', dest='rrd', default='network-size.rrd',
                     help='Path to round robin database file.')
-parser.add_argument('--size-graph', dest='sizeGraph', default='network-size.png',
+parser.add_argument('--size-graph', dest='sizeGraph', default='plot_network_size.png',
                     help='Path to the network size graph.')
 parser.add_argument('--store-graph', dest='storeGraph', default='plot_store_capacity.png',
                     help='Path to the store capacity graph.')
