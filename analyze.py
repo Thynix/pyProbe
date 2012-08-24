@@ -168,13 +168,14 @@ while latestIdentifier > toTime:
     # Start of previous effective size estimate period.
     fromTimeEffectivePrevious = toTime - 2*longPeriod
 
+    # Intersect removes duplicates.
     distinctEffectiveSamples = db.execute("""
     select
       count ("identifier")
     from
       (
         select
-          distinct "identifier"
+          "identifier"
         from
           "identifier"
         where
@@ -182,7 +183,7 @@ while latestIdentifier > toTime:
           "time" <  datetime('{1}')
       intersect
         select
-          distinct "identifier"
+          "identifier"
         from
           "identifier"
         where
