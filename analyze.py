@@ -221,8 +221,24 @@ while latestIdentifier > toTime:
 
     # TODO: Add / remove / ignore refusals to provide error bars? More than that needs to be error bars though.
     # TODO: Take into account refuals for error bars.
-    distinctInstantaneousSamples = db.execute("""select count(distinct "identifier") from "identifier" where "time" >= datetime('{0}') and "time" < datetime('{1}')""".format(fromTime, toTime)).fetchone()[0]
-    instantaneousSamples = db.execute("""select count("identifier") from "identifier" where "time" >= datetime('{0}') and "time" < datetime('{1}')""".format(fromTime, toTime)).fetchone()[0]
+    distinctInstantaneousSamples = db.execute("""
+    select
+      count(distinct "identifier")
+    from
+      "identifier"
+    where
+      "time" >= datetime('{0}') and
+      "time" <  datetime('{1}')
+    """.format(fromTime, toTime)).fetchone()[0]
+    instantaneousSamples = db.execute("""
+    select
+      count("identifier")
+    from
+      "identifier"
+    where
+      "time" >= datetime('{0}') and
+      "time" <  datetime('{1}')
+    """.format(fromTime, toTime)).fetchone()[0]
 
     instantaneousSize = binarySearch(distinctInstantaneousSamples, instantaneousSamples)
     print("{0}: {1} instantaneous samples | {2} distinct instantaneous samples | {3} estimated instantaneous size"
