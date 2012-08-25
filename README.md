@@ -7,13 +7,14 @@ pyProbe is a collection of data gathering and analysis tools for [Freenet](https
 * [Python 2.6 or higher](http://www.python.org/download/releases/2.7.3/)
 * [pysqlite](http://code.google.com/p/pysqlite/)
 * [Freenet](https://freenetproject.org/)
-* [gnuplot](http://www.gnuplot.info/) (for analyze.py plots)
+* [gnuplot](http://www.gnuplot.info/) (for extra analyze.py plots)
+* [rrdtool] (http://oss.oetiker.ch/rrdtool/download.en.html) (rrdpython)
 * [Twisted](https://twistedmatrix.com/trac/)
 * [twistedfcp](https://github.com/AnIrishDuck/twistedfcp)
 
 ## Installation
 
-Freenet, Python, gnuplot, and Twisted all have installation instructions on their respective sites.
+Freenet, Python, gnuplot, rrdtool, and Twisted all have installation instructions on their respective sites.
 
 However, as of this writing, the FCP field names in the current official build of Freenet [differ](https://github.com/freenet/fred-official/blob/build01410/src/freenet/node/fcp/FCPMessage.java#L22) from what was intended. This means all probes will run at `MAX_HTL` instead of the configured value, resulting in the vast majority of responses being errors due to the unworkably high HTL. To work around this, change `probe.py` line 39 to read `HTL="HTL"`.
 
