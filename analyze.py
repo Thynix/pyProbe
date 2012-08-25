@@ -31,7 +31,7 @@ def log(msg):
         print("{0}: {1}".format(datetime.datetime.now(), msg))
 
 recent = datetime.datetime.utcnow() - datetime.timedelta(hours=args.recentHours)
-print("Recency boundary is {0}.".format(recent))
+log("Recency boundary is {0}.".format(recent))
 
 log("Connecting to database.")
 db = sqlite3.connect(args.databaseFile)
@@ -221,7 +221,7 @@ while latestIdentifier > toTime:
 
     effectiveSize = binarySearch(distinctEffectiveSamples, effectiveSamples)
 
-    print("{0}: {1} effective samples | {2} distinct effective samples | {3} estimated effective size"
+    log("{0}: {1} effective samples | {2} distinct effective samples | {3} estimated effective size"
            .format(toTime, effectiveSamples, distinctEffectiveSamples, effectiveSize))
 
     # TODO: Add / remove / ignore refusals to provide error bars? More than that needs to be error bars though.
@@ -246,7 +246,7 @@ while latestIdentifier > toTime:
     """.format(fromTime, toTime)).fetchone()[0]
 
     instantaneousSize = binarySearch(distinctInstantaneousSamples, instantaneousSamples)
-    print("{0}: {1} instantaneous samples | {2} distinct instantaneous samples | {3} estimated instantaneous size"
+    log("{0}: {1} instantaneous samples | {2} distinct instantaneous samples | {3} estimated instantaneous size"
            .format(toTime, instantaneousSamples, distinctInstantaneousSamples, instantaneousSize))
 
     # Past week of datastore sizes.
