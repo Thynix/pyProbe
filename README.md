@@ -5,6 +5,7 @@ pyProbe is a collection of data gathering and analysis tools for [Freenet](https
 ## Requirements
 
 * [Python 2.6 or higher](http://www.python.org/download/releases/2.7.3/)
+    * [argparse]() (if using Python earlier than 2.7)
 * [pysqlite](http://code.google.com/p/pysqlite/)
 * [Freenet](https://freenetproject.org/)
 * [gnuplot](http://www.gnuplot.info/) (for extra analyze.py plots)
@@ -21,6 +22,10 @@ However, as of this writing, the FCP field names in the current official build o
 ### pysqlite
 
 * Available on the [Python Package Index](http://pypi.python.org/pypi/pip): `# pip install pysqlite`
+
+### argparse
+
+* argparse was added to Python in version 2.7. It is available for older versions on the package index: `# pip install argparse`
 
 ### twistedfcp
 
