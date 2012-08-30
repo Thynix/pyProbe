@@ -7,6 +7,13 @@ import rrdtool
 import calendar
 import math
 import time
+from ConfigParser import SafeConfigParser
+from twistedfcp.protocol import FreenetClientProtocol, Message
+from twistedfcp import message
+from twisted.internet import reactor, protocol
+import sys
+from string import split
+import os
 
 parser = argparse.ArgumentParser(description="Analyze probe results for estimates of peer distribution and network interconnectedness; generate plots.")
 parser.add_argument('-d', dest="databaseFile", default="database.sql",\
@@ -23,6 +30,9 @@ parser.add_argument('--size-graph', dest='sizeGraph', default='plot_network_size
                     help='Path to the network size graph.')
 parser.add_argument('--store-graph', dest='storeGraph', default='plot_store_capacity.png',
                     help='Path to the store capacity graph.')
+parser.add_argument('--upload-config', dest='uploadConfig', default=None,
+                    help='Path to the upload configuration file. See upload.conf_sample. If not specified skips uploading.')
+
 
 args = parser.parse_args()
 
@@ -358,3 +368,98 @@ call(["gnuplot","link_length.gnu"])
 
 log("Closing database.")
 db.close()
+
+if args.uploadConfig is None:
+    # Upload config not specified; no further operations needed.
+    sys.exit(0)
+
+
+config = SafeConfigParser()
+config.read(args.uploadConfig)
+defaults = config.defaults()
+
+privkey = defaults['privkey']
+path = defaults['path']
+files = split(defaults['insertfiles'], ';')
+host = defaults['host']
+port = int(defaults['port'])
+today = datetime.date.today()
+scriptPath = os.path.dirname(os.path.realpath(__file__))
+
+class InsertFCPFactory(protocol.ClientFactory):
+    """
+    Upon connection, inserts the requested statistics site, then disconnects
+    and ends the program.
+    """
+    protocol = FreenetClientProtocol
+
+    def __init__(self):
+        self.fields = [
+                    ('URI', '{0}/{1}/0/'.format(privkey, path)),
+                    ('Identifier', 'Statistics Page Insert {0}'.format(today)),
+                    ('MaxRetries', '-1'),
+                    ('Global', 'true'),
+                    ('Persistence', 'forever'),
+                    ('DefaultName', 'index.html')
+                 ]
+
+        fileNum = 0
+        for filename in files:
+            base = 'Files.{0}'.format(fileNum)
+            fileNum += 1
+
+            def attr(field):
+                return '{0}.{1}'.format(base, field)
+
+            self.fields.append((attr('Name'), filename))
+            self.fields.append((attr('UploadFrom'), 'disk'))
+            self.fields.append((attr('Filename'), '{0}/{1}'.format(scriptPath, filename)))
+
+    def Done(self, message):
+        print message.name, message.args
+        self.proto.sendMessage(Message('Disconnect', []))
+
+    def ProtocolError(self, message):
+        print 'Permissions error in insert!'
+        print 'Does "Core Settings" > "Directories uploading is allowed from" include all used directories?'
+        self.Done(message)
+
+    def clientConnectionLost(self, connection, reason):
+        """
+        Disconnection complete.
+        """
+        print "Disconnected."
+        reactor.stop()
+
+    def IdentifierCollision(self, message):
+        print 'Error in insert!'
+        print 'The previous upload was done the same day as the last.'
+        print 'Please remove the upload from the queue.'
+        self.Done(message)
+
+    def PutFetchable(self, message):
+        print "Insert successful."
+        self.Done(message)
+
+    def Insert(self, message):
+        # TODO: Run custom Fred build which prints names of messages as they are received - is the disconnect beind receivied first? Why would disconnecting without a delay lead to the upload not being queued?
+        self.proto.sendMessage(Message('ClientPutComplexDir', self.fields))
+        # TODO: What other messages can be used? Perhaps have a do_session() for a timeout?
+        self.proto.sendMessage(Message('Disconnect', []))
+
+    def buildProtocol(self, addr):
+        proto = FreenetClientProtocol()
+        proto.factory = self
+        self.proto = proto
+
+        proto.deferred['NodeHello'].addCallback(self.Insert)
+        proto.deferred['PutFetchable'].addCallback(self.PutFetchable)
+
+        proto.deferred['ProtocolError'].addCallback(self.ProtocolError)
+        proto.deferred['IdentifierCollision'].addCallback(self.IdentifierCollision)
+
+        return proto
+
+reactor.connectTCP(host, port, InsertFCPFactory())
+reactor.run()
+

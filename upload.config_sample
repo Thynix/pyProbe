@@ -1,0 +1,17 @@
+[DEFAULT]
+# Private key to use.
+privKey=USK@...,AQECAAE
+
+# Path to insert under the key.
+path=statistics
+
+# Semicolon-separated list of paths to files to insert, relative to the
+# analyze script location.
+insertFiles=index.html;plot_network_size.png;plot_store_capacity.png;size.rrd
+
+# FCP Host.
+host=127.0.0.1
+
+# FCP Port.
+port=9481
+
