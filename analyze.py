@@ -403,6 +403,7 @@ if args.markdownFiles is not None:
                                   output=markdownFile + '.html',
                                   extensions=['generateddate'],
                                   encoding='utf8',
+                                  output_format='html',
                                   # Not using user-supplied content; want image tags with size.
                                   safe=False)
 
