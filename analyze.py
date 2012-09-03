@@ -19,6 +19,8 @@ import re
 import logging
 
 parser = argparse.ArgumentParser(description="Analyze probe results for estimates of peer distribution and network interconnectedness; generate plots.")
+
+# Options.
 parser.add_argument('-d', dest="databaseFile", default="database.sql",\
                     help="Path to database file. Default \"database.sql\"")
 parser.add_argument('-T', '--recentHours', dest="recentHours", default=168, type=int,\
@@ -33,11 +35,20 @@ parser.add_argument('--size-graph', dest='sizeGraph', default='plot_network_size
                     help='Path to the network size graph.')
 parser.add_argument('--store-graph', dest='storeGraph', default='plot_store_capacity.png',
                     help='Path to the store capacity graph.')
-parser.add_argument('--upload-config', dest='uploadConfig', default=None,
-                    help='Path to the upload configuration file. See upload.conf_sample. If not specified skips uploading.')
+
+# Which segments of analysis to run.
+parser.add_argument('--upload', dest='uploadConfig', default=None,
+                    help='Path to the upload configuration file. See upload.conf_sample. No uploading is attempted if this is not specified.')
 parser.add_argument('--markdown', dest='markdownFiles', default=None,
                     help='Comma-separated list of markdown files to parse. Output filenames are the input filename appended with ".html".')
-
+parser.add_argument('--rrd', dest='runRRD', default=False, action='store_true',
+                    help='If specified updates and renders the RRDTool plots.')
+parser.add_argument('--location', dest='runLocation', default=False, action='store_true',
+                    help='If specified plots location distribution over the last recency period.')
+parser.add_argument('--peer-count', dest='runPeerCount', default=False, action='store_true',
+                    help='If specified plots peer count distribution over the last recency period.')
+parser.add_argument('--link-lengths', dest='runLinkLengths', default=False, action='store_true',
+                    help='If specified plots link length distribution over the last recency period.')
 
 args = parser.parse_args()
 
@@ -127,257 +138,262 @@ except:
                 'RRA:AVERAGE:0:{0}:1825'.format(int(86400/shortPeriodSeconds))
               )
 
-#
-# Start computation where the stored values left off, if any.
-# If the database is new rrdtool last returns the database start time.
-#
-last = rrdtool.last(args.rrd)
-fromTime = datetime.datetime.utcfromtimestamp(int(last))
-toTime = fromTime + shortPeriod
-log("Resuming network size computation for {0}.".format(toTime))
-
-
-def formula(samples, networkSize):
-    return networkSize * (1 - math.e**(-samples/networkSize))
-
-def binarySearch(distinctSamples, samples):
-    if math.fabs(samples - distinctSamples) < 3:
-        """Not enough information to make an estimate."""
-        return float('NaN')
-    # Upper and lower are network size guesses.
-    lower = distinctSamples
-    upper = distinctSamples * 2
-
-    #log("Starting: distinct {0}, samples {1}, lower {2}, upper {3}".format(distinctSamples, samples, lower, upper))
-
-    # Find an upper bound - multiply by two until too large.
-    while formula(samples, upper) < distinctSamples:
-        upper *= 2
-
-    while True:
-        #log("lower {0}, upper {1}".format(lower, upper))
-        # Got as close as possible. Lower can be greater than upper with certain
-        # values of mid.
-        if lower >= upper:
-            return lower
-
-        mid = int((upper - lower) / 2) + lower
-        current = formula(samples, mid)
-
-        if current < distinctSamples:
-            lower = mid + 1
-            continue
-        elif current > distinctSamples:
-            upper = mid - 1
-            continue
-        else:
-            # current == distinctSamples:
-            return mid
-
-log("Computing network size estimates. In-progress segement is {0}. ({1})".format(latestIdentifier, toPosix(latestIdentifier)))
-
-#
-# latestIdentifier can be up to the start time.
-# Perform binary search for network size in:
-# (distinct samples) = (network size) * (1 - e^(-1 * (samples)/(network size)))
-# ----Effective size estimate:
-# Identifiers that appear in the current long time period in the past, as well as
-# the period of the same length farther back.
-# ----Instantaneous size estimate:
-# Identifiers that appear in the current short time period in the past.
-while latestIdentifier > toTime:
-
-    # Start of current effective size estimate period.
-    fromTimeEffective = toTime - longPeriod
-    # Start of previous effective size estimate period.
-    fromTimeEffectivePrevious = toTime - 2*longPeriod
-
-    # Intersect removes duplicates.
-    distinctEffectiveSamples = db.execute("""
-    select
-      count ("identifier")
-    from
-      (
-        select
-          "identifier"
-        from
-          "identifier"
-        where
-          "time" >= datetime('{0}') and
-          "time" <  datetime('{1}')
-      intersect
-        select
-          "identifier"
-        from
-          "identifier"
-        where
-          "time" >= datetime('{1}') and
-          "time" <  datetime('{2}')
-      );
-    """.format(fromTimeEffectivePrevious, fromTimeEffective, toTime)).fetchone()[0]
-
-    effectiveSamples = db.execute("""
-    select
-      count("identifier")
-    from
-      (
-        select
-          "identifier" as "previous_identifier"
-        from
-          "identifier"
-        where
-          "time" >= datetime('{0}') and
-          "time" <  datetime('{1}')
-      )
-    join
-      "identifier"
-        on
-        "previous_identifier" == "identifier"
-      where
-        "time" >= datetime('{1}') and
-        "time" <  datetime('{2}')
-    ;
-    """.format(fromTimeEffectivePrevious, fromTimeEffective, toTime)).fetchone()[0]
-
-    effectiveSize = binarySearch(distinctEffectiveSamples, effectiveSamples)
-
-    log("{0}: {1} effective samples | {2} distinct effective samples | {3} estimated effective size"
-           .format(toTime, effectiveSamples, distinctEffectiveSamples, effectiveSize))
-
-    # TODO: Add / remove / ignore refusals to provide error bars? More than that needs to be error bars though.
-    # TODO: Take into account refuals for error bars.
-    distinctInstantaneousSamples = db.execute("""
-    select
-      count(distinct "identifier")
-    from
-      "identifier"
-    where
-      "time" >= datetime('{0}') and
-      "time" <  datetime('{1}')
-    """.format(fromTime, toTime)).fetchone()[0]
-    instantaneousSamples = db.execute("""
-    select
-      count("identifier")
-    from
-      "identifier"
-    where
-      "time" >= datetime('{0}') and
-      "time" <  datetime('{1}')
-    """.format(fromTime, toTime)).fetchone()[0]
-
-    instantaneousSize = binarySearch(distinctInstantaneousSamples, instantaneousSamples)
-    log("{0}: {1} instantaneous samples | {2} distinct instantaneous samples | {3} estimated instantaneous size"
-           .format(toTime, instantaneousSamples, distinctInstantaneousSamples, instantaneousSize))
-
-    # Past week of datastore sizes.
-    sizeResult = db.execute("""
-    select
-      sum("GiB"), count("GiB")
-    from
-      "store_size"
-    where
-      "time" >= datetime('{0}') and
-      "time" <  datetime('{1}')
-    """.format(fromTimeEffective, toTime)).fetchone()
-
-    storeCapacity = float('nan')
-    if sizeResult[1] != 0:
-        meanDatastoreSize = sizeResult[0] / sizeResult[1]
-        # Half of datastore is store; blocks are doubled for FEC, then each
-        # stored ~3 times for redundancy. 1073741824 bytes per GiB, 1/12 of
-        # datastore size is store capacity.
-        storeCapacity = meanDatastoreSize * effectiveSize * 1073741824 / 12
-
-    rrdtool.update( args.rrd,
-            '-t', 'instantaneous-size:effective-size:store-capacity',
-            '{0}:{1}:{2}:{3}'.format(toPosix(toTime), instantaneousSize, effectiveSize, storeCapacity))
-
-    fromTime = toTime
+if args.runRRD:
+    #
+    # Start computation where the stored values left off, if any.
+    # If the database is new rrdtool last returns the database start time.
+    #
+    last = rrdtool.last(args.rrd)
+    fromTime = datetime.datetime.utcfromtimestamp(int(last))
     toTime = fromTime + shortPeriod
+    log("Resuming network size computation for {0}.".format(toTime))
 
-# Graph all available information with a 2-pixel red line.
-# TODO: RRD isn't starting when intended - querying the database like so
-#       will mean that the database will have to maintain the time of the first
-#       sample, which is not desirable.
-#
-firstResult = toPosix(timestamp(db.execute(""" select min("time") from "identifier" """).fetchone()[0]))
-lastResult = rrdtool.last(args.rrd)
-rrdtool.graph(  args.sizeGraph,
-                '--start', str(firstResult),
-                '--end', str(lastResult),
-                'DEF:instantaneous-size={0}:instantaneous-size:AVERAGE:step={1}'.format(args.rrd, int(totalSeconds(shortPeriod))),
-                'DEF:effective-size={0}:effective-size:AVERAGE:step={1}'.format(args.rrd, int(totalSeconds(shortPeriod))),
-                'LINE2:instantaneous-size#FF0000:Hourly Instantaneous',
-                'LINE2:effective-size#0000FF:Weekly Effective',
-                '-v', 'Size Estimate',
-                '--right-axis', '1:0',
-                '--full-size-mode',
-                '--width', '900',
-                '--height', '300'
-             )
 
-rrdtool.graph(  args.storeGraph,
-                '--start', str(firstResult),
-                '--end', str(lastResult),
-                'DEF:store-capacity={0}:store-capacity:AVERAGE:step={1}'.format(args.rrd, int(totalSeconds(shortPeriod))),
-                'AREA:store-capacity#0000FF',
-                '-v', 'Store Capacity',
-                '--right-axis', '1:0',
-                '--full-size-mode',
-                '--width', '900',
-                '--height', '300'
-             )
+    def formula(samples, networkSize):
+        return networkSize * (1 - math.e**(-samples/networkSize))
 
-log("Querying database for locations.")
-locations = db.execute("""select distinct "location" from "location" where "time" > datetime('{0}') and "time" < datetime('{1}')""".format(recent, startTime)).fetchall()
+    def binarySearch(distinctSamples, samples):
+        if math.fabs(samples - distinctSamples) < 3:
+            """Not enough information to make an estimate."""
+            return float('NaN')
+        # Upper and lower are network size guesses.
+        lower = distinctSamples
+        upper = distinctSamples * 2
 
-log("Writing results.")
-with open("locations_output", "w") as output:
-    for location in locations:
-        output.write("{0} {1}\n".format(location[0], 1/len(locations)))
+        #log("Starting: distinct {0}, samples {1}, lower {2}, upper {3}".format(distinctSamples, samples, lower, upper))
 
-log("Plotting.")
-call(["gnuplot","location_dist.gnu"])
+        # Find an upper bound - multiply by two until too large.
+        while formula(samples, upper) < distinctSamples:
+            upper *= 2
 
-log("Querying database for peer distribution histogram.")
-rawPeerCounts = db.execute("""select peers, count("peers") from "peer_count" where "time" > datetime('{0}') and "time" < datetime('{1}') group by "peers" order by "peers" """.format(recent, startTime)).fetchall()
+        while True:
+            #log("lower {0}, upper {1}".format(lower, upper))
+            # Got as close as possible. Lower can be greater than upper with certain
+            # values of mid.
+            if lower >= upper:
+                return lower
 
-peerCounts = [ 0, ] * (args.histogramMax + 1)
+            mid = int((upper - lower) / 2) + lower
+            current = formula(samples, mid)
 
-#Database does not return empty entries for unseen peer counts, so fill them in.
-for count in rawPeerCounts:
-    if count[0] < len(peerCounts):
-        peerCounts[count[0]] = count[1]
-    else:
-        peerCounts[len(peerCounts) - 1] = count[1]
+            if current < distinctSamples:
+                lower = mid + 1
+                continue
+            elif current > distinctSamples:
+                upper = mid - 1
+                continue
+            else:
+                # current == distinctSamples:
+                return mid
 
-log("Writing results.")
-with open("peerDist.dat", 'w') as output:
-        totalNodes = sum(peerCounts)
-        numberOfPeers = 0
-        for nodes in peerCounts:
-                output.write("{0} {1}\n".format(numberOfPeers, nodes/totalNodes))
-                numberOfPeers += 1
+    log("Computing network size estimates. In-progress segement is {0}. ({1})".format(latestIdentifier, toPosix(latestIdentifier)))
 
-log("Plotting.")
-call(["gnuplot","peer_dist.gnu"])
+    #
+    # latestIdentifier can be up to the start time.
+    # Perform binary search for network size in:
+    # (distinct samples) = (network size) * (1 - e^(-1 * (samples)/(network size)))
+    # ----Effective size estimate:
+    # Identifiers that appear in the current long time period in the past, as well as
+    # the period of the same length farther back.
+    # ----Instantaneous size estimate:
+    # Identifiers that appear in the current short time period in the past.
+    while latestIdentifier > toTime:
 
-log("Querying database for link lengths.")
-links = db.execute("""select "length" from "link_lengths" where "time" > datetime('{0}') and "time" < datetime('{1}')""".format(recent, startTime)).fetchall()
+        # Start of current effective size estimate period.
+        fromTimeEffective = toTime - longPeriod
+        # Start of previous effective size estimate period.
+        fromTimeEffectivePrevious = toTime - 2*longPeriod
 
-log("Writing results.")
-with open('links_output', "w") as linkFile:
-    #GNUPlot cumulative adds y values, should add to 1.0 in total.
-    # Lambda: get result out of singleton list so it can be sorted as a number.
-    for link in sorted(map(lambda link: link[0], links)):
-        linkFile.write("{0} {1}\n".format(link, 1.0/len(links)))
+        # Intersect removes duplicates.
+        distinctEffectiveSamples = db.execute("""
+        select
+          count ("identifier")
+        from
+          (
+            select
+              "identifier"
+            from
+              "identifier"
+            where
+              "time" >= datetime('{0}') and
+              "time" <  datetime('{1}')
+          intersect
+            select
+              "identifier"
+            from
+              "identifier"
+            where
+              "time" >= datetime('{1}') and
+              "time" <  datetime('{2}')
+          );
+        """.format(fromTimeEffectivePrevious, fromTimeEffective, toTime)).fetchone()[0]
 
-log("Plotting.")
-call(["gnuplot","link_length.gnu"])
+        effectiveSamples = db.execute("""
+        select
+          count("identifier")
+        from
+          (
+            select
+              "identifier" as "previous_identifier"
+            from
+              "identifier"
+            where
+              "time" >= datetime('{0}') and
+              "time" <  datetime('{1}')
+          )
+        join
+          "identifier"
+            on
+            "previous_identifier" == "identifier"
+          where
+            "time" >= datetime('{1}') and
+            "time" <  datetime('{2}')
+        ;
+        """.format(fromTimeEffectivePrevious, fromTimeEffective, toTime)).fetchone()[0]
+
+        effectiveSize = binarySearch(distinctEffectiveSamples, effectiveSamples)
+
+        log("{0}: {1} effective samples | {2} distinct effective samples | {3} estimated effective size"
+               .format(toTime, effectiveSamples, distinctEffectiveSamples, effectiveSize))
+
+        # TODO: Add / remove / ignore refusals to provide error bars? More than that needs to be error bars though.
+        # TODO: Take into account refuals for error bars.
+        distinctInstantaneousSamples = db.execute("""
+        select
+          count(distinct "identifier")
+        from
+          "identifier"
+        where
+          "time" >= datetime('{0}') and
+          "time" <  datetime('{1}')
+        """.format(fromTime, toTime)).fetchone()[0]
+        instantaneousSamples = db.execute("""
+        select
+          count("identifier")
+        from
+          "identifier"
+        where
+          "time" >= datetime('{0}') and
+          "time" <  datetime('{1}')
+        """.format(fromTime, toTime)).fetchone()[0]
+
+        instantaneousSize = binarySearch(distinctInstantaneousSamples, instantaneousSamples)
+        log("{0}: {1} instantaneous samples | {2} distinct instantaneous samples | {3} estimated instantaneous size"
+               .format(toTime, instantaneousSamples, distinctInstantaneousSamples, instantaneousSize))
+
+        # Past week of datastore sizes.
+        sizeResult = db.execute("""
+        select
+          sum("GiB"), count("GiB")
+        from
+          "store_size"
+        where
+          "time" >= datetime('{0}') and
+          "time" <  datetime('{1}')
+        """.format(fromTimeEffective, toTime)).fetchone()
+
+        storeCapacity = float('nan')
+        if sizeResult[1] != 0:
+            meanDatastoreSize = sizeResult[0] / sizeResult[1]
+            # Half of datastore is store; blocks are doubled for FEC, then each
+            # stored ~3 times for redundancy. 1073741824 bytes per GiB, 1/12 of
+            # datastore size is store capacity.
+            storeCapacity = meanDatastoreSize * effectiveSize * 1073741824 / 12
+
+        rrdtool.update( args.rrd,
+                '-t', 'instantaneous-size:effective-size:store-capacity',
+                '{0}:{1}:{2}:{3}'.format(toPosix(toTime), instantaneousSize, effectiveSize, storeCapacity))
+
+        fromTime = toTime
+        toTime = fromTime + shortPeriod
+
+    # Graph all available information with a 2-pixel red line.
+    # TODO: RRD isn't starting when intended - querying the database like so
+    #       will mean that the database will have to maintain the time of the first
+    #       sample, which is not desirable.
+    #
+    firstResult = toPosix(timestamp(db.execute(""" select min("time") from "identifier" """).fetchone()[0]))
+    lastResult = rrdtool.last(args.rrd)
+    rrdtool.graph(  args.sizeGraph,
+                    '--start', str(firstResult),
+                    '--end', str(lastResult),
+                    'DEF:instantaneous-size={0}:instantaneous-size:AVERAGE:step={1}'.format(args.rrd, int(totalSeconds(shortPeriod))),
+                    'DEF:effective-size={0}:effective-size:AVERAGE:step={1}'.format(args.rrd, int(totalSeconds(shortPeriod))),
+                    'LINE2:instantaneous-size#FF0000:Hourly Instantaneous',
+                    'LINE2:effective-size#0000FF:Weekly Effective',
+                    '-v', 'Size Estimate',
+                    '--right-axis', '1:0',
+                    '--full-size-mode',
+                    '--width', '900',
+                    '--height', '300'
+                 )
+
+    rrdtool.graph(  args.storeGraph,
+                    '--start', str(firstResult),
+                    '--end', str(lastResult),
+                    'DEF:store-capacity={0}:store-capacity:AVERAGE:step={1}'.format(args.rrd, int(totalSeconds(shortPeriod))),
+                    'AREA:store-capacity#0000FF',
+                    '-v', 'Store Capacity',
+                    '--right-axis', '1:0',
+                    '--full-size-mode',
+                    '--width', '900',
+                    '--height', '300'
+                 )
+
+if args.runLocation:
+    log("Querying database for locations.")
+    locations = db.execute("""select distinct "location" from "location" where "time" > datetime('{0}') and "time" < datetime('{1}')""".format(recent, startTime)).fetchall()
+
+    log("Writing results.")
+    with open("locations_output", "w") as output:
+        for location in locations:
+            output.write("{0} {1}\n".format(location[0], 1/len(locations)))
+
+    log("Plotting.")
+    call(["gnuplot","location_dist.gnu"])
+
+if args.runPeerCount:
+    log("Querying database for peer distribution histogram.")
+    rawPeerCounts = db.execute("""select peers, count("peers") from "peer_count" where "time" > datetime('{0}') and "time" < datetime('{1}') group by "peers" order by "peers" """.format(recent, startTime)).fetchall()
+
+    peerCounts = [ 0, ] * (args.histogramMax + 1)
+
+    #Database does not return empty entries for unseen peer counts, so fill them in.
+    for count in rawPeerCounts:
+        if count[0] < len(peerCounts):
+            peerCounts[count[0]] = count[1]
+        else:
+            peerCounts[len(peerCounts) - 1] = count[1]
+
+    log("Writing results.")
+    with open("peerDist.dat", 'w') as output:
+            totalNodes = sum(peerCounts)
+            numberOfPeers = 0
+            for nodes in peerCounts:
+                    output.write("{0} {1}\n".format(numberOfPeers, nodes/totalNodes))
+                    numberOfPeers += 1
+
+    log("Plotting.")
+    call(["gnuplot","peer_dist.gnu"])
+
+if args.runLinkLengths:
+    log("Querying database for link lengths.")
+    links = db.execute("""select "length" from "link_lengths" where "time" > datetime('{0}') and "time" < datetime('{1}')""".format(recent, startTime)).fetchall()
+
+    log("Writing results.")
+    with open('links_output', "w") as linkFile:
+        #GNUPlot cumulative adds y values, should add to 1.0 in total.
+        # Lambda: get result out of singleton list so it can be sorted as a number.
+        for link in sorted(map(lambda link: link[0], links)):
+            linkFile.write("{0} {1}\n".format(link, 1.0/len(links)))
+
+    log("Plotting.")
+    call(["gnuplot","link_length.gnu"])
 
 log("Closing database.")
 db.close()
 
+# TODO: Instead of always appending ".html", replace an extension if it exists, otherwise append.
 if args.markdownFiles is not None:
     # The Markdown module uses Python logging.
     logging.basicConfig(filename="markdown.log")
