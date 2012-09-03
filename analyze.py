@@ -420,7 +420,6 @@ path = defaults['path']
 files = split(defaults['insertfiles'], ';')
 host = defaults['host']
 port = int(defaults['port'])
-today = datetime.date.today()
 scriptPath = os.path.dirname(os.path.realpath(__file__))
 
 class InsertFCPFactory(protocol.ClientFactory):
@@ -433,7 +432,7 @@ class InsertFCPFactory(protocol.ClientFactory):
     def __init__(self):
         self.fields = [
                     ('URI', '{0}/{1}/0/'.format(privkey, path)),
-                    ('Identifier', 'Statistics Page Insert {0}'.format(today)),
+                    ('Identifier', 'Statistics Page Insert {0}'.format(startTime)),
                     ('MaxRetries', '-1'),
                     ('Global', 'true'),
                     ('Persistence', 'forever'),
