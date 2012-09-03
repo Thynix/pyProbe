@@ -14,6 +14,9 @@ from twisted.internet import reactor, protocol
 import sys
 from string import split
 import os
+import markdown
+import re
+import logging
 
 parser = argparse.ArgumentParser(description="Analyze probe results for estimates of peer distribution and network interconnectedness; generate plots.")
 parser.add_argument('-d', dest="databaseFile", default="database.sql",\
@@ -32,6 +35,8 @@ parser.add_argument('--store-graph', dest='storeGraph', default='plot_store_capa
                     help='Path to the store capacity graph.')
 parser.add_argument('--upload-config', dest='uploadConfig', default=None,
                     help='Path to the upload configuration file. See upload.conf_sample. If not specified skips uploading.')
+parser.add_argument('--markdown', dest='markdownFiles', default=None,
+                    help='Comma-separated list of markdown files to parse. Output filenames are the input filename appended with ".html".')
 
 
 args = parser.parse_args()
@@ -368,6 +373,18 @@ call(["gnuplot","link_length.gnu"])
 
 log("Closing database.")
 db.close()
+
+if args.markdownFiles is not None:
+    # The Markdown module uses Python logging.
+    logging.basicConfig(filename="markdown.log")
+
+    for markdownFile in split(args.markdownFiles, ','):
+        markdown.markdownFromFile(input=markdownFile,
+                                  output=markdownFile + '.html',
+                                  extensions=['generateddate'],
+                                  encoding='utf8',
+                                  # Not using user-supplied content; want image tags with size.
+                                  safe=False)
 
 if args.uploadConfig is None:
     # Upload config not specified; no further operations needed.
