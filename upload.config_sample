@@ -7,7 +7,7 @@ path=statistics
 
 # Semicolon-separated list of paths to files to insert, relative to the
 # analyze script location.
-insertFiles=index.html;plot_network_size.png;plot_store_capacity.png;size.rrd
+insertFiles=index.html;plot_network_size.png;plot_store_capacity.png;plot_link_length.png;plot_peer_count.png;size.xml
 
 # FCP Host.
 host=127.0.0.1

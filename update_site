@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# Workaround for Markdown render target filename flexibility
+# and RRDTool Python dump support.
+
+#
+# Settings
+#
+# Used to run analyze script
+analyze="python analyze.py"
+# Path to upload config.
+uploadConfig="upload.config"
+
+#
+# Script
+#
+
+# Change to directory the script is stored in.
+cd $(dirname "$0")
+
+# Update RRD plots and database, peer count, link length, and Markdown render.
+$analyze --rrd --peer-count --link-lengths --markdown index.md || exit 1
+
+# Move index render to index.html.
+mv index.md.html index.html || exit 2
+
+# Dump RRD database to XML.
+# Official Python RRDTool bindings do not expose this.
+rrdtool dump size.rrd size.xml || exit 3
+
+# Insert site, including RRD dump.
+$analyze --upload "$uploadConfig" || exit 4
+
