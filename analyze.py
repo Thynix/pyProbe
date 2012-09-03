@@ -45,7 +45,10 @@ def log(msg):
     if not args.quiet:
         print("{0}: {1}".format(datetime.datetime.now(), msg))
 
-recent = datetime.datetime.utcnow() - datetime.timedelta(hours=args.recentHours)
+# Store the time the script started so that all database queries can cover
+# the same time span by only including up to this point in time.
+startTime = datetime.datetime.utcnow()
+recent = startTime - datetime.timedelta(hours=args.recentHours)
 log("Recency boundary is {0}.".format(recent))
 
 log("Connecting to database.")
@@ -83,7 +86,7 @@ longPeriod = datetime.timedelta(hours=168)
 # Latest stored identifier result. A shortPeriod including this time is
 # incomplete and will not be computed.
 #
-latestIdentifier = timestamp(db.execute("""select max("time") from "identifier" """).fetchone()[0])
+latestIdentifier = timestamp(db.execute("""select max("time") from "identifier" where "time" < datetime('{0}')""".format(startTime)).fetchone()[0])
 
 def toPosix(dt):
     return int(calendar.timegm(dt.utctimetuple()))
@@ -125,7 +128,8 @@ except:
               )
 
 #
-# Start computation where the stored values left off, provided there are any.
+# Start computation where the stored values left off, if any.
+# If the database is new rrdtool last returns the database start time.
 #
 last = rrdtool.last(args.rrd)
 fromTime = datetime.datetime.utcfromtimestamp(int(last))
@@ -173,6 +177,7 @@ def binarySearch(distinctSamples, samples):
 log("Computing network size estimates. In-progress segement is {0}. ({1})".format(latestIdentifier, toPosix(latestIdentifier)))
 
 #
+# latestIdentifier can be up to the start time.
 # Perform binary search for network size in:
 # (distinct samples) = (network size) * (1 - e^(-1 * (samples)/(network size)))
 # ----Effective size estimate:
@@ -324,7 +329,7 @@ rrdtool.graph(  args.storeGraph,
              )
 
 log("Querying database for locations.")
-locations = db.execute("""select distinct "location" from "location" where "time" > datetime('{0}')""".format(recent)).fetchall()
+locations = db.execute("""select distinct "location" from "location" where "time" > datetime('{0}') and "time" < datetime('{1}')""".format(recent, startTime)).fetchall()
 
 log("Writing results.")
 with open("locations_output", "w") as output:
@@ -335,7 +340,7 @@ log("Plotting.")
 call(["gnuplot","location_dist.gnu"])
 
 log("Querying database for peer distribution histogram.")
-rawPeerCounts = db.execute("""select peers, count("peers") from "peer_count" where "time" > datetime('{0}') group by "peers" order by "peers" """.format(recent)).fetchall()
+rawPeerCounts = db.execute("""select peers, count("peers") from "peer_count" where "time" > datetime('{0}') and "time" < datetime('{1}') group by "peers" order by "peers" """.format(recent, startTime)).fetchall()
 
 peerCounts = [ 0, ] * (args.histogramMax + 1)
 
@@ -358,8 +363,7 @@ log("Plotting.")
 call(["gnuplot","peer_dist.gnu"])
 
 log("Querying database for link lengths.")
-#TODO: time-limited period?
-links = db.execute("""select "length" from "link_lengths" where "time" > datetime('{0}')""".format(recent)).fetchall()
+links = db.execute("""select "length" from "link_lengths" where "time" > datetime('{0}') and "time" < datetime('{1}')""".format(recent, startTime)).fetchall()
 
 log("Writing results.")
 with open('links_output', "w") as linkFile:
