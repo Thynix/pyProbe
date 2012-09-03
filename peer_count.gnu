@@ -1,5 +1,5 @@
-set terminal png size 1200,800
-set output "peer_dist.png"
+set terminal png size 900,600
+set output "plot_peer_count.png"
 
 #How to handle xrange? Could mean missing huge changes.
 set xrange [1:50]

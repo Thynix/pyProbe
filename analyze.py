@@ -374,7 +374,7 @@ if args.runPeerCount:
                     numberOfPeers += 1
 
     log("Plotting.")
-    call(["gnuplot","peer_dist.gnu"])
+    call(["gnuplot","peer_count.gnu"])
 
 if args.runLinkLengths:
     log("Querying database for link lengths.")
