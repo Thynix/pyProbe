@@ -475,16 +475,18 @@ class InsertFCPFactory(protocol.ClientFactory):
         self.Done(message)
 
     def PutFetchable(self, message):
-        print "Insert successful."
+        log("Insert successful.")
         self.Done(message)
 
     def Insert(self, message):
         # TODO: Run custom Fred build which prints names of messages as they are received - is the disconnect beind receivied first? Why would disconnecting without a delay lead to the upload not being queued?
+        log("Connected. Sending insert request.")
         self.proto.sendMessage(Message('ClientPutComplexDir', self.fields))
         # TODO: What other messages can be used? Perhaps have a do_session() for a timeout?
         self.proto.sendMessage(Message('Disconnect', []))
 
     def buildProtocol(self, addr):
+        log("Connecting.")
         proto = FreenetClientProtocol()
         proto.factory = self
         self.proto = proto
