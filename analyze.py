@@ -307,7 +307,7 @@ rrdtool.graph(  args.sizeGraph,
                 '-v', 'Size Estimate',
                 '--right-axis', '1:0',
                 '--full-size-mode',
-                '--width', '1200',
+                '--width', '900',
                 '--height', '300'
              )
 
@@ -319,7 +319,7 @@ rrdtool.graph(  args.storeGraph,
                 '-v', 'Store Capacity',
                 '--right-axis', '1:0',
                 '--full-size-mode',
-                '--width', '1200',
+                '--width', '900',
                 '--height', '300'
              )
 
