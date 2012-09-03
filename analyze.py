@@ -437,21 +437,21 @@ class InsertFCPFactory(protocol.ClientFactory):
         self.proto.sendMessage(Message('Disconnect', []))
 
     def ProtocolError(self, message):
-        print 'Permissions error in insert!'
-        print 'Does "Core Settings" > "Directories uploading is allowed from" include all used directories?'
+        sys.stderr.write('Permissions error in insert!')
+        sys.stderr.write('Does "Core Settings" > "Directories uploading is allowed from" include all used directories?')
         self.Done(message)
 
     def clientConnectionLost(self, connection, reason):
         """
         Disconnection complete.
         """
-        print "Disconnected."
+        log("Disconnected.")
         reactor.stop()
 
     def IdentifierCollision(self, message):
-        print 'Error in insert!'
-        print 'The previous upload was done the same day as the last.'
-        print 'Please remove the upload from the queue.'
+        sys.stderr.write('Error in insert!')
+        sys.stderr.write('The previous upload was done the same day as the last.')
+        sys.stderr.write('Please remove the upload from the queue.')
         self.Done(message)
 
     def PutFetchable(self, message):
