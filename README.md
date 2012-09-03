@@ -18,7 +18,7 @@ pyProbe is a collection of data gathering and analysis tools for [Freenet](https
 
 Freenet, Python, gnuplot, rrdtool, Twisted, and Markdown all have installation instructions on their respective sites.
 
-However, as of this writing, the FCP field names in the current official build of Freenet [differ](https://github.com/freenet/fred-official/blob/build01410/src/freenet/node/fcp/FCPMessage.java#L22) from what was intended. This means all probes will run at `MAX_HTL` instead of the configured value, resulting in the vast majority of responses being errors due to the unworkably high HTL. To work around this, change `probe.py` line 39 to read `HTL="HTL"`.
+However, as of this writing, (September 2, 2012) the FCP field names in the current official build of Freenet [differ](https://github.com/freenet/fred-official/blob/build01410/src/freenet/node/fcp/FCPMessage.java#L22) from what was intended. This means all probes will run at `MAX_HTL` instead of the configured value, resulting in the vast majority of responses being errors due to the unworkably high HTL. To work around this, change `probe.py` line 39 to read `HTL="HTL"`.
 
 ### pysqlite
 
