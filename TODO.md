@@ -6,4 +6,7 @@
 
 * Correct terminology errors - the datastore contains the store and the cache.
 
+* Consistently use and specify UTC.
+* Clean up analyze by breaking into functions instead of a serial script. Perhaps a frontend and backend module?
+
 
