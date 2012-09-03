@@ -80,7 +80,7 @@ shortPeriod = datetime.timedelta(hours=1)
 longPeriod = datetime.timedelta(hours=168)
 
 #
-# Latest stored identifier result. A time shortPeriod including this time is
+# Latest stored identifier result. A shortPeriod including this time is
 # incomplete and will not be computed.
 #
 latestIdentifier = timestamp(db.execute("""select max("time") from "identifier" """).fetchone()[0])
