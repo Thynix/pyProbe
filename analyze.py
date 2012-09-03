@@ -295,11 +295,11 @@ while latestIdentifier > toTime:
 #       will mean that the database will have to maintain the time of the first
 #       sample, which is not desirable.
 #
-start = toPosix(timestamp(db.execute(""" select min("time") from "identifier" """).fetchone()[0]))
-end = rrdtool.last(args.rrd)
+firstResult = toPosix(timestamp(db.execute(""" select min("time") from "identifier" """).fetchone()[0]))
+lastResult = rrdtool.last(args.rrd)
 rrdtool.graph(  args.sizeGraph,
-                '--start', str(start),
-                '--end', str(end),
+                '--start', str(firstResult),
+                '--end', str(lastResult),
                 'DEF:instantaneous-size={0}:instantaneous-size:AVERAGE:step={1}'.format(args.rrd, int(totalSeconds(shortPeriod))),
                 'DEF:effective-size={0}:effective-size:AVERAGE:step={1}'.format(args.rrd, int(totalSeconds(shortPeriod))),
                 'LINE2:instantaneous-size#FF0000:Hourly Instantaneous',
@@ -312,8 +312,8 @@ rrdtool.graph(  args.sizeGraph,
              )
 
 rrdtool.graph(  args.storeGraph,
-                '--start', str(start),
-                '--end', str(end),
+                '--start', str(firstResult),
+                '--end', str(lastResult),
                 'DEF:store-capacity={0}:store-capacity:AVERAGE:step={1}'.format(args.rrd, int(totalSeconds(shortPeriod))),
                 'AREA:store-capacity#0000FF',
                 '-v', 'Store Capacity',
