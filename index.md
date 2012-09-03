@@ -1,6 +1,8 @@
 Freenet Statistics
 ==================
 
+<img src="activelink.png" alt="Activelink" width="108" height="36"/>
+
 ## Network Size
 
 <!--- TODO: Past month; week as well --->
