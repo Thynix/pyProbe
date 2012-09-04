@@ -27,7 +27,7 @@ Freenet Statistics
 
 These estimates are based on results gathered with the probes introduced in build 1409.
 
-The network size is estimated by gathering identifier probe results, and comparing the number of distinct identifiers with the total number of samples. Based on the assumption that the results are from nodes selected from the entire network at random, as the probes are desined to do, this allows guessing the size the network would have to be to give that proportion. The instantaneous size estimate does this with an hour of samples, and as such estimates how many nodes are online at that moment.
+The network size is estimated by gathering identifier probe results, and comparing the number of distinct identifiers with the total number of samples. Based on the assumption that the results are from nodes selected from the entire network at random, as the probes are designed to do, this allows guessing the size the network would have to be to give that proportion. The instantaneous size estimate does this with an hour of samples, and as such estimates how many nodes are online at that moment.
 
 Nodes still contribute to the network if they are online regularly - they need not be online all the time. The effective network size attempts to account for this by using the same estimation technique as the instantanious size, but with only those identifiers which were seen both in the past week and the previous week. This is problematic: one cannot depend on a response from a node during a week even if it is online during that week. A more accurate estimate could involve the included uptime percentage.
 
