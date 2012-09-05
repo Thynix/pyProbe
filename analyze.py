@@ -17,6 +17,7 @@ import os
 import markdown
 import re
 import logging
+import codecs
 
 parser = argparse.ArgumentParser(description="Analyze probe results for estimates of peer distribution and network interconnectedness; generate plots.")
 
@@ -394,18 +395,47 @@ log("Closing database.")
 db.close()
 
 # TODO: Instead of always appending ".html", replace an extension if it exists, otherwise append.
+# TODO: Different headers for different pages.
+header = '<title>Freenet Statistics</title>'
 if args.markdownFiles is not None:
     # The Markdown module uses Python logging.
     logging.basicConfig(filename="markdown.log")
 
     for markdownFile in split(args.markdownFiles, ','):
-        markdown.markdownFromFile(input=markdownFile,
-                                  output=markdownFile + '.html',
+        with codecs.open(markdownFile, mode='r', encoding='utf-8') as markdownInput:
+            with codecs.open(markdownFile + '.html', 'w', encoding='utf-8') as markdownOutput:
+
+                # NOTE: If the input file is large this will mean lots of memory usage
+                # when it is all read into memory. Perhaps if it is a problem one could
+                # pass in text which behaves like a string but actually pulls data from
+                # the disk as needed.
+                body = markdown.markdown(markdownInput.read(),
                                   extensions=['generateddate'],
                                   encoding='utf8',
-                                  output_format='html',
+                                  output_format='xhtml1',
                                   # Not using user-supplied content; want image tags with size.
                                   safe=False)
+
+                # Root element and doctype, conforming with XHTML 1.1
+                # Via http://www.w3.org/TR/xhtml11/conformance.html#docconf
+                markdownOutput.write("""<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html version="-//W3C//DTD XHTML 1.1//EN"
+      xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.w3.org/1999/xhtml
+                          http://www.w3.org/MarkUp/SCHEMA/xhtml11.xsd"
+>
+""")
+                # Header
+                markdownOutput.write("<head>" + header + "</head>\n")
+
+                # Content
+                markdownOutput.write("<body>" + body + "</body>")
+
+                # Close
+                markdownOutput.write("</html>")
 
 if args.uploadConfig is None:
     # Upload config not specified; no further operations needed.

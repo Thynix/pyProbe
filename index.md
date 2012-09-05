@@ -5,7 +5,8 @@ Freenet Statistics
 
 ## Network Size
 
-<!--- TODO: Past month; week as well --->
+<!--- TODO: Past month; week as well -->
+<!--- TODO: Vertical lines at configuration changes and build release/mandatory. -->
 
 <img src="plot_network_size.png" alt="Plot of all available network size estimates" title="All available data" width="900" height="300"/>
 
@@ -13,7 +14,7 @@ Freenet Statistics
 
 <img src="plot_store_capacity.png" alt="Plot of all available store capacity data" title="All available data" width="900" height="300"/>
 
-<!--- TODO: Graphs of error; refual occurances. --->
+<!--- TODO: Graphs of error; refual occurances. -->
 
 ## Peer Count
 
@@ -39,7 +40,6 @@ Link length and peer count are from the past 7 days results. All peer counts abo
 
 ### September 3rd, 2012
 
-<!--- TODO: Vertical lines at configuration changes and build release/mandatory. --->
 
 Initial release. This consists of plots of network and usable store size estimates for all available data, and downloads for the RRDs they were generated from.
 
