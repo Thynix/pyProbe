@@ -6,5 +6,5 @@ set title 'Location Distribution'
 set xlabel 'Location'
 set ylabel 'Percent nodes with this location or less'
 
-set output 'location_dist.png'
+set output 'plot_location_dist.png'
 plot [0:1.0] [0:1] 'locations_output' s cumul
