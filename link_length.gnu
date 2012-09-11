@@ -4,7 +4,7 @@ set key off
 set title 'Link Length Distribution'
 
 set xlabel 'Link Length (delta location)'
-set ylabel 'Percent nodes with this length or less'
+set ylabel 'Percent links with this length or less'
 
 set output "plot_link_length.png"
 set logscale x
