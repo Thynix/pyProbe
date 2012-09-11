@@ -386,7 +386,7 @@ if args.runLinkLengths:
         #GNUPlot cumulative adds y values, should add to 1.0 in total.
         # Lambda: get result out of singleton list so it can be sorted as a number.
         for link in sorted(map(lambda link: link[0], links)):
-            linkFile.write("{0} {1}\n".format(link, 1.0/len(links)))
+            linkFile.write("{0} {1:%}\n".format(link, 1.0/len(links)))
 
     log("Plotting.")
     call(["gnuplot","link_length.gnu"])
