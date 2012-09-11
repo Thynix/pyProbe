@@ -371,7 +371,7 @@ if args.runPeerCount:
             totalNodes = sum(peerCounts)
             numberOfPeers = 0
             for nodes in peerCounts:
-                    output.write("{0} {1}\n".format(numberOfPeers, nodes/totalNodes))
+                    output.write("{0} {1:%}\n".format(numberOfPeers, nodes/totalNodes))
                     numberOfPeers += 1
 
     log("Plotting.")
