@@ -5,14 +5,33 @@ Freenet Statistics
 
 ## Network Size
 
-<!--- TODO: Past month; week as well -->
 <!--- TODO: Vertical lines at configuration changes and build release/mandatory. -->
 
-<img src="plot_network_size.png" alt="Plot of all available network size estimates" title="All available data" width="900" height="300"/>
+### Past Week
+
+<a href="week_1200x400_plot_network_size.png"><img src="week_900x300_plot_network_size.png" alt="Plot of the last 7 days of network size estimates" title="Last 7 days" width="900" height="300"/></a>
+
+### Past Month
+
+<a href="month_1200x400_plot_network_size.png"><img src="month_900x300_plot_network_size.png" alt="Plot of the last 30 days of network size estimates" title="Last 30 days" width="900" height="300"/></a>
+
+### All Data
+
+<a href="all_1200x400_plot_network_size.png"><img src="all_900x300_plot_network_size.png" alt="Plot of all available network size estimates" title="All available data" width="900" height="300"/></a>
 
 ## Store Capacity
 
-<img src="plot_store_capacity.png" alt="Plot of all available store capacity data" title="All available data" width="900" height="300"/>
+### Past Week
+
+<a href="week_1200x400_plot_store_capacity.png"><img src="week_900x300_plot_store_capacity.png" alt="Plot of the last 7 days of store capacity data" title="Last 7 days" width="900" height="300"/></a>
+
+### Past Month
+
+<a href="month_1200x400_plot_store_capacity.png"><img src="month_900x300_plot_store_capacity.png" alt="Plot of the last 30 days of store capacity data" title="Last 30 days" width="900" height="300"/></a>
+
+### All Data
+
+<a href="all_1200x400_plot_store_capacity.png"><img src="all_900x300_plot_store_capacity.png" alt="Plot of all available store capacity data" title="All available data" width="900" height="300"/></a>
 
 <!--- TODO: Graphs of error; refual occurances. -->
 
@@ -37,6 +56,10 @@ Datastore size probe results return the approximate amount of disk space a node 
 Link length and peer count are from the past 7 days of results. All peer counts above 50 count towards 50.
 
 ## Changelog
+
+### October 7th, 2012
+
+Add plots of the past week and month of network size and store capacity. Click for a larger version.
 
 ### September 10th, 2012
 

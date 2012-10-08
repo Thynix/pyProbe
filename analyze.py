@@ -315,31 +315,38 @@ if args.runRRD:
     #
     firstResult = toPosix(timestamp(db.execute(""" select min("time") from "identifier" """).fetchone()[0]))
     lastResult = rrdtool.last(args.rrd)
-    rrdtool.graph(  args.sizeGraph,
-                    '--start', str(firstResult),
-                    '--end', str(lastResult),
-                    'DEF:instantaneous-size={0}:instantaneous-size:AVERAGE:step={1}'.format(args.rrd, int(totalSeconds(shortPeriod))),
-                    'DEF:effective-size={0}:effective-size:AVERAGE:step={1}'.format(args.rrd, int(totalSeconds(shortPeriod))),
-                    'LINE2:instantaneous-size#FF0000:Hourly Instantaneous',
-                    'LINE2:effective-size#0000FF:Weekly Effective',
-                    '-v', 'Size Estimate',
-                    '--right-axis', '1:0',
-                    '--full-size-mode',
-                    '--width', '900',
-                    '--height', '300'
-                 )
 
-    rrdtool.graph(  args.storeGraph,
-                    '--start', str(firstResult),
-                    '--end', str(lastResult),
-                    'DEF:store-capacity={0}:store-capacity:AVERAGE:step={1}'.format(args.rrd, int(totalSeconds(shortPeriod))),
-                    'AREA:store-capacity#0000FF',
-                    '-v', 'Store Capacity',
-                    '--right-axis', '1:0',
-                    '--full-size-mode',
-                    '--width', '900',
-                    '--height', '300'
-                 )
+    # Month: 3600 * 24 * 30 = 2592000 seconds
+    # Week: 3600 * 24 * 7 = 604800 seconds
+    # Period name, start.
+    for period in [ ('all', firstResult), ('month', lastResult - 2592000), ('week', lastResult - 604800) ]:
+        # Width, height.
+        for dimension in [ (900, 300), (1200, 400) ]:
+            rrdtool.graph(  '{0}_{1}x{2}_{3}'.format(period[0], dimension[0], dimension[1], args.sizeGraph),
+                            '--start', str(period[1]),
+                            '--end', str(lastResult),
+                            'DEF:instantaneous-size={0}:instantaneous-size:AVERAGE:step={1}'.format(args.rrd, int(totalSeconds(shortPeriod))),
+                            'DEF:effective-size={0}:effective-size:AVERAGE:step={1}'.format(args.rrd, int(totalSeconds(shortPeriod))),
+                            'LINE2:instantaneous-size#FF0000:Hourly Instantaneous',
+                            'LINE2:effective-size#0000FF:Weekly Effective',
+                            '-v', 'Size Estimate',
+                            '--right-axis', '1:0',
+                            '--full-size-mode',
+                            '--width', str(dimension[0]),
+                            '--height', str(dimension[1])
+                         )
+
+            rrdtool.graph(  '{0}_{1}x{2}_{3}'.format(period[0], dimension[0], dimension[1], args.storeGraph),
+                            '--start', str(period[1]),
+                            '--end', str(lastResult),
+                            'DEF:store-capacity={0}:store-capacity:AVERAGE:step={1}'.format(args.rrd, int(totalSeconds(shortPeriod))),
+                            'AREA:store-capacity#0000FF',
+                            '-v', 'Store Capacity',
+                            '--right-axis', '1:0',
+                            '--full-size-mode',
+                            '--width', str(dimension[0]),
+                            '--height', str(dimension[1])
+                         )
 
 if args.runLocation:
     log("Querying database for locations.")
