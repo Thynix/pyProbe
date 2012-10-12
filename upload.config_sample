@@ -7,7 +7,7 @@ path=statistics
 
 # Semicolon-separated list of paths to files to insert, relative to the
 # analyze script location.
-insertFiles=index.html;plot_link_length.png;plot_peer_count.png;activelink.png;size.xml;all_900x300_plot_network_size.png;all_900x300_plot_store_size.png;all_1200x400_plot_network_size.png;all_1200x400_plot_store_size.png;month_900x300_plot_network_size.png;month_900x300_plot_store_size.png;month_1200x400_plot_network_size.png;month_1200x400_plot_store_size.png;week_900x300_plot_network_size.png;week_900x300_plot_store_size.png;week_1200x400_plot_network_size.png;week_1200x400_plot_store_size.png
+insertFiles=index.html;plot_link_length.png;plot_peer_count.png;activelink.png;size.xml;all_900x300_plot_network_size.png;all_900x300_plot_store_capacity.png;all_1200x400_plot_network_size.png;all_1200x400_plot_store_capacity.png;month_900x300_plot_network_size.png;month_900x300_plot_store_capacity.png;month_1200x400_plot_network_size.png;month_1200x400_plot_store_capacity.png;week_900x300_plot_network_size.png;week_900x300_plot_store_capacity.png;week_1200x400_plot_network_size.png;week_1200x400_plot_store_capacity.png
 
 # FCP Host.
 host=127.0.0.1
