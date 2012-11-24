@@ -319,7 +319,7 @@ if args.runRRD:
         ;
         """.format(fromTimeDailyPrevious, fromTimeDaily, toTime)).fetchone()[0]
 
-        dailySize = binarySearch(distinctDailySamples, effectiveSamples)
+        dailySize = binarySearch(distinctDailySamples, dailySamples)
 
         log("{0}: {1} effective samples | {2} distinct effective samples | {3} estimated effective size"
                .format(toTime, dailySamples, distinctDailySamples, dailySize))
