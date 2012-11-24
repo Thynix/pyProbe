@@ -12,7 +12,7 @@ from twistedfcp.protocol import FreenetClientProtocol, Message
 from twistedfcp import message
 from twisted.internet import reactor, protocol
 import sys
-from string import split
+from string import split, join
 import os
 import markdown
 import re
@@ -370,7 +370,7 @@ if args.runRRD:
 
         rrdtool.update( args.rrd,
                 '-t', 'instantaneous-size:daily-size:effective-size:store-capacity',
-                '{0}:{1}:{2}:{3}'.format(toPosix(toTime), instantaneousSize, dailySize, effectiveSize, storeCapacity))
+                join(map(str, [toPosix(toTime), instantaneousSize, dailySize, effectiveSize, storeCapacity], ':'))
 
         fromTime = toTime
         toTime = fromTime + shortPeriod
