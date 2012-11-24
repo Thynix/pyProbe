@@ -370,7 +370,7 @@ if args.runRRD:
 
         rrdtool.update( args.rrd,
                 '-t', 'instantaneous-size:daily-size:effective-size:store-capacity',
-                join(map(str, [toPosix(toTime), instantaneousSize, dailySize, effectiveSize, storeCapacity], ':'))
+                join(map(str, [toPosix(toTime), instantaneousSize, dailySize, effectiveSize, storeCapacity], ':')))
 
         fromTime = toTime
         toTime = fromTime + shortPeriod
