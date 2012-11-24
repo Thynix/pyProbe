@@ -396,7 +396,7 @@ if args.runRRD:
                             'DEF:daily-size={0}:effective-size:AVERAGE:step={1}'.format(args.rrd, int(totalSeconds(mediumPeriod))),
                             'DEF:effective-size={0}:effective-size:AVERAGE:step={1}'.format(args.rrd, int(totalSeconds(shortPeriod))),
                             'LINE2:instantaneous-size#FF0000:Hourly Instantaneous',
-                            'LINE2:daily-size#0000FF:Daily Effective',
+                            'LINE2:daily-size#0099FF:Daily Effective',
                             'LINE2:effective-size#0000FF:Weekly Effective',
                             '-v', 'Size Estimate',
                             '--right-axis', '1:0',
