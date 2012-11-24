@@ -87,6 +87,14 @@ def timestamp(string):
 # archive will not be valid.
 shortPeriod = datetime.timedelta(hours=1)
 
+# Period of time to consider samples in a group for a short effective
+# size estimate.  The thought is that while nodes may not be online
+# all the time, many will be online regularly enough that they still
+# contribute to the network's capacity.  Despite considering a longer
+# period, it is still made every shortPeriod.  One week: 24 hours/day
+# * 7 days = 168 hours.
+mediumPeriod = datetime.timedelta(hours=24)
+
 # Period of time to consider samples in a group for an effective size estimate.
 # The thought is that while nodes may not be online all the time, many will be
 # online regularly enough that they still contribute to the network's capacity.
@@ -127,6 +135,8 @@ except:
                 '--step', '{0}'.format(shortPeriodSeconds),
                 # Data source for instantaneous size once each shortPeriod; values greater than zero.
                 'DS:instantaneous-size:GAUGE:{0}:0:U'.format(shortPeriodSeconds),
+                # Data source for effective size estimate; greater than zero.
+                'DS:daily-size:GAUGE:{0}:0:U'.format(shortPeriodSeconds),
                 # Data source for effective size estimate; greater than zero.
                 'DS:effective-size:GAUGE:{0}:0:U'.format(shortPeriodSeconds),
                 # Data source for usable store capacity estimate. Size in bytes, so RRDTool can use prefixes. Greater than zero.
@@ -257,6 +267,63 @@ if args.runRRD:
         log("{0}: {1} effective samples | {2} distinct effective samples | {3} estimated effective size"
                .format(toTime, effectiveSamples, distinctEffectiveSamples, effectiveSize))
 
+        # Start of current daily effective size estimate period.
+        fromTimeDaily = toTime - mediumPeriod
+        # Start of previous daily effective size estimate period.
+        fromTimeDailyPrevious = toTime - 2*mediumPeriod
+
+        # Intersect removes duplicates.
+        distinctDailySamples = db.execute("""
+        select
+          count ("identifier")
+        from
+          (
+            select
+              "identifier"
+            from
+              "identifier"
+            where
+              "time" >= datetime('{0}') and
+              "time" <  datetime('{1}')
+          intersect
+            select
+              "identifier"
+            from
+              "identifier"
+            where
+              "time" >= datetime('{1}') and
+              "time" <  datetime('{2}')
+          );
+        """.format(fromTimeDailyPrevious, fromTimeDaily, toTime)).fetchone()[0]
+
+        dailySamples = db.execute("""
+        select
+          count("identifier")
+        from
+          (
+            select
+              "identifier" as "previous_identifier"
+            from
+              "identifier"
+            where
+              "time" >= datetime('{0}') and
+              "time" <  datetime('{1}')
+          )
+        join
+          "identifier"
+            on
+            "previous_identifier" == "identifier"
+          where
+            "time" >= datetime('{1}') and
+            "time" <  datetime('{2}')
+        ;
+        """.format(fromTimeDailyPrevious, fromTimeDaily, toTime)).fetchone()[0]
+
+        dailySize = binarySearch(distinctDailySamples, effectiveSamples)
+
+        log("{0}: {1} effective samples | {2} distinct effective samples | {3} estimated effective size"
+               .format(toTime, dailySamples, distinctDailySamples, dailySize))
+
         # TODO: Add / remove / ignore refusals to provide error bars? More than that needs to be error bars though.
         # TODO: Take into account refuals for error bars.
         distinctInstantaneousSamples = db.execute("""
@@ -302,8 +369,8 @@ if args.runRRD:
             storeCapacity = meanDatastoreSize * effectiveSize * 1073741824 / 12
 
         rrdtool.update( args.rrd,
-                '-t', 'instantaneous-size:effective-size:store-capacity',
-                '{0}:{1}:{2}:{3}'.format(toPosix(toTime), instantaneousSize, effectiveSize, storeCapacity))
+                '-t', 'instantaneous-size:daily-size:effective-size:store-capacity',
+                '{0}:{1}:{2}:{3}'.format(toPosix(toTime), instantaneousSize, dailySize, effectiveSize, storeCapacity))
 
         fromTime = toTime
         toTime = fromTime + shortPeriod
@@ -326,8 +393,10 @@ if args.runRRD:
                             '--start', str(period[1]),
                             '--end', str(lastResult),
                             'DEF:instantaneous-size={0}:instantaneous-size:AVERAGE:step={1}'.format(args.rrd, int(totalSeconds(shortPeriod))),
+                            'DEF:daily-size={0}:effective-size:AVERAGE:step={1}'.format(args.rrd, int(totalSeconds(mediumPeriod))),
                             'DEF:effective-size={0}:effective-size:AVERAGE:step={1}'.format(args.rrd, int(totalSeconds(shortPeriod))),
                             'LINE2:instantaneous-size#FF0000:Hourly Instantaneous',
+                            'LINE2:daily-size#0000FF:Daily Effective',
                             'LINE2:effective-size#0000FF:Weekly Effective',
                             '-v', 'Size Estimate',
                             '--right-axis', '1:0',
