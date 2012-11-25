@@ -33,7 +33,19 @@ Freenet Statistics
 
 <a href="all_1200x400_plot_store_capacity.png"><img src="all_900x300_plot_store_capacity.png" alt="Plot of all available store capacity data" title="All available data" width="900" height="300"/></a>
 
-<!--- TODO: Graphs of error; refual occurances. -->
+## Errors and Refused
+
+### Past Week
+
+<a href="week_1200x400_plot_error_refused.png"><img src="week_900x300_plot_error_refused.png" alt="Plot of the last 7 days of store capacity data" title="Last 7 days" width="900" height="300"/></a>
+
+### Past Month
+
+<a href="month_1200x400_plot_error_refused.png"><img src="month_900x300_plot_error_refused.png" alt="Plot of the last 30 days of store capacity data" title="Last 30 days" width="900" height="300"/></a>
+
+### All Data
+
+<a href="all_1200x400_plot_error_refused.png"><img src="all_900x300_plot_error_refused.png" alt="Plot of all available store capacity data" title="All available data" width="900" height="300"/></a>
 
 ## Peer Count
 
@@ -53,9 +65,24 @@ Nodes still contribute to the network if they are online regularly - they need n
 
 Datastore size probe results return the approximate amount of disk space a node has reserved to store data for the network. Taking the mean of these values and multiplying by the effective network size gives an estimate of the total amount of disk space used for datastores throughout the entire network. Half of the datastore on each node is used for caching; half for longer-term storage. When blocks are inserted into Freenet an error correction (FEC) block is added for each one to allow reconstructing the data without being able to fetch every single block. In addition, every block, including error correction, is stored multiple - often three - times. This means that the usable storage capacity on Freenet is approximately 1/12th of the total dedicated disk space.
 
+Refused responses mean that a node opted not to respond with the requested information.
+
+Errors are:
+
+* Disconnected: a node being waited on for a response - not neccesarily the endpoint - disconnected.
+* Overload: a node could not accept the probe request because its probe DoS protection had tripped.
+* Timeout: timed out while waiting for a response.
+* Unknown Error: an error occured, but the error code was not recognized.
+* Unrecognized Type: a remote node did not recognize the requested probe type.
+* Cannot Forward: a remote node understood the request but failed to forward it to another node.
+
 Link length and peer count are from the past 7 days of results. All peer counts above 50 count towards 50.
 
 ## Changelog
+
+### November 25th, 2012
+
+Add plots of errors and refused responses. Fix non-relative links in the footer being relative.
 
 ### October 7th, 2012
 

@@ -36,6 +36,8 @@ parser.add_argument('--size-graph', dest='sizeGraph', default='plot_network_size
                     help='Path to the network size graph.')
 parser.add_argument('--store-graph', dest='storeGraph', default='plot_store_capacity.png',
                     help='Path to the store capacity graph.')
+parser.add_argument('--error-refused-graph', dest='errorRefusedGraph', default='plot_error_refused.png',
+                    help='Path to the errors and refusals graph.')
 
 # Which segments of analysis to run.
 parser.add_argument('--upload', dest='uploadConfig', default=None,
@@ -104,6 +106,29 @@ mediumPeriod = datetime.timedelta(hours=24)
 # One week: 24 hours/day * 7 days = 168 hours.
 longPeriod = datetime.timedelta(hours=168)
 
+# The order and length of these must match. It'd be less convinent as a list of tuples though.
+errorTypes = [  "DISCONNECTED",
+                "OVERLOAD",
+                "TIMEOUT",
+                "UNKNOWN",
+                "UNRECOGNIZED_TYPE",
+                "CANNOT_FORWARD" ]
+
+# Names can be up to 19 characters.
+errorDataSources = ['error-disconnected',   # Error occurances in the past shortPeriod.
+                    'error-overload',
+                    'error-timeout',        # TODO: This will include both local and remote errors.
+                    'error-unknown',
+                    'error-unrecognized',
+                    'error-cannot-frwrd' ]
+
+errorPlotNames = [  'Disconnected',
+                    'Overload',
+                    'Timeout',
+                    'Unknown Error',
+                    'Unrecognized Type',
+                    'Cannot Forward' ]
+
 
 def toPosix(dt):
     return int(calendar.timegm(dt.utctimetuple()))
@@ -124,26 +149,29 @@ except:
     toTime = fromTime + shortPeriod
     shortPeriodSeconds = int(totalSeconds(shortPeriod))
     log("Creating round robin network size database.")
+
+    # Generate list of data sources to reduce repetition. All sources contain only values greater than zero.
+    datasources = [ 'DS:{0}:GAUGE:{1}:0:U'.format(name, shortPeriodSeconds) for name in
+                    [   'instantanious-size',   # Size estimated over a shortPeriod.
+                        'effective-size',       # Effective size estimated over a longPeriod.
+                        'store-capacity',       # Usable store capacity. In bytes so RRDTool can use prefixes.
+                        'daily-size',           # Effective size estimated over the past 2 days.
+                        'refused'               # Refused, for all probe types.
+                    ] + errorDataSources ]
+
     rrdtool.create( args.rrd,
                 # If the database already exists don't overwrite it.
                 '--no-overwrite',
                 '--start', str(toPosix(toTime) - 1),
                 # Once each hour.
                 '--step', '{0}'.format(shortPeriodSeconds),
-                # Data source for instantaneous size once each shortPeriod; values greater than zero.
-                'DS:instantaneous-size:GAUGE:{0}:0:U'.format(shortPeriodSeconds),
-                # Data source for effective size estimate; greater than zero.
-                'DS:daily-size:GAUGE:{0}:0:U'.format(shortPeriodSeconds),
-                # Data source for effective size estimate; greater than zero.
-                'DS:effective-size:GAUGE:{0}:0:U'.format(shortPeriodSeconds),
-                # Data source for usable store capacity estimate. Size in bytes, so RRDTool can use prefixes. Greater than zero.
-                'DS:store-capacity:GAUGE:{0}:0:U'.format(shortPeriodSeconds),
                 # Lossless for a year of instantanious; longer for effective estimate. No unknowns allowed.
                 # (60 * 60 * 24 * 365 = 31536000 seconds per year)
                 'RRA:AVERAGE:0:1:{0}'.format(int(31536000/shortPeriodSeconds)),
                 # Daily average for five years; longer for effective estimate.
                 # (3600 * 24 = 86400 seconds in a day;365 * 5 = 1825 days)
-                'RRA:AVERAGE:0:{0}:1825'.format(int(86400/shortPeriodSeconds))
+                'RRA:AVERAGE:0:{0}:1825'.format(int(86400/shortPeriodSeconds)),
+                *datasources
               )
 
 if args.runRRD:
@@ -364,9 +392,35 @@ if args.runRRD:
             # datastore size is store capacity.
             storeCapacity = meanDatastoreSize * effectiveSize * 1073741824 / 12
 
+        refused = db.execute("""
+        select
+          count(*)
+        from
+          "refused"
+        where
+          "time" >= datetime('{0}') and
+          "time" <  datetime('{1}')
+        """.format(fromTime, toTime)).fetchone()[0]
+
+        # Get numbers of each error type.
+        errors = []
+        for errorType in errorTypes:
+            errors.append(db.execute("""
+            select
+              count(*)
+            from
+              "error"
+            where
+              "error_type" == '{0}' and
+              "time" >= datetime('{1}') and
+              "time" <  datetime('{2}')
+            """.format(errorType, fromTime, toTime)).fetchone()[0])
+
+        # RRDTool format string to explicitly specify the order of the data sources.
+        # The first one is implicitly the time of the sample.
         rrdtool.update( args.rrd,
-                '-t', 'instantaneous-size:daily-size:effective-size:store-capacity',
-                join(map(str, [toPosix(toTime), instantaneousSize, dailySize, effectiveSize, storeCapacity], ':')))
+            '-t', 'instantaneous-size:daily-size:effective-size:store-capacity:refused:' + join(errorDataSources, ':'),
+                join(map(str, [ toPosix(toTime), instantaneousSize, dailySize, effectiveSize, storeCapacity, refused ] + errors), ':'))
 
         fromTime = toTime
         toTime = fromTime + shortPeriod
@@ -378,6 +432,35 @@ if args.runRRD:
     #
     firstResult = toPosix(timestamp(db.execute(""" select min("time") from "identifier" """).fetchone()[0]))
     lastResult = rrdtool.last(args.rrd)
+
+    # Distant colors are not easily confused.
+    # See http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.65.2790
+    # Should be at least as long as len(sourcesNames) because zip()
+    # truncates to the length of the shortest argument.
+    colors = [
+                '#5B000D', # Brown
+                '#00FFFD', # Cyan
+                '#23A9FF', # Light blue
+                '#FFE800', # Yellow
+                '#08005B', # Dark blue
+                '#FFD0C6', # Light pink
+                '#04FF04', # Light green
+                '#0000FF', # Blue
+                '#004F00', # Dark green
+                '#FF15CD', # Dark pink
+                '#FF0000'  # Red
+             ]
+
+    # List for error sources and lines to avoid repetition.
+    # Without a manually specified color RRDTool assigns them.
+    sourcesNames = zip( errorDataSources + [ 'refused' ],
+                        errorPlotNames + [ 'Refused' ],
+                        colors )
+
+    refusedAndErrors = [    'DEF:{0}={1}:{0}:AVERAGE:step={2}'.format(pair[0], args.rrd, int(totalSeconds(shortPeriod))) 
+                            for pair in sourcesNames ]
+    refusedAndErrors += [ 'LINE2:{0}{1}:{2}'.format(pair[0], pair[2], pair[1])
+                            for pair in sourcesNames ]
 
     # Month: 3600 * 24 * 30 = 2592000 seconds
     # Week: 3600 * 24 * 7 = 604800 seconds
@@ -411,6 +494,17 @@ if args.runRRD:
                             '--full-size-mode',
                             '--width', str(dimension[0]),
                             '--height', str(dimension[1])
+                         )
+
+            rrdtool.graph(  '{0}_{1}x{2}_{3}'.format(period[0], dimension[0], dimension[1], args.errorRefusedGraph),
+                            '--start', str(period[1]),
+                            '--end', str(lastResult),
+                            '-v', 'Errors and Refused',
+                            '--right-axis', '1:0',
+                            '--full-size-mode',
+                            '--width', str(dimension[0]),
+                            '--height', str(dimension[1]),
+                            *refusedAndErrors
                          )
 
 if args.runLocation:
