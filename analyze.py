@@ -59,6 +59,8 @@ def log(msg):
 
 # Store the time the script started so that all database queries can cover
 # the same time span by only including up to this point in time.
+# If a time period for RRD includes this start time it is considered
+# incomplete and not computed.
 startTime = datetime.datetime.utcnow()
 recent = startTime - datetime.timedelta(hours=args.recentHours)
 log("Recency boundary is {0}.".format(recent))
@@ -102,11 +104,6 @@ mediumPeriod = datetime.timedelta(hours=24)
 # One week: 24 hours/day * 7 days = 168 hours.
 longPeriod = datetime.timedelta(hours=168)
 
-#
-# Latest stored identifier result. A shortPeriod including this time is
-# incomplete and will not be computed.
-#
-latestIdentifier = timestamp(db.execute("""select max("time") from "identifier" where "time" < datetime('{0}')""".format(startTime)).fetchone()[0])
 
 def toPosix(dt):
     return int(calendar.timegm(dt.utctimetuple()))
@@ -197,10 +194,9 @@ if args.runRRD:
                 # current == distinctSamples:
                 return mid
 
-    log("Computing network size estimates. In-progress segement is {0}. ({1})".format(latestIdentifier, toPosix(latestIdentifier)))
+    log("Computing network plot data. In-progress segement is {0}. ({1})".format(startTime, toPosix(startTime)))
 
     #
-    # latestIdentifier can be up to the start time.
     # Perform binary search for network size in:
     # (distinct samples) = (network size) * (1 - e^(-1 * (samples)/(network size)))
     # ----Effective size estimate:
@@ -208,7 +204,7 @@ if args.runRRD:
     # the period of the same length farther back.
     # ----Instantaneous size estimate:
     # Identifiers that appear in the current short time period in the past.
-    while latestIdentifier > toTime:
+    while startTime > toTime:
 
         # Start of current effective size estimate period.
         fromTimeEffective = toTime - longPeriod
