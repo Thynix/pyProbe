@@ -18,3 +18,7 @@ http://cran.r-project.org/web/packages/Rcapture/index.html
 
 Perhaps consider per-hour and build a matrix based on distinct IDs and whether they occur in that period.
 
+Reduce or eliminate dropping data due to locking timeouts.
+    Switch from sqlite to postgresql or similar?
+    Thread differently?
+
