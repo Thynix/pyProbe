@@ -1,3 +1,15 @@
+Use Greasemonkey in Firefox and Chrome native support for the same to have interactive Javascript plots.
+    Possibilities:
+        http://dygraphs.com/
+        https://github.com/danvk/dygraphs
+        http://www.flotcharts.org/
+    Data in HTML? In a CSV in the same USK container?
+
+Keep list of notable dates, insert labeled vertical lines in the plots at those points.
+    World events
+    Version releases
+    Changes to probe gathering techniques
+
 `link_lengths`:
 
 * Could save space by omitting `time` and `htl` on all but the first entry of a given `id`.
