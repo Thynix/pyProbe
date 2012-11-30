@@ -116,8 +116,8 @@ errorTypes = [  "DISCONNECTED",
 
 # Names can be up to 19 characters.
 errorDataSources = ['error-disconnected',   # Error occurances in the past shortPeriod.
-                    'error-overload',
-                    'error-timeout',        # TODO: This will include both local and remote errors.
+                    'error-overload',       # TODO: This will include both local and remote errors.
+                    'error-timeout',        # It may be more informative to treat local and remote separately.
                     'error-unknown',
                     'error-unrecognized',
                     'error-cannot-frwrd' ]
