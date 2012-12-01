@@ -82,9 +82,9 @@ Link length and peer count are from the past 7 days of results. All peer counts 
 
 ## Changelog
 
-### November 25th, 2012
+### December 1st, 2012
 
-Add plots of errors and refused responses. Fix non-relative links in the footer being relative.
+Add plots of errors and refused responses. Add daily effective network size. Fix non-relative links in the footer being relative.
 
 ### October 7th, 2012
 
