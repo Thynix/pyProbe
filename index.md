@@ -76,6 +76,8 @@ Errors are:
 * Unrecognized Type: a remote node did not recognize the requested probe type.
 * Cannot Forward: a remote node understood the request but failed to forward it to another node.
 
+The dips at midnight are probably an artifact of database locking problems causing results to not be stored during the longer analysis just before inserting an update.
+
 Link length and peer count are from the past 7 days of results. All peer counts above 50 count towards 50.
 
 ## Changelog
