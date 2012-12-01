@@ -19,7 +19,7 @@ uploadConfig="upload.config"
 cd $(dirname "$0")
 
 # Update RRD plots and database, peer count, link length, and Markdown render.
-$analyze --rrd --peer-count --link-lengths --markdown index.md || exit 1
+$analyze -q --rrd --peer-count --link-lengths --markdown index.md || exit 1
 
 # Move index render to index.html.
 mv index.md.html index.html || exit 2
@@ -29,5 +29,5 @@ mv index.md.html index.html || exit 2
 rrdtool dump size.rrd size.xml || exit 3
 
 # Insert site, including RRD dump.
-$analyze --upload "$uploadConfig" || exit 4
+$analyze -q --upload "$uploadConfig" || exit 4
 
