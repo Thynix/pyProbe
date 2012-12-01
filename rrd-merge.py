@@ -106,7 +106,7 @@ for rra in rras:
     # Add RRA descriptions.
     SubElement(element, 'cf').text = rra[0]
     SubElement(element, 'pdp_per_row').text = rra[1]
-    SubElement(SubElement(element, 'xff'), 'params').text = rra[2]
+    SubElement(SubElement(element, 'params'), 'xff').text = rra[2]
 
     database = SubElement(element, 'database')
 
