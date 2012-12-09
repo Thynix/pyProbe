@@ -61,11 +61,13 @@ def insert(args, probe_type, result, duration):
 	elif probe_type == "IDENTIFIER":
 		db.execute("insert into identifier(time, htl, identifier, percent, duration) values(?, ?, ?, ?, ?)", (now, htl, result[PROBE_IDENTIFIER], result[UPTIME_PERCENT], duration))
 	elif probe_type == "LINK_LENGTHS":
+		cur = db.cursor()
 		lengths = split(result[LINK_LENGTHS], ';')
-		db.execute("insert into peer_count(time, htl, peers, duration) values(?, ?, ?, ?)", (now, htl, len(lengths), duration))
-		new_id = db.lastrowid
+		cur.execute("insert into peer_count(time, htl, peers, duration) values(?, ?, ?, ?)", (now, htl, len(lengths), duration))
+		new_id = cur.lastrowid
 		for length in lengths:
-			db.execute("insert into link_lengths(time, htl, length, id) values(?, ?, ?, ?)", (now, htl, length, new_id))
+			cur.execute("insert into link_lengths(time, htl, length, id) values(?, ?, ?, ?)", (now, htl, length, new_id))
+		cur.close()
 	elif probe_type == "LOCATION":
 		db.execute("insert into location(time, htl, location, duration) values(?, ?, ?, ?)", (now, htl, result[LOCATION], duration))
 	elif probe_type == "STORE_SIZE":
