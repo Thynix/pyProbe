@@ -61,15 +61,11 @@ def insert(args, probe_type, result, duration):
 	elif probe_type == "IDENTIFIER":
 		db.execute("insert into identifier(time, htl, identifier, percent, duration) values(?, ?, ?, ?, ?)", (now, htl, result[PROBE_IDENTIFIER], result[UPTIME_PERCENT], duration))
 	elif probe_type == "LINK_LENGTHS":
-		max_id = db.execute("select max(id) from link_lengths").fetchone()[0]
-		new_id = 0
-		if max_id is not None:
-			new_id = max_id + 1
-
 		lengths = split(result[LINK_LENGTHS], ';')
+		db.execute("insert into peer_count(time, htl, peers, duration) values(?, ?, ?, ?)", (now, htl, len(lengths), duration))
+		new_id = db.lastrowid
 		for length in lengths:
 			db.execute("insert into link_lengths(time, htl, length, id) values(?, ?, ?, ?)", (now, htl, length, new_id))
-		db.execute("insert into peer_count(time, htl, peers, duration) values(?, ?, ?, ?)", (now, htl, len(lengths), duration))
 	elif probe_type == "LOCATION":
 		db.execute("insert into location(time, htl, location, duration) values(?, ?, ?, ?)", (now, htl, result[LOCATION], duration))
 	elif probe_type == "STORE_SIZE":
