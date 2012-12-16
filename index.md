@@ -82,6 +82,10 @@ Link length and peer count are from the past 7 days of results. All peer counts 
 
 ## Changelog
 
+### December 9th, 2012
+
+Implement first of many backend improvements. (Thanks Eleriseth!)
+
 ### December 1st, 2012
 
 Add plots of errors and refused responses. Add daily effective network size. (Thanks ArneBab!) Fix non-relative links in the footer being relative. (Thanks SeekingFor!)
