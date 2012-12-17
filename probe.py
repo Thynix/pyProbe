@@ -39,9 +39,10 @@ TYPE = "Type"
 HTL = "HopsToLive"
 LOCAL = "Local"
 
+db = None
+
 def insert(args, probe_type, result, duration):
 	start = datetime.datetime.utcnow()
-	db = sqlite3.connect(args.databaseFile)
 
 	header = result.name
 	htl = args.hopsToLive
@@ -78,11 +79,11 @@ def insert(args, probe_type, result, duration):
 		db.execute("insert into uptime_7d(time, htl, percent, duration) values(?, ?, ?, ?)", (now, htl, result[UPTIME_PERCENT], duration))
 
 	db.commit()
-	db.close()
 	logging.debug("Committed {0} ({1}) in {2}.".format(header, probe_type, datetime.datetime.utcnow() - start))
 
 def sigint_handler(signum, frame):
 	logging.warning("Got signal {0}. Shutting down.".format(signum))
+	db.close()
 	signal(SIGINT, SIG_DFL)
 	reactor.stop()
 
@@ -189,7 +190,6 @@ def init_database(db):
 			logging.warning("Update from 2 to 3 complete.")
 
 	db.commit()
-	db.close()
 
 #Inactive class for holding arguments in attributes.
 class Arguments(object):
@@ -325,8 +325,11 @@ def main():
 	logging.basicConfig(format="%(asctime)s - %(levelname)s: %(message)s", level=getattr(logging, args.verbosity), filename=args.logFile)
 	logging.info("Starting up.")
 
+	global db
+	db = sqlite3.connect(args.databaseFile)
+
 	#Ensure the database holds the required tables, columns, and indicies.
-	init_database(sqlite3.connect(args.databaseFile))
+	init_database(db)
 
 	if args.numThreads < 1:
 		print("Cannot run fewer than one thread.")
