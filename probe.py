@@ -6,6 +6,7 @@ import datetime
 import time
 from sys import exit, stderr
 from twisted.internet import reactor, protocol
+from twisted.internet.task import LoopingCall
 from signal import signal, SIGINT, SIGTERM, SIG_DFL
 import thread
 import logging
@@ -199,16 +200,17 @@ def MakeRequest(ProbeType, HopsToLive):
 	return IdentifiedMessage("ProbeRequest",\
 				 [(TYPE, ProbeType), (HTL, HopsToLive)])
 
-class CommitHook:
+class SendHook:
 	"""
-	Stores a probe type and commits a result to the database when called.
-	Assumes the time of its creation is when the probe request is sent.
+	Sends a probe of a random type and commits the result to the database.
 	"""
-	def __init__(self, args, probeType):
-		logging.debug("Sending {0}.".format(probeType))
+	def __init__(self, args, proto):
 		self.sent = datetime.datetime.utcnow()
 		self.args = args
-		self.probeType = probeType
+		self.probeType = random.choice(self.args.types)
+		logging.debug("Sending {0}.".format(self.probeType))
+
+		proto.do_session(MakeRequest(self.probeType, self.args.hopsToLive), self)
 
 	def __call__(self, message):
 		delta = datetime.datetime.utcnow() - self.sent
@@ -220,21 +222,6 @@ class CommitHook:
 		#Commit results
 		reactor.callFromThread(insert, self.args, self.probeType, message, duration)
 		return True
-
-class SendLoop:
-	def __init__(self, proto, args):
-		"""Sends first probe request"""
-		self.args = args
-		self.proto = proto
-		self.send()
-
-	def send(self):
-		"""Internal function to send a probe request and schedule the next.
-		   This begins a loop, and so need only be called once at startup."""
-		probeType = random.choice(self.args.types)
-		self.proto.do_session(MakeRequest(probeType, self.args.hopsToLive), CommitHook(self.args, probeType))
-
-		reactor.callLater(self.args.probeWait, self.send)
 
 class Complain:
 	"""
@@ -274,13 +261,7 @@ class FCPReconnectingFactory(protocol.ReconnectingClientFactory):
 
 			def callback(self, message):
 				delay_per = self.args.probeWait / self.args.numThreads
-
-				def start(i):
-					logging.debug("Starting probe instance {0}.".format(i))
-					SendLoop(self.proto, self.args)
-
-				for i in range(self.args.numThreads):
-					reactor.callLater(delay_per * i, start, i)
+				LoopingCall(SendHook, self.args, self.proto).start(delay_per)
 
 		proto.deferred['NodeHello'] = StartProbes(proto, self.args)
 		proto.deferred['ProtocolError'] = Complain()
