@@ -7,14 +7,6 @@
 
 [DEFAULT]
 #
-# Number of probe sessions. This should be set to approximately the minimum
-# sustained number of peers expected. If OVERLOAD errors are common it is an
-# indication that this value is too high. This default works well with a 25-peer
-# limit.
-#
-numThreads=20
-
-#
 # FCP Host.
 #
 host=127.0.0.1
@@ -25,9 +17,13 @@ host=127.0.0.1
 port=9481
 
 #
-# Seconds to wait in each session between sending probes.
+# Number of probes to send per minute.
 #
-probeWait=61
+# This should be set so that it does not overwhelm the number of sustained
+# peers expected. Given stable connections this will happen if more than
+# 10 * (number of peers) probes are sent per minute.
+#
+probeRate=20
 
 #
 # Seconds to wait before timing out on a probe request.

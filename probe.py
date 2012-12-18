@@ -260,8 +260,7 @@ class FCPReconnectingFactory(protocol.ReconnectingClientFactory):
 				self.args = args
 
 			def callback(self, message):
-				delay_per = self.args.probeWait / self.args.numThreads
-				LoopingCall(SendHook, self.args, self.proto).start(delay_per)
+				LoopingCall(SendHook, self.args, self.proto).start(self.args.probePeriod)
 
 		proto.deferred['NodeHello'] = StartProbes(proto, self.args)
 		proto.deferred['ProtocolError'] = Complain()
@@ -293,7 +292,7 @@ def main():
 		setattr(args, arg, get(arg))
 
 	#Convert integer options
-	for arg in [ "numThreads", "port", "probeWait", "hopsToLive" ]:
+	for arg in [ "port", "hopsToLive", "probeRate" ]:
 		setattr(args, arg, int(getattr(args, arg)))
 
 	#Convert floating point options.
@@ -302,6 +301,13 @@ def main():
 
 	#Convert types list to list
 	args.types = split(args.types, ",")
+
+	# Compute probe period. Rate is easier to think about, so it's used in the
+	# config file. probeRate is probes/minute. Period is seconds/probe.
+	# 60 seconds   1 minute           seconds
+	# ---------- * ---------------- = -------
+	# 1 minute     probeRate probes   probe
+	args.probePeriod = 60 / args.probeRate
 
 	logging.basicConfig(format="%(asctime)s - %(levelname)s: %(message)s", level=getattr(logging, args.verbosity), filename=args.logFile)
 	logging.info("Starting up.")
@@ -312,9 +318,6 @@ def main():
 	#Ensure the database holds the required tables, columns, and indicies.
 	init_database(db)
 
-	if args.numThreads < 1:
-		print("Cannot run fewer than one thread.")
-		exit(1)
 
 	reactor.callWhenRunning(signal, SIGINT, sigint_handler)
 	reactor.callWhenRunning(signal, SIGTERM, sigint_handler)
