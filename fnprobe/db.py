@@ -60,7 +60,7 @@ def init_database(db):
 			db.execute("PRAGMA user_version = {0}".format(new))
 			version = db.execute("PRAGMA user_version").fetchone()[0]
 
-		# In version 1: added a response time column "duration" to most tables.
+		# In version 1: Add a response time column "duration" to most tables.
 		if version == 0:
 			logging.warning("Upgrading from database version 0 to version 1.")
 			version_zero = [ "bandwidth", "build", "identifier", "peer_count",
@@ -71,16 +71,16 @@ def init_database(db):
 			update_version(1)
 			logging.warning("Upgrade from 0 to 1 complete.")
 
-		# In version 2: Added a "local" column to the error table.
+		# In version 2: Add a "local" column to the error table.
 		if version == 1:
 			logging.warning("Upgrading from database version 1 to version 2.")
 			db.execute("""alter table error add column local""")
 			update_version(2)
 			logging.warning("Upgrade from 1 to 2 complete.")
 
-		# In version 3: Created time index on each table instead of only bandwidth.
-		# Added identifier index separate from time index for performance: the covering
-		# index led to very poor performance during normal usage.
+		# In version 3: Create time index on each table instead of only bandwidth.
+		# Add identifier index separate from time index for performance: the covering
+		# index leads to very poor performance during normal usage.
 		if version == 2:
 			logging.warning("Upgrading from database version 2 to version 3.")
 			# Remove old index.
