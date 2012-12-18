@@ -1,6 +1,6 @@
 from __future__ import division
 import argparse
-import sqlite3
+from pysqlite2 import dbapi2 as sqlite3
 import datetime
 from subprocess import call
 import rrdtool

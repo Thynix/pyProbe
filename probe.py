@@ -1,7 +1,7 @@
 from __future__ import division
 import argparse
 import random
-import sqlite3
+from pysqlite2 import dbapi2 as sqlite3
 import datetime
 import time
 from sys import exit, stderr
