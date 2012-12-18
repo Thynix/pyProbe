@@ -1,6 +1,10 @@
 import logging
 
 def init_database(db):
+	"""
+	Initialize the database if it does not already exist. If it already exists and
+	is not the latest version, upgrade it.
+	"""
 	# If there are no tables in this database, it is new, so set up the latest version.
 	if db.execute("""SELECT count(*) FROM "sqlite_master" WHERE type == 'table'""").fetchone()[0] == 0:
 		logging.warning("Setting up new database.")
