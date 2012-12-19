@@ -193,7 +193,7 @@ def main():
 		setattr(args, arg, int(getattr(args, arg)))
 
 	#Convert floating point options.
-	for arg in [ "timeout" ]:
+	for arg in [ "timeout", "databaseTimeout" ]:
 		setattr(args, arg, float(getattr(args, arg)))
 
 	#Convert types list to list
@@ -210,7 +210,7 @@ def main():
 	logging.info("Starting up.")
 
 	global db
-	db = sqlite3.connect(args.databaseFile)
+	db = sqlite3.connect(args.databaseFile, timeout=args.databaseTimeout)
 
 	#Ensure the database holds the required tables, columns, and indicies.
 	init_database(db)
