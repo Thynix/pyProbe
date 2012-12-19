@@ -2,6 +2,7 @@ from __future__ import division
 import argparse
 import random
 import sqlite3
+from twisted.enterprise import adbapi
 import datetime
 import time
 from sys import exit, stderr
@@ -41,9 +42,7 @@ TYPE = "Type"
 HTL = "HopsToLive"
 LOCAL = "Local"
 
-db = None
-
-def insert(args, probe_type, result, duration):
+def insert(db, args, probe_type, result, duration):
 	start = datetime.datetime.utcnow()
 
 	header = result.name
@@ -55,15 +54,12 @@ def insert(args, probe_type, result, duration):
 	success = False
 	while not success:
 		try:
-			# In a with statement the connection object is a context manager.
-			# It rollbacks on error and commits on success.
-			with db:
-				insertResult(db, header, htl, result, now, duration, probe_type)
-				success = True
+			insertResult(db, header, htl, result, now, duration, probe_type)
+			success = True
 		except sqlite3.OperationalError as ex:
 			# Database locked. Try again.
-			logging.warning("Database locked. Tried {0} times before. Retrying:".format(tries))
-			logging.warning(ex)
+			db.rollback()
+			logging.warning("Got operational error '{0}'. Tried {1} times before. Retrying.".format(ex, tries))
 			tries += 1
 
 	logging.debug("Committed {0} ({1}) in {2}.".format(header, probe_type, datetime.datetime.utcnow() - start))
@@ -100,11 +96,15 @@ def insertResult(db, header, htl, result, now, duration, probe_type):
 	elif probe_type == "UPTIME_7D":
 		db.execute("insert into uptime_7d(time, htl, percent, duration) values(?, ?, ?, ?)", (now, htl, result[UPTIME_PERCENT], duration))
 
-def sigint_handler(signum, frame):
-	logging.warning("Got signal {0}. Shutting down.".format(signum))
-	db.close()
-	signal(SIGINT, SIG_DFL)
-	reactor.stop()
+class sigint_handler:
+	def __init__(self, pool):
+		self.pool = pool
+
+	def __call__(self, signum, frame):
+		logging.warning("Got signal {0}. Shutting down.".format(signum))
+		self.pool.close()
+		signal(SIGINT, SIG_DFL)
+		reactor.stop()
 
 #Inactive class for holding arguments in attributes.
 class Arguments(object):
@@ -118,10 +118,11 @@ class SendHook:
 	"""
 	Sends a probe of a random type and commits the result to the database.
 	"""
-	def __init__(self, args, proto):
+	def __init__(self, args, proto, pool):
 		self.sent = datetime.datetime.utcnow()
 		self.args = args
 		self.probeType = random.choice(self.args.types)
+		self.pool = pool
 		logging.debug("Sending {0}.".format(self.probeType))
 
 		proto.do_session(MakeRequest(self.probeType, self.args.hopsToLive), self)
@@ -134,7 +135,7 @@ class SendHook:
 		# Seconds per microsecond: 1/1000000
 		duration = delta.days * 86400 + delta.seconds + delta.microseconds / 1000000
 		#Commit results
-		reactor.callFromThread(insert, self.args, self.probeType, message, duration)
+		self.pool.runWithConnection(insert, self.args, self.probeType, message, duration)
 		return True
 
 class Complain:
@@ -158,8 +159,9 @@ class FCPReconnectingFactory(protocol.ReconnectingClientFactory):
 	#Log disconnection and reconnection attempts
 	noisy = True
 
-	def __init__(self, args):
+	def __init__(self, args, pool):
 		self.args = args
+		self.pool = pool
 
 	def buildProtocol(self, addr):
 		proto = FreenetClientProtocol()
@@ -169,7 +171,7 @@ class FCPReconnectingFactory(protocol.ReconnectingClientFactory):
 		proto.deferred['NodeHello'] = self
 		proto.deferred['ProtocolError'] = Complain()
 
-		self.sendLoop = LoopingCall(SendHook, self.args, proto)
+		self.sendLoop = LoopingCall(SendHook, self.args, proto, self.pool)
 
 		return proto
 
@@ -218,16 +220,23 @@ def main():
 	logging.basicConfig(format="%(asctime)s - %(levelname)s: %(message)s", level=getattr(logging, args.verbosity), filename=args.logFile)
 	logging.info("Starting up.")
 
-	global db
-	db = sqlite3.connect(args.databaseFile, timeout=args.databaseTimeout)
+	# Sqlite does not support concurrent writes, so make only one connection.
+	# In this way adbapi provides a dedicated database thread so that waiting
+	# for a lock does not block the reactor thread. It will close the connection
+	# in a separate thread, so the Python module should not prevent doing so.
+	# Versions of sqlite prior to 3.3.1 are not thread-safe.
+	# See https://www.sqlite.org/releaselog/3_3_1.html
+	#     https://www.sqlite.org/faq.html#q6
+	pool = adbapi.ConnectionPool('sqlite3', args.databaseFile, timeout=args.databaseTimeout, cp_max=1, check_same_thread=False)
 
 	#Ensure the database holds the required tables, columns, and indicies.
-	init_database(db)
+	pool.runWithConnection(init_database)
 
 
-	reactor.callWhenRunning(signal, SIGINT, sigint_handler)
-	reactor.callWhenRunning(signal, SIGTERM, sigint_handler)
-	reactor.connectTCP(args.host, args.port, FCPReconnectingFactory(args))
+	handler = sigint_handler(pool)
+	reactor.callWhenRunning(signal, SIGINT, handler)
+	reactor.callWhenRunning(signal, SIGTERM, handler)
+	reactor.connectTCP(args.host, args.port, FCPReconnectingFactory(args, pool))
 
 #run main if run with twistd: it will start the reactor.
 if __name__ == "__builtin__":
