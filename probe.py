@@ -49,6 +49,26 @@ def insert(args, probe_type, result, duration):
 	header = result.name
 	htl = args.hopsToLive
 	now = datetime.datetime.utcnow()
+
+	# Retry insert on locking timeout.
+	tries = 0
+	success = False
+	while not success:
+		try:
+			# In a with statement the connection object is a context manager.
+			# It rollbacks on error and commits on success.
+			with db:
+				insertResult(db, header, htl, result, now, duration, probe_type)
+				success = True
+		except sqlite3.OperationalError as ex:
+			# Database locked. Try again.
+			logging.warning("Database locked. Tried {0} times before. Retrying:".format(tries))
+			logging.warning(ex)
+			tries += 1
+
+	logging.debug("Committed {0} ({1}) in {2}.".format(header, probe_type, datetime.datetime.utcnow() - start))
+
+def insertResult(db, header, htl, result, now, duration, probe_type):
 	if header == "ProbeError":
 		#type should always be defined, but the code might not be.
 		code = None
@@ -79,9 +99,6 @@ def insert(args, probe_type, result, duration):
 		db.execute("insert into uptime_48h(time, htl, percent, duration) values(?, ?, ?, ?)", (now, htl, result[UPTIME_PERCENT], duration))
 	elif probe_type == "UPTIME_7D":
 		db.execute("insert into uptime_7d(time, htl, percent, duration) values(?, ?, ?, ?)", (now, htl, result[UPTIME_PERCENT], duration))
-
-	db.commit()
-	logging.debug("Committed {0} ({1}) in {2}.".format(header, probe_type, datetime.datetime.utcnow() - start))
 
 def sigint_handler(signum, frame):
 	logging.warning("Got signal {0}. Shutting down.".format(signum))
