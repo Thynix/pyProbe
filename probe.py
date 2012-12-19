@@ -166,27 +166,19 @@ class FCPReconnectingFactory(protocol.ReconnectingClientFactory):
 		proto.factory = self
 		proto.timeout = self.args.timeout
 
-		#Register a callback for the NodeHello in order to send messages
-		#once the transport is established.
-		class StartProbes:
-			def __init__(self, proto, args):
-				self.proto = proto
-				self.args = args
-
-			def callback(self, message):
-				LoopingCall(SendHook, self.args, self.proto).start(self.args.probePeriod)
-
-		proto.deferred['NodeHello'] = StartProbes(proto, self.args)
+		proto.deferred['NodeHello'] = self
 		proto.deferred['ProtocolError'] = Complain()
+
+		self.sendLoop = LoopingCall(SendHook, self.args, proto)
 
 		return proto
 
+	def callback(self, message):
+		self.sendLoop.start(self.args.probePeriod)
+
 	def clientConnectionLost(self, connector, reason):
 		logging.warning("Lost connection: {0}".format(reason))
-
-		#Stop pending probe requests - new requests will be started upon reconnection.
-		for delayed_call in reactor.getDelayedCalls():
-			delayed_call.cancel()
+		self.sendLoop.stop()
 
 		#Any connection loss is failure; reconnect.
 		protocol.ReconnectingClientFactory.clientConnectionFailed(self, connector, reason)
