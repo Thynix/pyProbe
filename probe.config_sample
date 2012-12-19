@@ -44,6 +44,11 @@ timeout=95
 databaseFile=database.sql
 
 #
+# Seconds to wait to acquire a database lock.
+#
+databaseTimeout=60
+
+#
 # Logging level: DEBUG, INFO, WARNING, ERROR
 #
 verbosity=WARNING
