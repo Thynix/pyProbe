@@ -18,6 +18,7 @@ import markdown
 import re
 import logging
 import codecs
+from fnprobe.time import toPosix, totalSeconds
 
 parser = argparse.ArgumentParser(description="Analyze probe results for estimates of peer distribution and network interconnectedness; generate plots.")
 
@@ -128,17 +129,6 @@ errorPlotNames = [  'Disconnected',
                     'Unknown Error',
                     'Unrecognized Type',
                     'Cannot Forward' ]
-
-
-def toPosix(dt):
-    return int(calendar.timegm(dt.utctimetuple()))
-
-def totalSeconds(delta):
-    # Duration in seconds. Python 2.7 introduced timedelta.total_seconds()
-    # but this should run on Python 2.6. (Version in Debian Squeeze.)
-    # Seconds per day: 24 hours per day * 60 minutes per hour * 60 seconds per minute = 86400
-    # Seconds per microsecond: 1/1000000
-    return delta.days * 86400 + delta.seconds + delta.microseconds / 1000000
 
 try:
     f = open(args.rrd, "r")

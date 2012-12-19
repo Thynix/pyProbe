@@ -18,6 +18,7 @@ from twistedfcp.protocol import FreenetClientProtocol, IdentifiedMessage
 from twistedfcp import message
 from twisted.python import log
 from fnprobe.db import init_database
+from fnprobe.time import toPosix, totalSeconds
 
 __version__ = "0.1"
 application = service.Application("pyProbe")
@@ -129,11 +130,7 @@ class SendHook:
 
 	def __call__(self, message):
 		delta = datetime.datetime.utcnow() - self.sent
-		# Duration in seconds. Python 2.7 introduced timedelta.total_seconds()
-		# but this should run on Python 2.6. (Version in Debian Squeeze.)
-		# Seconds per day: 24 hours per day * 60 minutes per hour * 60 seconds per minute = 86400
-		# Seconds per microsecond: 1/1000000
-		duration = delta.days * 86400 + delta.seconds + delta.microseconds / 1000000
+		duration = totalSeconds(delta)
 		#Commit results
 		self.pool.runWithConnection(insert, self.args, self.probeType, message, duration)
 		return True
