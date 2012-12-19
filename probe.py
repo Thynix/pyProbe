@@ -1,7 +1,7 @@
 from __future__ import division
 import argparse
 import random
-from pysqlite2 import dbapi2 as sqlite3
+import sqlite3
 from twisted.enterprise import adbapi
 import datetime
 import time
