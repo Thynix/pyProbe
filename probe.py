@@ -148,8 +148,6 @@ class Complain:
 		errStr = "Got ProtocolError - node does not support probes."
 		logging.error(errStr)
 		stderr.write(errStr + '\n')
-		#This is in a deferred, not in the main thread, so sys.exit()
-		#will throw an ineffective exception.
 		thread.interrupt_main()
 
 class FCPReconnectingFactory(protocol.ReconnectingClientFactory):
