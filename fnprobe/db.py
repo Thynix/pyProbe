@@ -67,7 +67,7 @@ def upgrade(db):
 		db.execute("PRAGMA user_version = {0}".format(new))
 		version = db.execute("PRAGMA user_version").fetchone()[0]
 
-	# In version 1: add a response time column "duration" to most tables.
+	# In version 1: Add a response time column "duration" to most tables.
 	if version == 0:
 		logging.warning("Upgrading from database version 0 to version 1.")
 		version_zero = [ "bandwidth", "build", "identifier", "peer_count",
@@ -86,7 +86,7 @@ def upgrade(db):
 		logging.warning("Upgrade from 1 to 2 complete.")
 
 	# In version 3: Create time index on each table instead of only bandwidth.
-	# Adde identifier index separate from time index for performance: the covering
+	# Add identifier index separate from time index for performance: the covering
 	# index leads to very poor performance during normal usage.
 	if version == 2:
 		logging.warning("Upgrading from database version 2 to version 3.")
