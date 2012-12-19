@@ -6,7 +6,6 @@ pyProbe is a collection of data gathering and analysis tools for [Freenet](https
 
 * [Python 2.6 or higher](http://www.python.org/download/releases/2.7.3/)
     * [argparse]() (if using Python earlier than 2.7)
-* [pysqlite](http://code.google.com/p/pysqlite/)
 * [Freenet](https://freenetproject.org/)
 * [gnuplot](http://www.gnuplot.info/) (for extra analyze.py plots)
 * [rrdtool] (http://oss.oetiker.ch/rrdtool/download.en.html) (rrdpython)
@@ -17,10 +16,6 @@ pyProbe is a collection of data gathering and analysis tools for [Freenet](https
 ## Installation
 
 Freenet, Python, gnuplot, rrdtool, Twisted, and Markdown all have installation instructions on their respective sites.
-
-### pysqlite
-
-* Available on the [Python Package Index](http://pypi.python.org/pypi/pip): `# pip install pysqlite`
 
 ### argparse
 
