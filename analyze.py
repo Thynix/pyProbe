@@ -71,15 +71,6 @@ log("Recency boundary is {0}.".format(recent))
 log("Connecting to database.")
 db = sqlite3.connect(args.databaseFile)
 
-#
-# Data cannot be added at the time the database starts, and it should have an
-# entire hour of data before it just like all the rest. As the first entry
-# should be added after the first hour of data, the database should begin
-# a second before one hour after the first data.
-#
-# An entry is computed from the data over the past hour. Start inclusive; end
-# exclusive.
-#
 timestampFormat = u"%Y-%m-%d %H:%M:%S.%f"
 def timestamp(string):
     """
@@ -135,7 +126,15 @@ try:
     f.close()
 except:
     # Database does not exist - create it.
-    fromTime = timestamp(db.execute("""select min("time") from "identifier" """).fetchone()[0])
+    #
+    # Data cannot be added at the time the database starts, and it should have an
+    # entire hour of data before it just like all the rest. As the first entry
+    # should be added after the first hour of data, the database should begin
+    # a second before one hour after the first data.
+    #
+    # An entry is computed including the start of the period and excluding the end.
+    #
+    fromTime = datetime.datetime.utcfromtimestamp(db.execute("""select min("time") from "identifier" """).fetchone()[0])
     toTime = fromTime + shortPeriod
     shortPeriodSeconds = int(totalSeconds(shortPeriod))
     log("Creating round robin network size database.")
@@ -420,7 +419,7 @@ if args.runRRD:
     #       will mean that the database will have to maintain the time of the first
     #       sample, which is not desirable.
     #
-    firstResult = toPosix(timestamp(db.execute(""" select min("time") from "identifier" """).fetchone()[0]))
+    firstResult = db.execute(""" select min("time") from "identifier" """).fetchone()[0]
     lastResult = rrdtool.last(args.rrd)
 
     # Distant colors are not easily confused.
