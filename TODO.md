@@ -1,3 +1,14 @@
+Database upgrade:
+then:
+    Typed columns.
+	Parameterize (values (?, ?)) util and analyze.
+now:
+    Store dates as integer seconds.
+    Enable WAL: PRAGMA journal_mode=WAL
+       Why does DATETIME result in typeof() returning "text"?
+    Database upgrade requires standalone tool: this next upgrade should just mention the tool, say to use it, and exit. It would be too intensive to run automatically.
+		Maybe not if not setting types on columns.
+
 Use Greasemonkey in Firefox and Chrome native support for the same to have interactive Javascript plots.
     Possibilities:
         http://dygraphs.com/
@@ -29,8 +40,3 @@ http://cran.r-project.org/web/packages/mrds/index.html
 http://cran.r-project.org/web/packages/Rcapture/index.html
 
 Perhaps consider per-hour and build a matrix based on distinct IDs and whether they occur in that period.
-
-Reduce or eliminate dropping data due to locking timeouts.
-    Switch from sqlite to postgresql or similar?
-    Thread differently?
-

@@ -15,46 +15,113 @@ def init_database(db):
 	db.commit()
 
 def create_new(db):
+	createVersion4(db)
+
+def createVersion4(db):
+	"""
+	Create a version 4 database. This is separated to avoid duplication between
+	the upgrade from version 3 to 4 and version 4 creation. This is because
+	sqlite does not support ALTER COLUMN and so tables must be recreated in order
+	to add types.
+	"""
 	logging.warning("Setting up new database.")
-	db.execute("PRAGMA user_version = 3")
+	db.execute("PRAGMA user_version = 4")
 
-	db.execute("create table bandwidth(time, htl, KiB, duration)")
-	db.execute("create index bandwidth_time_index on bandwidth(time)")
+	db.execute(""""create table bandwidth(
+	                                      time     DATETIME,
+	                                      htl      INTEGER,
+	                                      KiB      FLOAT,
+	                                      duration FLOAT
+	                                     )""")
+	db.execute("""create index bandwidth_time_index on bandwidth(time)""")
 
-	db.execute("create table build(time, htl, build, duration)")
+	db.execute("create table build(
+	                               time     DATETIME,
+	                               htl      INTEGER,
+	                               build    INTEGER,
+	                               duration FLOAT
+	                              )")
 	db.execute("create index build_time_index on build(time)")
 
-	db.execute("create table identifier(time, htl, identifier, percent, duration)")
+	db.execute("create table identifier(
+	                                    time       DATETIME,
+	                                    htl        INTEGER,
+	                                    identifier INTEGER,
+	                                    percent    INTEGER,
+	                                    duration   FLOAT
+	                                   )")
 	db.execute("create index identifier_time_index on identifier(time)")
 	db.execute("create index identifier_identifier_index on identifier(identifier)")
 
 	# link_lengths need not have duration because peer count will have it for
 	# all LINK_LENGTHS requests. Storing it on link_lengths would be needless
 	# duplication.
-	db.execute("create table link_lengths(time, htl, length, id)")
+	db.execute("create table link_lengths(
+	                                      time   DATETIME,
+	                                      htl    INTEGER,
+	                                      length FLOAT,
+	                                      id     INTEGER
+	                                     )")
 	db.execute("create index link_lengths_time_index on link_lengths(time)")
 
-	db.execute("create table peer_count(time, htl, peers, duration)")
+	db.execute("create table peer_count(
+	                                    time     DATETIME,
+	                                    htl      INTEGER,
+	                                    peers    INTEGER,
+	                                    duration FLOAT
+	                                   )")
 	db.execute("create index peer_count_time_index on peer_count(time)")
 
-	db.execute("create table location(time, htl, location, duration)")
+	db.execute("create table location(
+	                                  time     DATETIME,
+	                                  htl      INTEGER,
+	                                  location FLOAT,
+	                                  duration FLOAT
+	                                 )")
 	db.execute("create index location_time_index on location(time)")
 
-	db.execute("create table store_size(time, htl, GiB, duration)")
+	db.execute("create table store_size(
+	                                    time     DATETIME,
+	                                    htl      INTEGER,
+	                                    GiB      FLOAT,
+	                                    duration FLOAT
+	                                   )")
 	db.execute("create index store_size_time_index on peer_count(time)")
 
-	db.execute("create table uptime_48h(time, htl, percent, duration)")
+	db.execute("create table uptime_48h(
+	                                    time     DATETIME,
+	                                    htl      INTEGER,
+	                                    percent  FLOAT,
+	                                    duration FLOAT
+	                                   )")
 	db.execute("create index uptime_48h_time_index on uptime_48h(time)")
 
-	db.execute("create table uptime_7d(time, htl, percent, duration)")
+	db.execute("create table uptime_7d(
+	                                   time     DATETIME,
+	                                   htl      INTEGER,
+	                                   percent  FLOAT,
+	                                   duration FLOAT
+	                                  )")
 	db.execute("create index uptime_7d_time_index on uptime_7d(time)")
 
 	#Type is included in error and refused to better inform possible
 	#estimates of error in probe results.
-	db.execute("create table error(time, htl, probe_type, error_type, code, duration, local)")
+	db.execute("create table error(time       DATETIME,
+	                               htl        INTEGER,
+	                               probe_type TEXT,
+	                               error_type TEXT,
+	                               code       INTEGER,
+	                               duration   FLOAT,
+	                               local      BOOLEAN
+	                              )")
 	db.execute("create index error_time_index on error(time)")
 
-	db.execute("create table refused(time, htl, probe_type, duration)")
+	db.execute("create table refused(
+	                                 time       DATETIME,
+	                                 htl        INTEGER,
+	                                 probe_type TEXT,
+	                                 duration   FLOAT
+	                                )")
 	db.execute("create index refused_time_index on refused(time)")
 
 	db.execute("analyze")
@@ -112,3 +179,30 @@ def upgrade(db):
 
 		update_version(3)
 		logging.warning("Update from 2 to 3 complete.")
+
+	# In version 4: Use WAL so that "readers do not block writers and a writer does
+	# not block readers." Recreate database with column datatypes - sqlite does not
+	# support ALTER COLUMN. Convert timestamps to POSIX time.
+	# See https://www.sqlite.org/wal.html
+	if version == 3:
+		logging.warning("Upgrading from database version 3 to version 4.")
+
+		# TODO: Ensure the table is locked - is BEGIN TRANSACTION neccesary? is the journal change enough to lock it?
+		# Begin transaction isn't enough on its own.
+		# Enable WAL.
+		journal_mode = db.execute("""PRAGMA journal_mode=WAL""").fetchone()[0]
+		if journal_mode is not "wal":
+			logging.warning("Unable to change journal_mode to Write-Ahead Logging. This will probably mean poor concurrency performance. It is currently '{0}'".format(journal_mode))
+
+		# Rename existing tables so as to not interfere with the new.
+		for table in [ "bandwidth", "build", "identifier", "link_lengths", "peer_count",
+		               "location", "store_size", "uptime_48h", "uptime_7d", "error", "refused" ]:
+			db.execute("""ALTER TABLE {0} RENAME TO {0}-old""".format(table))
+
+		createVersion4(db)
+
+		# TODO: Select everything from each table, insert into new, converting time into POSIX time.
+		# TODO: analyze.py also has a function for going from a timestamp in the database to a datetime.
+
+		db.execute("analyze")
+		logging.warning("Update from 3 to 4 complete.")

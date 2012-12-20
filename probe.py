@@ -48,7 +48,7 @@ def insert(db, args, probe_type, result, duration):
 
 	header = result.name
 	htl = args.hopsToLive
-	now = datetime.datetime.utcnow()
+	now = toPosix(datetime.datetime.utcnow())
 
 	# Retry insert on locking timeout.
 	tries = 0
@@ -225,7 +225,9 @@ def main():
 	pool = adbapi.ConnectionPool('sqlite3', args.databaseFile, timeout=args.databaseTimeout, cp_max=1, check_same_thread=False)
 
 	#Ensure the database holds the required tables, columns, and indicies.
-	pool.runWithConnection(init_database)
+	init = pool.runWithConnection(init_database)
+	def upgradeFailure(# TODO: Complain and exit on database upgrade failure.
+	init.addErrback(thread.interrupt_main)
 
 
 	handler = sigint_handler(pool)

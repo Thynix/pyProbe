@@ -76,15 +76,15 @@ For command line argument documentation run with `--help`.
 
 There are separate tables for each result type, errors, and refuals. The database is versioned, and previous versions will be upgraded. (`init_database()`) All table names but `error`, `refused`, and `peer_count` match the name of the result type with which they are updated. With the exception of `link_lengths` lacking a `duration` column, all tables have the following columns:
 
-* `time`: Timestamp of when the result was committed.
-* `htl`: Hops to live value the probe used.
-* `duration`: How long elapsed between sending the probe and receiving the response.
+* `time`: POSIX time when the result was committed.
+* `htl`: Hops to live the probe request had.
+* `duration`: Floating point seconds elapsed between sending the probe and receiving the response.
 
 Additional columns vary by table:
 
 ### `bandwidth`
 
-* `KiB`: Outgoing bandwidth limit in KiB/s.
+* `KiB`- Outgoing bandwidth limit in floating point KiB/s.
 
 ### `build`
 
@@ -92,15 +92,15 @@ Additional columns vary by table:
 
 ### `identifier`
 
-* `identifier`: Randomly assigned (by default; can be set or randomized again at will) identifier.
-* `percent`: Very low-precision uptime percentage over the last 7 days.
+* `identifier`: Randomly assigned (by default; can be set or randomized again at will) integer identifier.
+* `percent`: Very low-precision integer uptime percentage over the last 7 days.
 
 ### `link_lengths`
 
 Each individual reported length has its own entry. This table does not have a `duration` column because the next table, `peer_count`, is based off the same probe result and has only one entry for each, which avoids storing that information multiple times for a single returned result.
 
-* `length`: Difference between the responding node's location and one of its peers' locations.
-* `id`: Each value is shared with the other entries resulting from the same probe result.
+* `length`: Floating point difference between the responding node's location and one of its peers' locations.
+* `id`: Integer ID shared with the other entries resulting from the same probe result.
 
 ### `peer count`
 
@@ -110,19 +110,19 @@ Set from `LINK_LENGTHS` probes like `link_lengths`.
 
 ### `location`
 
-* `location`: Network location.
+* `location`: Floating point network location.
 
 ### `store_size`:
 
-* `GiB`: Datastore (cache and store) size in GiB.
+* `GiB`: Datastore (cache and store) size in floating point GiB.
 
 ### `uptime_48h`
 
-* `percent`: Uptime percentage over the last 48 hours.
+* `percent`: Floating point uptime percentage over the last 48 hours.
 
 ### `uptime_7d`
 
-* `percent`: Uptime percentage over the last 7 days.
+* `percent`: Floating point uptime percentage over the last 7 days.
 
 ### `error`
 
