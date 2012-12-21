@@ -132,7 +132,7 @@ def upgrade(db):
 
 	def update_version(new):
 		db.execute("PRAGMA user_version = {0}".format(new))
-		version = db.execute("PRAGMA user_version").fetchone()[0]
+		return db.execute("PRAGMA user_version").fetchone()[0]
 
 	# In version 1: Add a response time column "duration" to most tables.
 	if version == 0:
@@ -142,14 +142,14 @@ def upgrade(db):
 		# Add the response time column to the relevant version 0 tables.
 		for table in version_zero:
 			db.execute("""alter table "{0}" add column duration""".format(table))
-		update_version(1)
+		version = update_version(1)
 		logging.warning("Upgrade from 0 to 1 complete.")
 
 	# In version 2: Add a "local" column to the error table.
 	if version == 1:
 		logging.warning("Upgrading from database version 1 to version 2.")
 		db.execute("""alter table error add column local""")
-		update_version(2)
+		version = update_version(2)
 		logging.warning("Upgrade from 1 to 2 complete.")
 
 	# In version 3: Create time index on each table instead of only bandwidth.
@@ -177,7 +177,7 @@ def upgrade(db):
 		# Analyze so that the optimizer is aware of the indexes.
 		db.execute("analyze")
 
-		update_version(3)
+		version = update_version(3)
 		logging.warning("Update from 2 to 3 complete.")
 
 	# In version 4: Use WAL so that "readers do not block writers and a writer does
