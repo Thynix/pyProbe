@@ -18,7 +18,7 @@ import markdown
 import re
 import logging
 import codecs
-from fnprobe.time import toPosix, totalSeconds
+from fnprobe.time import toPosix, totalSeconds, timestamp
 
 parser = argparse.ArgumentParser(description="Analyze probe results for estimates of peer distribution and network interconnectedness; generate plots.")
 
@@ -70,13 +70,6 @@ log("Recency boundary is {0}.".format(recent))
 
 log("Connecting to database.")
 db = sqlite3.connect(args.databaseFile)
-
-timestampFormat = u"%Y-%m-%d %H:%M:%S.%f"
-def timestamp(string):
-    """
-    Parses a database-formatted timestamp into a datetime.
-    """
-    return datetime.datetime.strptime(string, timestampFormat)
 
 # Period of time to consider samples in a group for an instantaneous estimate.
 # Must be a day or less. If it is more than a day the RRDTool 5-year daily
