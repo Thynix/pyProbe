@@ -232,16 +232,16 @@ if args.runRRD:
             from
               "identifier"
             where
-              "time" >= datetime('{0}') and
-              "time" <  datetime('{1}')
+              "time" >= strftime('%s', '{0}') and
+              "time" <  strftime('%s', '{1}')
           intersect
             select
               "identifier"
             from
               "identifier"
             where
-              "time" >= datetime('{1}') and
-              "time" <  datetime('{2}')
+              "time" >= strftime('%s', '{1}') and
+              "time" <  strftime('%s', '{2}')
           );
         """.format(fromTimeEffectivePrevious, fromTimeEffective, toTime)).fetchone()[0]
 
@@ -255,16 +255,16 @@ if args.runRRD:
             from
               "identifier"
             where
-              "time" >= datetime('{0}') and
-              "time" <  datetime('{1}')
+              "time" >= strftime('%s', '{0}') and
+              "time" <  strftime('%s', '{1}')
           )
         join
           "identifier"
             on
             "previous_identifier" == "identifier"
           where
-            "time" >= datetime('{1}') and
-            "time" <  datetime('{2}')
+            "time" >= strftime('%s', '{1}') and
+            "time" <  strftime('%s', '{2}')
         ;
         """.format(fromTimeEffectivePrevious, fromTimeEffective, toTime)).fetchone()[0]
 
@@ -289,16 +289,16 @@ if args.runRRD:
             from
               "identifier"
             where
-              "time" >= datetime('{0}') and
-              "time" <  datetime('{1}')
+              "time" >= strftime('%s', '{0}') and
+              "time" <  strftime('%s', '{1}')
           intersect
             select
               "identifier"
             from
               "identifier"
             where
-              "time" >= datetime('{1}') and
-              "time" <  datetime('{2}')
+              "time" >= strftime('%s', '{1}') and
+              "time" <  strftime('%s', '{2}')
           );
         """.format(fromTimeDailyPrevious, fromTimeDaily, toTime)).fetchone()[0]
 
@@ -312,16 +312,16 @@ if args.runRRD:
             from
               "identifier"
             where
-              "time" >= datetime('{0}') and
-              "time" <  datetime('{1}')
+              "time" >= strftime('%s', '{0}') and
+              "time" <  strftime('%s', '{1}')
           )
         join
           "identifier"
             on
             "previous_identifier" == "identifier"
           where
-            "time" >= datetime('{1}') and
-            "time" <  datetime('{2}')
+            "time" >= strftime('%s', '{1}') and
+            "time" <  strftime('%s', '{2}')
         ;
         """.format(fromTimeDailyPrevious, fromTimeDaily, toTime)).fetchone()[0]
 
@@ -338,8 +338,8 @@ if args.runRRD:
         from
           "identifier"
         where
-          "time" >= datetime('{0}') and
-          "time" <  datetime('{1}')
+          "time" >= strftime('%s', '{0}') and
+          "time" <  strftime('%s', '{1}')
         """.format(fromTime, toTime)).fetchone()[0]
         instantaneousSamples = db.execute("""
         select
@@ -347,8 +347,8 @@ if args.runRRD:
         from
           "identifier"
         where
-          "time" >= datetime('{0}') and
-          "time" <  datetime('{1}')
+          "time" >= strftime('%s', '{0}') and
+          "time" <  strftime('%s', '{1}')
         """.format(fromTime, toTime)).fetchone()[0]
 
         instantaneousSize = binarySearch(distinctInstantaneousSamples, instantaneousSamples)
@@ -362,8 +362,8 @@ if args.runRRD:
         from
           "store_size"
         where
-          "time" >= datetime('{0}') and
-          "time" <  datetime('{1}')
+          "time" >= strftime('%s', '{0}') and
+          "time" <  strftime('%s', '{1}')
         """.format(fromTimeEffective, toTime)).fetchone()
 
         storeCapacity = float('nan')
@@ -380,8 +380,8 @@ if args.runRRD:
         from
           "refused"
         where
-          "time" >= datetime('{0}') and
-          "time" <  datetime('{1}')
+          "time" >= strftime('%s', '{0}') and
+          "time" <  strftime('%s', '{1}')
         """.format(fromTime, toTime)).fetchone()[0]
 
         # Get numbers of each error type.
@@ -394,8 +394,8 @@ if args.runRRD:
               "error"
             where
               "error_type" == '{0}' and
-              "time" >= datetime('{1}') and
-              "time" <  datetime('{2}')
+              "time" >= strftime('%s', '{1}') and
+              "time" <  strftime('%s', '{2}')
             """.format(errorType, fromTime, toTime)).fetchone()[0])
 
         # RRDTool format string to explicitly specify the order of the data sources.
