@@ -43,12 +43,11 @@ TYPE = "Type"
 HTL = "HopsToLive"
 LOCAL = "Local"
 
-def insert(db, args, probe_type, result, duration):
+def insert(db, args, probe_type, result, duration, now):
 	start = datetime.datetime.utcnow()
 
 	header = result.name
 	htl = args.hopsToLive
-	now = toPosix(datetime.datetime.utcnow())
 
 	# Retry insert on locking timeout.
 	tries = 0
@@ -131,8 +130,9 @@ class SendHook:
 	def __call__(self, message):
 		delta = datetime.datetime.utcnow() - self.sent
 		duration = totalSeconds(delta)
+		now = toPosix(datetime.datetime.utcnow())
 		#Commit results
-		self.pool.runWithConnection(insert, self.args, self.probeType, message, duration)
+		self.pool.runWithConnection(insert, self.args, self.probeType, message, duration, now)
 		return True
 
 class Complain:
