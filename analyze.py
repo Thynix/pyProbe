@@ -134,7 +134,7 @@ except:
 
     # Generate list of data sources to reduce repetition. All sources contain only values greater than zero.
     datasources = [ 'DS:{0}:GAUGE:{1}:0:U'.format(name, shortPeriodSeconds) for name in
-                    [   'instantanious-size',   # Size estimated over a shortPeriod.
+                    [   'instantaneous-size',   # Size estimated over a shortPeriod.
                         'effective-size',       # Effective size estimated over a longPeriod.
                         'store-capacity',       # Usable store capacity. In bytes so RRDTool can use prefixes.
                         'daily-size',           # Effective size estimated over the past 2 days.
