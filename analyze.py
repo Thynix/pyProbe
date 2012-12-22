@@ -232,16 +232,16 @@ if args.runRRD:
             from
               "identifier"
             where
-              "time" >= datetime('{0}') and
-              "time" <  datetime('{1}')
+              "time" >= strftime('%s', '{0}') and
+              "time" <  strftime('%s', '{1}')
           intersect
             select
               "identifier"
             from
               "identifier"
             where
-              "time" >= datetime('{1}') and
-              "time" <  datetime('{2}')
+              "time" >= strftime('%s', '{1}') and
+              "time" <  strftime('%s', '{2}')
           );
         """.format(fromTimeEffectivePrevious, fromTimeEffective, toTime)).fetchone()[0]
 
@@ -255,16 +255,16 @@ if args.runRRD:
             from
               "identifier"
             where
-              "time" >= datetime('{0}') and
-              "time" <  datetime('{1}')
+              "time" >= strftime('%s', '{0}') and
+              "time" <  strftime('%s', '{1}')
           )
         join
           "identifier"
             on
             "previous_identifier" == "identifier"
           where
-            "time" >= datetime('{1}') and
-            "time" <  datetime('{2}')
+            "time" >= strftime('%s', '{1}') and
+            "time" <  strftime('%s', '{2}')
         ;
         """.format(fromTimeEffectivePrevious, fromTimeEffective, toTime)).fetchone()[0]
 
@@ -289,16 +289,16 @@ if args.runRRD:
             from
               "identifier"
             where
-              "time" >= datetime('{0}') and
-              "time" <  datetime('{1}')
+              "time" >= strftime('%s', '{0}') and
+              "time" <  strftime('%s', '{1}')
           intersect
             select
               "identifier"
             from
               "identifier"
             where
-              "time" >= datetime('{1}') and
-              "time" <  datetime('{2}')
+              "time" >= strftime('%s', '{1}') and
+              "time" <  strftime('%s', '{2}')
           );
         """.format(fromTimeDailyPrevious, fromTimeDaily, toTime)).fetchone()[0]
 
@@ -312,16 +312,16 @@ if args.runRRD:
             from
               "identifier"
             where
-              "time" >= datetime('{0}') and
-              "time" <  datetime('{1}')
+              "time" >= strftime('%s', '{0}') and
+              "time" <  strftime('%s', '{1}')
           )
         join
           "identifier"
             on
             "previous_identifier" == "identifier"
           where
-            "time" >= datetime('{1}') and
-            "time" <  datetime('{2}')
+            "time" >= strftime('%s', '{1}') and
+            "time" <  strftime('%s', '{2}')
         ;
         """.format(fromTimeDailyPrevious, fromTimeDaily, toTime)).fetchone()[0]
 
@@ -338,8 +338,8 @@ if args.runRRD:
         from
           "identifier"
         where
-          "time" >= datetime('{0}') and
-          "time" <  datetime('{1}')
+          "time" >= strftime('%s', '{0}') and
+          "time" <  strftime('%s', '{1}')
         """.format(fromTime, toTime)).fetchone()[0]
         instantaneousSamples = db.execute("""
         select
@@ -347,8 +347,8 @@ if args.runRRD:
         from
           "identifier"
         where
-          "time" >= datetime('{0}') and
-          "time" <  datetime('{1}')
+          "time" >= strftime('%s', '{0}') and
+          "time" <  strftime('%s', '{1}')
         """.format(fromTime, toTime)).fetchone()[0]
 
         instantaneousSize = binarySearch(distinctInstantaneousSamples, instantaneousSamples)
@@ -362,8 +362,8 @@ if args.runRRD:
         from
           "store_size"
         where
-          "time" >= datetime('{0}') and
-          "time" <  datetime('{1}')
+          "time" >= strftime('%s', '{0}') and
+          "time" <  strftime('%s', '{1}')
         """.format(fromTimeEffective, toTime)).fetchone()
 
         storeCapacity = float('nan')
@@ -380,8 +380,8 @@ if args.runRRD:
         from
           "refused"
         where
-          "time" >= datetime('{0}') and
-          "time" <  datetime('{1}')
+          "time" >= strftime('%s', '{0}') and
+          "time" <  strftime('%s', '{1}')
         """.format(fromTime, toTime)).fetchone()[0]
 
         # Get numbers of each error type.
@@ -394,8 +394,8 @@ if args.runRRD:
               "error"
             where
               "error_type" == '{0}' and
-              "time" >= datetime('{1}') and
-              "time" <  datetime('{2}')
+              "time" >= strftime('%s', '{1}') and
+              "time" <  strftime('%s', '{2}')
             """.format(errorType, fromTime, toTime)).fetchone()[0])
 
         # RRDTool format string to explicitly specify the order of the data sources.
@@ -491,7 +491,7 @@ if args.runRRD:
 
 if args.runLocation:
     log("Querying database for locations.")
-    locations = db.execute("""select distinct "location" from "location" where "time" > datetime('{0}') and "time" < datetime('{1}')""".format(recent, startTime)).fetchall()
+    locations = db.execute("""select distinct "location" from "location" where "time" > strftime('%s', '{0}') and "time" < strftime('%s', '{1}')""".format(recent, startTime)).fetchall()
 
     log("Writing results.")
     with open("locations_output", "w") as output:
@@ -503,7 +503,7 @@ if args.runLocation:
 
 if args.runPeerCount:
     log("Querying database for peer distribution histogram.")
-    rawPeerCounts = db.execute("""select peers, count("peers") from "peer_count" where "time" > datetime('{0}') and "time" < datetime('{1}') group by "peers" order by "peers" """.format(recent, startTime)).fetchall()
+    rawPeerCounts = db.execute("""select peers, count("peers") from "peer_count" where "time" > strftime('%s', '{0}') and "time" < strftime('%s', '{1}') group by "peers" order by "peers" """.format(recent, startTime)).fetchall()
 
     peerCounts = [ 0, ] * (args.histogramMax + 1)
 
@@ -527,7 +527,7 @@ if args.runPeerCount:
 
 if args.runLinkLengths:
     log("Querying database for link lengths.")
-    links = db.execute("""select "length" from "link_lengths" where "time" > datetime('{0}') and "time" < datetime('{1}')""".format(recent, startTime)).fetchall()
+    links = db.execute("""select "length" from "link_lengths" where "time" > strftime('%s', '{0}') and "time" < strftime('%s', '{1}')""".format(recent, startTime)).fetchall()
 
     log("Writing results.")
     with open('links_output', "w") as linkFile:
