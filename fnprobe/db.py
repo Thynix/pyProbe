@@ -229,37 +229,30 @@ def upgrade(db):
 		# Insert everything from the old tables into the new, performing these conversions:
 		# * time into POSIX timestamps
 		# * probe_type and error_type into numeric codes
-		# This depends on the order of the columns being the same between versions.
-		# Number of columns for correct number of value substitutions.
-		numColumns = { "bandwidth": 4, "build": 4, "identifier": 5,
-		               "link_lengths": 4, "peer_count": 4, "location": 4,
-		               "store_size": 4, "uptime_48h": 4, "uptime_7d": 4,
-		               "error": 7, "refused": 4}
+		# The sqlite3 module only allows executing single statements, so build a list.
+		# {0} stays as such to allow substitutions for each table.
+		probeTypeUpdates = []
+		errorTypeUpdates = []
+		for probeType in probeTypes:
+			probeTypeUpdates.append("""update "{0}" set "probe_type" = "{1}" where "probe_type" == "{2}" """.format("{0}", probeType.index, probeType))
+		for errorType in errorTypes:
+			errorTypeUpdates.append("""update "{0}" set "error_type" = "{1}" where "error_type" == "{2}" """.format("{0}", errorType.index, errorType))
+
 		for table in tables:
-			valueSubs = string.join(["?"] * numColumns[table], ",")
-			for row in db.execute("""select * from "{0}-old" """.format(table)):
-				# Unlike tuples lists are mutable.
-				row = list(row)
-				# Time is always the first column.
-				row[0] = stringToPosix(row[0])
-				# Convert probe_type if it exists.
-				if table == "error" or table == "refused":
-					row[2] = getattr(probeTypes, row[2]).index
-				# Convert error_type if it exists.
-				if table is "error":
-					row[3] = getattr(errorTypes, row[3]).index
-
-				# Pad out any remaining columns with None. They might be enpty from earlier
-				# usage of the database where they did not exist.
-				while len(row) < numColumns[table]:
-					row.append(None)
-
-				db.execute("""insert into "{0}" values({1})""".format(table, valueSubs), row)
+			db.execute("""insert into "{0}" select * from "{0}-old" """.format(table))
+			db.execute("""update "{0}" set time = strftime('%s', time) """.format(table))
+			if table == "error":
+				for update in errorTypeUpdates:
+					db.execute(update.format(table))
+			if table == "error" or table == "refused":
+				for update in probeTypeUpdates:
+					db.execute(update.format(table))
 
 		# Drop old tables.
 		for table in tables:
 			db.execute("""drop table "{0}-old" """.format(table))
 
+		db.execute("vacuum")
 		db.execute("analyze")
 		version = update_version(4)
 		logging.warning("Update from 3 to 4 complete.")
