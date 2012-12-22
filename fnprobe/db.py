@@ -1,4 +1,17 @@
 import logging
+from fnprobe.time import toPosix, timestamp
+from enum import Enum
+import string
+
+# TODO: Enums between names and codes
+# http://pypi.python.org/pypi/enum/0.4.4
+# https://github.com/freenet/fred-official/blob/master/src/freenet/node/probe/Type.java
+# Then what... getarr?
+probeTypes = Enum('BANDWIDTH', 'BUILD', 'IDENTIFIER', 'LINK_LENGTHS',
+                  'LOCATION', 'STORE_SIZE', 'UPTIME_48H', 'UPTIME_7D')
+
+errorTypes = Enum('DISCONNECTED', 'OVERLOAD', 'TIMEOUT', 'UNKNOWN',
+                  'UNRECOGNIZED_TYPE', 'CANNOT_FORWARD')
 
 def init_database(db):
 	"""
@@ -11,8 +24,6 @@ def init_database(db):
 	else:
 		# The database has already been set up. Upgrade to the latest version if necessary.
 		upgrade(db)
-
-	db.commit()
 
 def create_new(db):
 	createVersion4(db)
@@ -27,104 +38,111 @@ def createVersion4(db):
 	logging.warning("Setting up new database.")
 	db.execute("PRAGMA user_version = 4")
 
-	db.execute(""""create table bandwidth(
-	                                      time     DATETIME,
-	                                      htl      INTEGER,
-	                                      KiB      FLOAT,
-	                                      duration FLOAT
-	                                     )""")
+	db.execute("""create table bandwidth(
+	                                     time     DATETIME,
+	                                     htl      INTEGER,
+	                                     KiB      FLOAT,
+	                                     duration FLOAT
+	                                    )""")
 	db.execute("""create index bandwidth_time_index on bandwidth(time)""")
 
-	db.execute("create table build(
-	                               time     DATETIME,
-	                               htl      INTEGER,
-	                               build    INTEGER,
-	                               duration FLOAT
-	                              )")
-	db.execute("create index build_time_index on build(time)")
+	db.execute("""create table build(
+	                                 time     DATETIME,
+	                                 htl      INTEGER,
+	                                 build    INTEGER,
+	                                 duration FLOAT
+	                                )""")
+	db.execute("""create index build_time_index on build(time)""")
 
-	db.execute("create table identifier(
-	                                    time       DATETIME,
-	                                    htl        INTEGER,
-	                                    identifier INTEGER,
-	                                    percent    INTEGER,
-	                                    duration   FLOAT
-	                                   )")
-	db.execute("create index identifier_time_index on identifier(time)")
-	db.execute("create index identifier_identifier_index on identifier(identifier)")
+	db.execute("""create table identifier(
+	                                      time       DATETIME,
+	                                      htl        INTEGER,
+	                                      identifier INTEGER,
+	                                      percent    INTEGER,
+	                                      duration   FLOAT
+	                                     )""")
+	db.execute("""create index identifier_time_index on identifier(time)""")
+	db.execute("""create index identifier_identifier_index on identifier(identifier)""")
 
 	# link_lengths need not have duration because peer count will have it for
 	# all LINK_LENGTHS requests. Storing it on link_lengths would be needless
 	# duplication.
-	db.execute("create table link_lengths(
-	                                      time   DATETIME,
-	                                      htl    INTEGER,
-	                                      length FLOAT,
-	                                      id     INTEGER
-	                                     )")
-	db.execute("create index link_lengths_time_index on link_lengths(time)")
+	db.execute("""create table link_lengths(
+	                                        time   DATETIME,
+	                                        htl    INTEGER,
+	                                        length FLOAT,
+	                                        id     INTEGER
+	                                       )""")
+	db.execute("""create index link_lengths_time_index on link_lengths(time)""")
 
-	db.execute("create table peer_count(
+	db.execute("""create table peer_count(
+	                                      time     DATETIME,
+	                                      htl      INTEGER,
+	                                      peers    INTEGER,
+	                                      duration FLOAT
+	                                     )""")
+	db.execute("""create index peer_count_time_index on peer_count(time)""")
+
+	db.execute("""create table location(
 	                                    time     DATETIME,
 	                                    htl      INTEGER,
-	                                    peers    INTEGER,
+	                                    location FLOAT,
 	                                    duration FLOAT
-	                                   )")
-	db.execute("create index peer_count_time_index on peer_count(time)")
+	                                   )""")
+	db.execute("""create index location_time_index on location(time)""")
 
-	db.execute("create table location(
-	                                  time     DATETIME,
-	                                  htl      INTEGER,
-	                                  location FLOAT,
-	                                  duration FLOAT
-	                                 )")
-	db.execute("create index location_time_index on location(time)")
+	db.execute("""create table store_size(
+	                                      time     DATETIME,
+	                                      htl      INTEGER,
+	                                      GiB      FLOAT,
+	                                      duration FLOAT
+	                                     )""")
+	db.execute("""create index store_size_time_index on peer_count(time)""")
 
-	db.execute("create table store_size(
-	                                    time     DATETIME,
-	                                    htl      INTEGER,
-	                                    GiB      FLOAT,
-	                                    duration FLOAT
-	                                   )")
-	db.execute("create index store_size_time_index on peer_count(time)")
+	db.execute("""create table uptime_48h(
+	                                      time     DATETIME,
+	                                      htl      INTEGER,
+	                                      percent  FLOAT,
+	                                      duration FLOAT
+	                                     )""")
+	db.execute("""create index uptime_48h_time_index on uptime_48h(time)""")
 
-	db.execute("create table uptime_48h(
-	                                    time     DATETIME,
-	                                    htl      INTEGER,
-	                                    percent  FLOAT,
-	                                    duration FLOAT
-	                                   )")
-	db.execute("create index uptime_48h_time_index on uptime_48h(time)")
-
-	db.execute("create table uptime_7d(
-	                                   time     DATETIME,
-	                                   htl      INTEGER,
-	                                   percent  FLOAT,
-	                                   duration FLOAT
-	                                  )")
-	db.execute("create index uptime_7d_time_index on uptime_7d(time)")
+	db.execute("""create table uptime_7d(
+	                                     time     DATETIME,
+	                                     htl      INTEGER,
+	                                     percent  FLOAT,
+	                                     duration FLOAT
+	                                    )""")
+	db.execute("""create index uptime_7d_time_index on uptime_7d(time)""")
 
 	#Type is included in error and refused to better inform possible
 	#estimates of error in probe results.
-	db.execute("create table error(time       DATETIME,
-	                               htl        INTEGER,
-	                               probe_type TEXT,
-	                               error_type TEXT,
-	                               code       INTEGER,
-	                               duration   FLOAT,
-	                               local      BOOLEAN
-	                              )")
-	db.execute("create index error_time_index on error(time)")
-
-	db.execute("create table refused(
+	db.execute("""create table error(
 	                                 time       DATETIME,
 	                                 htl        INTEGER,
-	                                 probe_type TEXT,
-	                                 duration   FLOAT
-	                                )")
-	db.execute("create index refused_time_index on refused(time)")
+	                                 probe_type INTEGER,
+	                                 error_type INTEGER,
+	                                 code       INTEGER,
+	                                 duration   FLOAT,
+	                                 local      BOOLEAN
+	                                )""")
+	db.execute("""create index error_time_index on error(time)""")
+
+	db.execute("""create table refused(
+	                                   time       DATETIME,
+	                                   htl        INTEGER,
+	                                   probe_type INTEGER,
+	                                   duration   FLOAT
+	                                  )""")
+	db.execute("""create index refused_time_index on refused(time)""")
 
 	db.execute("analyze")
+
+def stringToPosix(string):
+	"""
+	Converts a database timestamp string to a POSIX timestamp.
+	"""
+	return toPosix(timestamp(string))
 
 def upgrade(db):
 	version = db.execute("PRAGMA user_version").fetchone()[0]
@@ -182,27 +200,66 @@ def upgrade(db):
 
 	# In version 4: Use WAL so that "readers do not block writers and a writer does
 	# not block readers." Recreate database with column datatypes - sqlite does not
-	# support ALTER COLUMN. Convert timestamps to POSIX time.
-	# See https://www.sqlite.org/wal.html
+	# support ALTER COLUMN. Convert timestamps to POSIX time. Store probe and error
+	# types as integer codes.
+	# See https://www.sqlite.org/wal.html https://www.sqlite.org/datatype3.html
 	if version == 3:
 		logging.warning("Upgrading from database version 3 to version 4.")
 
-		# TODO: Ensure the table is locked - is BEGIN TRANSACTION neccesary? is the journal change enough to lock it?
-		# Begin transaction isn't enough on its own.
+		# Lock the database. If other writes occur data could be left behind and lost.
+		db.execute("""begin immediate transaction""")
+
 		# Enable WAL.
-		journal_mode = db.execute("""PRAGMA journal_mode=WAL""").fetchone()[0]
-		if journal_mode is not "wal":
+		journal_mode = db.execute("""pragma journal_mode=wal""").fetchone()[0]
+		if journal_mode != "wal":
 			logging.warning("Unable to change journal_mode to Write-Ahead Logging. This will probably mean poor concurrency performance. It is currently '{0}'".format(journal_mode))
 
+		tables = [ "bandwidth", "build", "identifier", "link_lengths", "peer_count",
+		           "location", "store_size", "uptime_48h", "uptime_7d", "error", "refused" ]
 		# Rename existing tables so as to not interfere with the new.
-		for table in [ "bandwidth", "build", "identifier", "link_lengths", "peer_count",
-		               "location", "store_size", "uptime_48h", "uptime_7d", "error", "refused" ]:
-			db.execute("""ALTER TABLE {0} RENAME TO {0}-old""".format(table))
+		# Drop existing indexes as they conflict in name with those on the new.
+		for table in tables:
+			db.execute("""alter table "{0}" rename to "{0}-old" """.format(table))
+			db.execute("""drop index "{0}_time_index" """.format(table))
+		db.execute("""drop index identifier_identifier_index""")
 
+		# Create version 4 database; set user_version to 4.
 		createVersion4(db)
 
-		# TODO: Select everything from each table, insert into new, converting time into POSIX time.
-		# TODO: analyze.py also has a function for going from a timestamp in the database to a datetime.
+		# Insert everything from the old tables into the new, performing these conversions:
+		# * time into POSIX timestamps
+		# * probe_type and error_type into numeric codes
+		# This depends on the order of the columns being the same between versions.
+		# Number of columns for correct number of value substitutions.
+		numColumns = { "bandwidth": 4, "build": 4, "identifier": 5,
+		               "link_lengths": 4, "peer_count": 4, "location": 4,
+		               "store_size": 4, "uptime_48h": 4, "uptime_7d": 4,
+		               "error": 7, "refused": 4}
+		for table in tables:
+			valueSubs = string.join(["?"] * numColumns[table], ",")
+			for row in db.execute("""select * from "{0}-old" """.format(table)):
+				# Unlike tuples lists are mutable.
+				row = list(row)
+				# Time is always the first column.
+				row[0] = stringToPosix(row[0])
+				# Convert probe_type if it exists.
+				if table == "error" or table == "refused":
+					row[2] = getattr(probeTypes, row[2]).index
+				# Convert error_type if it exists.
+				if table is "error":
+					row[3] = getattr(errorTypes, row[3]).index
+
+				# Pad out any remaining columns with None. They might be enpty from earlier
+				# usage of the database where they did not exist.
+				while len(row) < numColumns[table]:
+					row.append(None)
+
+				db.execute("""insert into "{0}" values({1})""".format(table, valueSubs), row)
+
+		# Drop old tables.
+		for table in tables:
+			db.execute("""drop table "{0}-old" """.format(table))
 
 		db.execute("analyze")
+		version = update_version(4)
 		logging.warning("Update from 3 to 4 complete.")

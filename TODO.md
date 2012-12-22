@@ -1,13 +1,13 @@
 Database upgrade:
 then:
-    Typed columns.
-	Parameterize (values (?, ?)) util and analyze.
+    Parameterize (values (?, ?)) util and analyze.
+    Omit time and HTL from link_lengths entries: can select from peer_count and find same ID.
+	More efficient queries. (Eleriseth #12)
 now:
+    Typed columns.
     Store dates as integer seconds.
     Enable WAL: PRAGMA journal_mode=WAL
        Why does DATETIME result in typeof() returning "text"?
-    Database upgrade requires standalone tool: this next upgrade should just mention the tool, say to use it, and exit. It would be too intensive to run automatically.
-		Maybe not if not setting types on columns.
 
 Use Greasemonkey in Firefox and Chrome native support for the same to have interactive Javascript plots.
     Possibilities:
@@ -23,7 +23,7 @@ Keep list of notable dates, insert labeled vertical lines in the plots at those 
 
 `link_lengths`:
 
-* Could save space by omitting `time` and `htl` on all but the first entry of a given `id`.
+* Could save space by omitting `time` and `htl` and instead finding peer_count entries with the same `id`.
 
 `store_size`:
 

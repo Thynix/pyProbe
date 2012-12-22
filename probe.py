@@ -224,16 +224,24 @@ def main():
 	#     https://www.sqlite.org/faq.html#q6
 	pool = adbapi.ConnectionPool('sqlite3', args.databaseFile, timeout=args.databaseTimeout, cp_max=1, check_same_thread=False)
 
-	#Ensure the database holds the required tables, columns, and indicies.
+	# Ensure the database holds the required tables, columns, and indicies.
+	# Connect and start sending probes only if this is successful.
+	# Note that runWithConnection() commits if no exceptions are thrown.
 	init = pool.runWithConnection(init_database)
-	def upgradeFailure(# TODO: Complain and exit on database upgrade failure.
-	init.addErrback(thread.interrupt_main)
 
+	def databaseInitFailure(failure):
+		logging.error("Database initialization failed: '{0}'".format(failure))
+		exit(1)
+
+	def databaseInitSuccess(d):
+		reactor.connectTCP(args.host, args.port, FCPReconnectingFactory(args, pool))
+
+	init.addErrback(databaseInitFailure)
+	init.addCallback(databaseInitSuccess)
 
 	handler = sigint_handler(pool)
 	reactor.callWhenRunning(signal, SIGINT, handler)
 	reactor.callWhenRunning(signal, SIGTERM, handler)
-	reactor.connectTCP(args.host, args.port, FCPReconnectingFactory(args, pool))
 
 #run main if run with twistd: it will start the reactor.
 if __name__ == "__builtin__":

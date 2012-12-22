@@ -12,6 +12,7 @@ pyProbe is a collection of data gathering and analysis tools for [Freenet](https
 * [Twisted](https://twistedmatrix.com/trac/)
 * [twistedfcp](https://github.com/AnIrishDuck/twistedfcp)
 * [Markdown](http://packages.python.org/Markdown/index.html)
+* [enum](http://pypi.python.org/pypi/enum/0.4.4)
 
 ## Installation
 
@@ -30,6 +31,10 @@ Freenet, Python, gnuplot, rrdtool, Twisted, and Markdown all have installation i
 ### Markdown
 
 * Available on the package index: `# pip install markdown`
+
+### enum
+
+* Available on the package index: `# pip install enum`
 
 ## Usage
 

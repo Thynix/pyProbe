@@ -18,7 +18,7 @@ import markdown
 import re
 import logging
 import codecs
-from fnprobe.time import toPosix, totalSeconds, timestamp
+from fnprobe.time import toPosix, totalSeconds
 
 parser = argparse.ArgumentParser(description="Analyze probe results for estimates of peer distribution and network interconnectedness; generate plots.")
 
@@ -127,7 +127,7 @@ except:
     #
     # An entry is computed including the start of the period and excluding the end.
     #
-    fromTime = timestamp(db.execute("""select min("time") from "identifier" """).fetchone()[0])
+    fromTime = datetime.datetime.utcfromtimestamp(db.execute("""select min("time") from "identifier" """).fetchone()[0])
     toTime = fromTime + shortPeriod
     shortPeriodSeconds = int(totalSeconds(shortPeriod))
     log("Creating round robin network size database.")
@@ -412,7 +412,7 @@ if args.runRRD:
     #       will mean that the database will have to maintain the time of the first
     #       sample, which is not desirable.
     #
-    firstResult = toPosix(timestamp(db.execute(""" select min("time") from "identifier" """).fetchone()[0]))
+    firstResult = db.execute(""" select min("time") from "identifier" """).fetchone()[0]
     lastResult = rrdtool.last(args.rrd)
 
     # Distant colors are not easily confused.
