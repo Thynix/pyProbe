@@ -27,6 +27,7 @@ probeRate=20
 
 #
 # Seconds to wait before timing out on a probe request.
+#
 # The node has a local timeout for requests which is based on the hops to live.
 # This does not interfere with sending additional requests.
 # As of this writing, there is a base timeout of 15 seconds, and every HTL over

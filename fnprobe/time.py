@@ -3,6 +3,9 @@ import datetime
 import exceptions
 
 def toPosix(dt):
+	"""
+	Returns the UTC POSIX timestamp for a datetime.
+	"""
 	return int(calendar.timegm(dt.utctimetuple()))
 
 def totalSeconds(delta):
