@@ -525,16 +525,19 @@ if args.runPeerCount:
     log("Plotting.")
     call(["gnuplot","peer_count.gnu"])
 
+def writeCDF(data, filename):
+    log("Writing results.")
+    with open(filename, "w") as output:
+        #GNUPlot cumulative adds y values, should add to 1.0 in total.
+        # Lambda: get result out of singleton list so it can be sorted as a number.
+        for entry in sorted(map(lambda entry: entry[0], data)):
+            output.write("{0} {1:%}\n".format(entry, 1.0/len(data)))
+
 if args.runLinkLengths:
     log("Querying database for link lengths.")
     links = db.execute("""select "length" from "link_lengths" where "time" > strftime('%s', '{0}') and "time" < strftime('%s', '{1}')""".format(recent, startTime)).fetchall()
 
-    log("Writing results.")
-    with open('links_output', "w") as linkFile:
-        #GNUPlot cumulative adds y values, should add to 1.0 in total.
-        # Lambda: get result out of singleton list so it can be sorted as a number.
-        for link in sorted(map(lambda link: link[0], links)):
-            linkFile.write("{0} {1:%}\n".format(link, 1.0/len(links)))
+    writeCDF(links, 'links_output')
 
     log("Plotting.")
     call(["gnuplot","link_length.gnu"])
