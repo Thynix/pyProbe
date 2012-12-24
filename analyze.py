@@ -53,6 +53,8 @@ parser.add_argument('--peer-count', dest='runPeerCount', default=False, action='
                     help='If specified plots peer count distribution over the last recency period.')
 parser.add_argument('--link-lengths', dest='runLinkLengths', default=False, action='store_true',
                     help='If specified plots link length distribution over the last recency period.')
+parser.add_argument('--uptime', dest='runUptime', default=False, action='store_true',
+                    help='If specified plots uptime distribution over the last recency period.')
 
 args = parser.parse_args()
 
@@ -541,6 +543,14 @@ if args.runLinkLengths:
 
     log("Plotting.")
     call(["gnuplot","link_length.gnu"])
+
+if args.runUptime:
+    log("Querying database for uptime reported with identifiers")
+    uptimes = db.execute("""select "percent" from "identifier" where "time" > strftime('%s', '{0}') and "time" < strftime('%s', '{1}')""".format(recent, startTime)).fetchall()
+
+    writeCDF(uptimes, 'uptimes')
+
+    call(["gnuplot","uptime.gnu"])
 
 log("Closing database.")
 db.close()
