@@ -3,11 +3,6 @@ then:
     Parameterize (values (?, ?)) util and analyze.
     Omit time and HTL from link_lengths entries: can select from peer_count and find same ID.
 	More efficient queries. (Eleriseth #12)
-now:
-    Typed columns.
-    Store dates as integer seconds.
-    Enable WAL: PRAGMA journal_mode=WAL
-       Why does DATETIME result in typeof() returning "text"?
 
 Use Greasemonkey in Firefox and Chrome native support for the same to have interactive Javascript plots.
     Possibilities:
