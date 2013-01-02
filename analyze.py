@@ -455,8 +455,10 @@ if args.runRRD:
             rrdtool.graph(  '{0}_{1}x{2}_{3}'.format(period[0], dimension[0], dimension[1], args.sizeGraph),
                             '--start', str(period[1]),
                             '--end', str(lastResult),
+                            # Each data source has a new value each shortPeriod,
+                            # even if it involves data over a longer period.
                             'DEF:instantaneous-size={0}:instantaneous-size:AVERAGE:step={1}'.format(args.rrd, int(totalSeconds(shortPeriod))),
-                            'DEF:daily-size={0}:effective-size:AVERAGE:step={1}'.format(args.rrd, int(totalSeconds(mediumPeriod))),
+                            'DEF:daily-size={0}:effective-size:AVERAGE:step={1}'.format(args.rrd, int(totalSeconds(shortPeriod))),
                             'DEF:effective-size={0}:effective-size:AVERAGE:step={1}'.format(args.rrd, int(totalSeconds(shortPeriod))),
                             'LINE2:instantaneous-size#FF0000:Hourly Instantaneous',
                             'LINE2:daily-size#0099FF:Daily Effective',
