@@ -458,7 +458,7 @@ if args.runRRD:
                             # Each data source has a new value each shortPeriod,
                             # even if it involves data over a longer period.
                             'DEF:instantaneous-size={0}:instantaneous-size:AVERAGE:step={1}'.format(args.rrd, int(totalSeconds(shortPeriod))),
-                            'DEF:daily-size={0}:effective-size:AVERAGE:step={1}'.format(args.rrd, int(totalSeconds(shortPeriod))),
+                            'DEF:daily-size={0}:daily-size:AVERAGE:step={1}'.format(args.rrd, int(totalSeconds(shortPeriod))),
                             'DEF:effective-size={0}:effective-size:AVERAGE:step={1}'.format(args.rrd, int(totalSeconds(shortPeriod))),
                             'LINE2:instantaneous-size#FF0000:Hourly Instantaneous',
                             'LINE2:daily-size#0099FF:Daily Effective',
