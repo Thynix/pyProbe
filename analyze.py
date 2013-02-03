@@ -534,10 +534,10 @@ if args.runPeerCount:
 
     log("Writing results.")
     with open("peerDist.dat", 'w') as output:
-            totalNodes = sum(peerCounts)
+            totalReports = max(1, sum(peerCounts))
             numberOfPeers = 0
-            for nodes in peerCounts:
-                    output.write("{0} {1:%}\n".format(numberOfPeers, nodes/max(1, totalNodes)))
+            for reports in peerCounts:
+                    output.write("{0} {1:%}\n".format(numberOfPeers, reports/totalReports))
                     numberOfPeers += 1
 
     log("Plotting.")
