@@ -39,6 +39,8 @@ parser.add_argument('--store-graph', dest='storeGraph', default='plot_store_capa
                     help='Path to the store capacity graph.')
 parser.add_argument('--error-refused-graph', dest='errorRefusedGraph', default='plot_error_refused.png',
                     help='Path to the errors and refusals graph.')
+parser.add_argument('--uptime-histogram-max', dest="uptimeHistogramMax", default=120, type=int,
+                    help='Maxmimum percentage to include in the uptime histogram. Default 120')
 
 # Which segments of analysis to run.
 parser.add_argument('--upload', dest='uploadConfig', default=None,
@@ -561,9 +563,17 @@ if args.runLinkLengths:
 
 if args.runUptime:
     log("Querying database for uptime reported with identifiers")
-    uptimes = db.execute("""select "percent" from "identifier" where "time" > strftime('%s', '{0}') and "time" < strftime('%s', '{1}')""".format(recent, startTime)).fetchall()
+    # Note that the uptime percentage on the identifier probes is an integer.
+    uptimes = db.execute("""select "percent", count("percent") from "identifier" where "time" > strftime('%s', '{0}') and "time" < strftime('%s', '{1}') group by "percent" order by "percent" """.format(recent, startTime)).fetchall()
+    print len(uptimes)
 
-    writeCDF(uptimes, 'uptimes')
+    hist = makeHistogram(args.uptimeHistogramMax, uptimes)
+    with open('uptimes', 'w') as output:
+        totalReports = max(1, sum(hist))
+        percent = 0
+        for reports in hist:
+            output.write("{0} {1:%}\n".format(percent, reports/totalReports))
+            percent += 1
 
     call(["gnuplot","uptime.gnu"])
 
