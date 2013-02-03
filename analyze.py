@@ -544,10 +544,11 @@ if args.runPeerCount:
 def writeCDF(data, filename):
     log("Writing results.")
     with open(filename, "w") as output:
+        height = 1.0/max(1.0, len(data))
         #GNUPlot cumulative adds y values, should add to 1.0 in total.
         # Lambda: get result out of singleton list so it can be sorted as a number.
         for entry in sorted(map(lambda entry: entry[0], data)):
-            output.write("{0} {1:%}\n".format(entry, 1.0/len(data)))
+            output.write("{0} {1:%}\n".format(entry, height))
 
 if args.runLinkLengths:
     log("Querying database for link lengths.")
