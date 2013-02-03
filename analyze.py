@@ -493,6 +493,25 @@ if args.runRRD:
                             *refusedAndErrors
                          )
 
+def makeHistogram(histMax, results):
+    """
+    The histogram is capped at histMax.
+    results is a list of tuples of (value, occurances).
+
+    Returns a list of occurances indexed by value, with those at index maxHist
+    being a sum of those at and above that value.
+    """
+    # The database does not return a row for unseen values - fill them in.
+    hist = [ 0, ] * (histMax + 1)
+
+    for result in results:
+        if result[0] < len(hist):
+            hist[result[0]] = result[1]
+        else:
+            hist[histMax] += result[1]
+
+    return hist
+
 if args.runLocation:
     log("Querying database for locations.")
     locations = db.execute("""select distinct "location" from "location" where "time" > strftime('%s', '{0}') and "time" < strftime('%s', '{1}')""".format(recent, startTime)).fetchall()
@@ -509,14 +528,7 @@ if args.runPeerCount:
     log("Querying database for peer distribution histogram.")
     rawPeerCounts = db.execute("""select peers, count("peers") from "peer_count" where "time" > strftime('%s', '{0}') and "time" < strftime('%s', '{1}') group by "peers" order by "peers" """.format(recent, startTime)).fetchall()
 
-    peerCounts = [ 0, ] * (args.histogramMax + 1)
-
-    #Database does not return empty entries for unseen peer counts, so fill them in.
-    for count in rawPeerCounts:
-        if count[0] < len(peerCounts):
-            peerCounts[count[0]] = count[1]
-        else:
-            peerCounts[len(peerCounts) - 1] = count[1]
+    peerCounts = makeHistogram(args.histogramMax, rawPeerCounts)
 
     log("Writing results.")
     with open("peerDist.dat", 'w') as output:
