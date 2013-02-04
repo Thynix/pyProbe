@@ -26,7 +26,108 @@ def init_database(db):
 		upgrade(db)
 
 def create_new(db):
-	createVersion4(db)
+	logging.warning("Setting up new database.")
+	db.execute("PRAGMA user_version = 5")
+
+	db.execute("""create table bandwidth(
+	                                     time     DATETIME,
+	                                     htl      INTEGER,
+	                                     KiB      FLOAT,
+	                                     duration FLOAT
+	                                    )""")
+	db.execute("""create index bandwidth_time_index on bandwidth(time)""")
+
+	db.execute("""create table build(
+	                                 time     DATETIME,
+	                                 htl      INTEGER,
+	                                 build    INTEGER,
+	                                 duration FLOAT
+	                                )""")
+	db.execute("""create index build_time_index on build(time)""")
+
+	db.execute("""create table identifier(
+	                                      time       DATETIME,
+	                                      htl        INTEGER,
+	                                      identifier INTEGER,
+	                                      percent    INTEGER,
+	                                      duration   FLOAT
+	                                     )""")
+	db.execute("""create index identifier_identifier_time on identifier(identifier, time)""")
+	db.execute("""create index identifier_time_identifier on identifier(time, identifier)""")
+
+	# link_lengths need not have duration because peer count will have it for
+	# all LINK_LENGTHS requests. Storing it on link_lengths would be needless
+	# duplication.
+	db.execute("""create table link_lengths(
+	                                        time   DATETIME,
+	                                        htl    INTEGER,
+	                                        length FLOAT,
+	                                        id     INTEGER
+	                                       )""")
+	db.execute("""create index link_lengths_time_index on link_lengths(time)""")
+
+	db.execute("""create table peer_count(
+	                                      time     DATETIME,
+	                                      htl      INTEGER,
+	                                      peers    INTEGER,
+	                                      duration FLOAT
+	                                     )""")
+	db.execute("""create index peer_count_time_index on peer_count(time)""")
+
+	db.execute("""create table location(
+	                                    time     DATETIME,
+	                                    htl      INTEGER,
+	                                    location FLOAT,
+	                                    duration FLOAT
+	                                   )""")
+	db.execute("""create index location_time_index on location(time)""")
+
+	db.execute("""create table store_size(
+	                                      time     DATETIME,
+	                                      htl      INTEGER,
+	                                      GiB      FLOAT,
+	                                      duration FLOAT
+	                                     )""")
+	db.execute("""create index store_size_time_index on store_size(time)""")
+
+	db.execute("""create table uptime_48h(
+	                                      time     DATETIME,
+	                                      htl      INTEGER,
+	                                      percent  FLOAT,
+	                                      duration FLOAT
+	                                     )""")
+	db.execute("""create index uptime_48h_time_index on uptime_48h(time)""")
+
+	db.execute("""create table uptime_7d(
+	                                     time     DATETIME,
+	                                     htl      INTEGER,
+	                                     percent  FLOAT,
+	                                     duration FLOAT
+	                                    )""")
+	db.execute("""create index uptime_7d_time_index on uptime_7d(time)""")
+
+	#Type is included in error and refused to better inform possible
+	#estimates of error in probe results.
+	db.execute("""create table error(
+	                                 time       DATETIME,
+	                                 htl        INTEGER,
+	                                 probe_type INTEGER,
+	                                 error_type INTEGER,
+	                                 code       INTEGER,
+	                                 duration   FLOAT,
+	                                 local      BOOLEAN
+	                                )""")
+	db.execute("""create index error_time_index on error(time)""")
+
+	db.execute("""create table refused(
+	                                   time       DATETIME,
+	                                   htl        INTEGER,
+	                                   probe_type INTEGER,
+	                                   duration   FLOAT
+	                                  )""")
+	db.execute("""create index refused_time_index on refused(time)""")
+
+	db.execute("analyze")
 
 def createVersion4(db):
 	"""
@@ -256,3 +357,27 @@ def upgrade(db):
 		db.execute("analyze")
 		version = update_version(4)
 		logging.warning("Update from 3 to 4 complete.")
+
+	# In version 5: Add covering indexes for performance on size estimate.
+	# Remove some unused indexes.
+	# Remove duplicate index and add the one it was intended to be.
+	if version == 4:
+		logging.warning("Upgrading from database version 4 to version 5.")
+
+		# Covering indexes.
+		db.execute("""CREATE INDEX identifier_identifier_time ON identifier(identifier, time)""")
+		db.execute("""CREATE INDEX identifier_time_identifier ON identifier(time, identifier)""")
+
+		# Not needed in query on covering indexes.
+		db.execute("""DROP INDEX identifier_identifier_index""")
+		db.execute("""DROP INDEX identifier_time_index""")
+
+		# Store size time index was accidentally over peer_count
+		db.execute("""DROP INDEX store_size_time_index""")
+		db.execute("""CREATE INDEX store_size_time_index on store_size(time)""")
+
+		db.execute("analyze")
+		version = update_version(5)
+		logging.warning("Update from 4 to 5 complete.")
+
+
