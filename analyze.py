@@ -565,7 +565,14 @@ def writeCDF(data, filename):
 
 if args.runLinkLengths:
     log("Querying database for link lengths.")
-    links = db.execute("""select "length" from "link_lengths" where "time" > strftime('%s', '{0}') and "time" < strftime('%s', '{1}')""".format(recent, startTime)).fetchall()
+    links = db.execute("""
+    SELECT
+      "length"
+    FROM
+      "link_lengths"
+    WHERE
+      "time" BETWEEN strftime('%s', ?1) AND strftime('%s', ?2)
+    """, (recent, startTime)).fetchall()
 
     writeCDF(links, 'links_output')
 
@@ -575,7 +582,16 @@ if args.runLinkLengths:
 if args.runUptime:
     log("Querying database for uptime reported with identifiers")
     # Note that the uptime percentage on the identifier probes is an integer.
-    uptimes = db.execute("""select "percent", count("percent") from "identifier" where "time" > strftime('%s', '{0}') and "time" < strftime('%s', '{1}') group by "percent" order by "percent" """.format(recent, startTime)).fetchall()
+    uptimes = db.execute("""
+    SELECT
+      "percent", count("percent")
+    FROM
+      "identifier"
+    WHERE
+      "time" BETWEEN strftime('%s', ?1) AND strftime('%s', ?2)
+    GROUP BY "percent"
+    ORDER BY "percent"
+    """, (recent, startTime)).fetchall()
 
     hist = makeHistogram(args.uptimeHistogramMax, uptimes)
     with open('uptimes', 'w') as output:
