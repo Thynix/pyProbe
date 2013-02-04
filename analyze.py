@@ -576,7 +576,6 @@ if args.runUptime:
     log("Querying database for uptime reported with identifiers")
     # Note that the uptime percentage on the identifier probes is an integer.
     uptimes = db.execute("""select "percent", count("percent") from "identifier" where "time" > strftime('%s', '{0}') and "time" < strftime('%s', '{1}') group by "percent" order by "percent" """.format(recent, startTime)).fetchall()
-    print len(uptimes)
 
     hist = makeHistogram(args.uptimeHistogramMax, uptimes)
     with open('uptimes', 'w') as output:
