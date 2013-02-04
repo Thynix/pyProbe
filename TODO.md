@@ -1,8 +1,7 @@
+Use Q-Q plots for link length distribution (logarithmic) and location. (uniform?)
+
 Database upgrade:
-then:
-    Parameterize (values (?, ?)) util and analyze.
     Omit time and HTL from link_lengths entries: can select from peer_count and find same ID.
-	More efficient queries. (Eleriseth #12)
     Treating probe and error type as integers is incomplete. Existing occurances were converted in the upgrade to version 4, but they are still stored and retreived as text.
 
 Use Greasemonkey in Firefox and Chrome native support for the same to have interactive Javascript plots.
