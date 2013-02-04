@@ -412,11 +412,6 @@ if args.runRRD:
         toTime = fromTime + shortPeriod
 
     # Graph all available information with a 2-pixel red line.
-    # TODO: RRD isn't starting when intended - querying the database like so
-    #       will mean that the database will have to maintain the time of the first
-    #       sample, which is not desirable.
-    #
-    firstResult = db.execute(""" select min("time") from "identifier" """).fetchone()[0]
     lastResult = rrdtool.last(args.rrd)
 
     # Distant colors are not easily confused.
@@ -448,10 +443,11 @@ if args.runRRD:
     refusedAndErrors += [ 'LINE2:{0}{1}:{2}'.format(pair[0], pair[2], pair[1])
                             for pair in sourcesNames ]
 
+    # Year: 3600 * 24 * 365 = 31536000 seconds
     # Month: 3600 * 24 * 30 = 2592000 seconds
     # Week: 3600 * 24 * 7 = 604800 seconds
     # Period name, start.
-    for period in [ ('all', firstResult), ('month', lastResult - 2592000), ('week', lastResult - 604800) ]:
+    for period in [ ('year', lastResult - 31536000), ('month', lastResult - 2592000), ('week', lastResult - 604800) ]:
         # Width, height.
         for dimension in [ (900, 300), (1200, 400) ]:
             rrdtool.graph(  '{0}_{1}x{2}_{3}'.format(period[0], dimension[0], dimension[1], args.sizeGraph),

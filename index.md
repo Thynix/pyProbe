@@ -15,9 +15,9 @@ Freenet Statistics
 
 <a href="month_1200x400_plot_network_size.png"><img src="month_900x300_plot_network_size.png" alt="Plot of the last 30 days of network size estimates" title="Last 30 days" width="900" height="300"/></a>
 
-### All Data
+### Past Year
 
-<a href="all_1200x400_plot_network_size.png"><img src="all_900x300_plot_network_size.png" alt="Plot of all available network size estimates" title="All available data" width="900" height="300"/></a>
+<a href="year_1200x400_plot_network_size.png"><img src="year_900x300_plot_network_size.png" alt="Plot of all available network size estimates" title="All available data" width="900" height="300"/></a>
 
 ## Store Capacity
 
@@ -29,9 +29,9 @@ Freenet Statistics
 
 <a href="month_1200x400_plot_store_capacity.png"><img src="month_900x300_plot_store_capacity.png" alt="Plot of the last 30 days of store capacity data" title="Last 30 days" width="900" height="300"/></a>
 
-### All Data
+### Past Year
 
-<a href="all_1200x400_plot_store_capacity.png"><img src="all_900x300_plot_store_capacity.png" alt="Plot of all available store capacity data" title="All available data" width="900" height="300"/></a>
+<a href="year_1200x400_plot_store_capacity.png"><img src="year_900x300_plot_store_capacity.png" alt="Plot of all available store capacity data" title="All available data" width="900" height="300"/></a>
 
 ## Errors and Refused
 
@@ -43,9 +43,9 @@ Freenet Statistics
 
 <a href="month_1200x400_plot_error_refused.png"><img src="month_900x300_plot_error_refused.png" alt="Plot of the last 30 days of store capacity data" title="Last 30 days" width="900" height="300"/></a>
 
-### All Data
+### Past Year
 
-<a href="all_1200x400_plot_error_refused.png"><img src="all_900x300_plot_error_refused.png" alt="Plot of all available store capacity data" title="All available data" width="900" height="300"/></a>
+<a href="year_1200x400_plot_error_refused.png"><img src="year_900x300_plot_error_refused.png" alt="Plot of all available store capacity data" title="All available data" width="900" height="300"/></a>
 
 ## Peer Count
 
