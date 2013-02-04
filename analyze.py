@@ -210,6 +210,20 @@ if args.runRRD:
 
     log("Computing network plot data. In-progress segement is {0}. ({1})".format(startTime, toPosix(startTime)))
 
+    intersectionQuery = """
+    SELECT
+      COUNT(DISTINCT identifier), COUNT(identifier)
+    FROM
+      (SELECT
+        i1.identifier
+       FROM identifier i1
+         JOIN identifier i2
+         USING(identifier)
+       WHERE i1.time BETWEEN strftime('%s', ?1) AND strftime('%s', ?2)
+         AND i2.time BETWEEN strftime('%s', ?2) AND strftime('%s', ?3)
+      )
+    """
+
     #
     # Perform binary search for network size in:
     # (distinct samples) = (network size) * (1 - e^(-1 * (samples)/(network size)))
@@ -225,139 +239,41 @@ if args.runRRD:
         # Start of previous effective size estimate period.
         fromTimeEffectivePrevious = toTime - 2*longPeriod
 
-        # Intersect removes duplicates.
-        distinctEffectiveSamples = db.execute("""
-        select
-          count ("identifier")
-        from
-          (
-            select
-              "identifier"
-            from
-              "identifier"
-            where
-              "time" >= strftime('%s', '{0}') and
-              "time" <  strftime('%s', '{1}')
-          intersect
-            select
-              "identifier"
-            from
-              "identifier"
-            where
-              "time" >= strftime('%s', '{1}') and
-              "time" <  strftime('%s', '{2}')
-          );
-        """.format(fromTimeEffectivePrevious, fromTimeEffective, toTime)).fetchone()[0]
+        weekEffectiveResult = db.execute(intersectionQuery,
+          (fromTimeEffectivePrevious, fromTimeEffective, toTime)).fetchone()
 
-        effectiveSamples = db.execute("""
-        select
-          count("identifier")
-        from
-          (
-            select
-              "identifier" as "previous_identifier"
-            from
-              "identifier"
-            where
-              "time" >= strftime('%s', '{0}') and
-              "time" <  strftime('%s', '{1}')
-          )
-        join
-          "identifier"
-            on
-            "previous_identifier" == "identifier"
-          where
-            "time" >= strftime('%s', '{1}') and
-            "time" <  strftime('%s', '{2}')
-        ;
-        """.format(fromTimeEffectivePrevious, fromTimeEffective, toTime)).fetchone()[0]
+        effectiveSize = binarySearch(weekEffectiveResult[0], weekEffectiveResult[1])
 
-        effectiveSize = binarySearch(distinctEffectiveSamples, effectiveSamples)
-
-        log("{0}: {1} effective samples | {2} distinct effective samples | {3} estimated effective size"
-               .format(toTime, effectiveSamples, distinctEffectiveSamples, effectiveSize))
+        log("{0}: {1} samples | {2} distinct samples | {3} estimated weekly effective size"
+               .format(toTime, weekEffectiveResult[1], weekEffectiveResult[0], effectiveSize))
 
         # Start of current daily effective size estimate period.
         fromTimeDaily = toTime - mediumPeriod
         # Start of previous daily effective size estimate period.
         fromTimeDailyPrevious = toTime - 2*mediumPeriod
 
-        # Intersect removes duplicates.
-        distinctDailySamples = db.execute("""
-        select
-          count ("identifier")
-        from
-          (
-            select
-              "identifier"
-            from
-              "identifier"
-            where
-              "time" >= strftime('%s', '{0}') and
-              "time" <  strftime('%s', '{1}')
-          intersect
-            select
-              "identifier"
-            from
-              "identifier"
-            where
-              "time" >= strftime('%s', '{1}') and
-              "time" <  strftime('%s', '{2}')
-          );
-        """.format(fromTimeDailyPrevious, fromTimeDaily, toTime)).fetchone()[0]
+        dailyEffectiveResult = db.execute(intersectionQuery,
+          (fromTimeDailyPrevious, fromTimeDaily, toTime)).fetchone()
 
-        dailySamples = db.execute("""
-        select
-          count("identifier")
-        from
-          (
-            select
-              "identifier" as "previous_identifier"
-            from
-              "identifier"
-            where
-              "time" >= strftime('%s', '{0}') and
-              "time" <  strftime('%s', '{1}')
-          )
-        join
-          "identifier"
-            on
-            "previous_identifier" == "identifier"
-          where
-            "time" >= strftime('%s', '{1}') and
-            "time" <  strftime('%s', '{2}')
-        ;
-        """.format(fromTimeDailyPrevious, fromTimeDaily, toTime)).fetchone()[0]
+        dailySize = binarySearch(dailyEffectiveResult[0], dailyEffectiveResult[1])
 
-        dailySize = binarySearch(distinctDailySamples, dailySamples)
-
-        log("{0}: {1} effective samples | {2} distinct effective samples | {3} estimated effective size"
-               .format(toTime, dailySamples, distinctDailySamples, dailySize))
+        log("{0}: {1} samples | {2} distinct samples | {3} estimated daily effective size"
+               .format(toTime, dailyEffectiveResult[1], dailyEffectiveResult[0], dailySize))
 
         # TODO: Add / remove / ignore refusals to provide error bars? More than that needs to be error bars though.
         # TODO: Take into account refuals for error bars.
-        distinctInstantaneousSamples = db.execute("""
-        select
-          count(distinct "identifier")
-        from
+        instantaneousResult = db.execute("""
+        SELECT
+          COUNT(DISTINCT "identifier"), COUNT("identifier")
+        FROM
           "identifier"
-        where
-          "time" >= strftime('%s', '{0}') and
-          "time" <  strftime('%s', '{1}')
-        """.format(fromTime, toTime)).fetchone()[0]
-        instantaneousSamples = db.execute("""
-        select
-          count("identifier")
-        from
-          "identifier"
-        where
-          "time" >= strftime('%s', '{0}') and
-          "time" <  strftime('%s', '{1}')
-        """.format(fromTime, toTime)).fetchone()[0]
+        WHERE
+          time BETWEEN strftime('%s', ?1) AND strftime('%s', ?2)
+        """, (fromTime, toTime)).fetchone()
 
-        instantaneousSize = binarySearch(distinctInstantaneousSamples, instantaneousSamples)
-        log("{0}: {1} instantaneous samples | {2} distinct instantaneous samples | {3} estimated instantaneous size"
-               .format(toTime, instantaneousSamples, distinctInstantaneousSamples, instantaneousSize))
+        instantaneousSize = binarySearch(instantaneousResult[0], instantaneousResult[1])
+        log("{0}: {1} samples | {2} distinct samples | {3} estimated instantaneous size"
+               .format(toTime, instantaneousResult[1], instantaneousResult[0], instantaneousSize))
 
         # Past week of datastore sizes.
         sizeResult = db.execute("""
