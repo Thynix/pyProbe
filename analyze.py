@@ -70,7 +70,7 @@ def log(msg):
 # incomplete and not computed.
 startTime = datetime.datetime.utcnow()
 recent = startTime - datetime.timedelta(hours=args.recentHours)
-log("Recency boundary is {0}.".format(recent))
+log("Recency boundary is {0} ({1}).".format(recent, toPosix(recent)))
 
 log("Connecting to database.")
 db = sqlite3.connect(args.databaseFile)
