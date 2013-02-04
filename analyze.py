@@ -580,7 +580,7 @@ if args.runLinkLengths:
     call(["gnuplot","link_length.gnu"])
 
 if args.runUptime:
-    log("Querying database for uptime reported with identifiers")
+    log("Querying database for uptime reported with identifiers.")
     # Note that the uptime percentage on the identifier probes is an integer.
     uptimes = db.execute("""
     SELECT
@@ -594,6 +594,7 @@ if args.runUptime:
     """, (recent, startTime)).fetchall()
 
     hist = makeHistogram(args.uptimeHistogramMax, uptimes)
+    log("Writing results.")
     with open('uptimes', 'w') as output:
         totalReports = max(1, sum(hist))
         percent = 0
@@ -601,6 +602,7 @@ if args.runUptime:
             output.write("{0} {1:%}\n".format(percent, reports/totalReports))
             percent += 1
 
+    log("Plotting.")
     call(["gnuplot","uptime.gnu"])
 
 log("Closing database.")
