@@ -361,14 +361,13 @@ if args.runRRD:
 
         # Past week of datastore sizes.
         sizeResult = db.execute("""
-        select
+        SELECT
           sum("GiB"), count("GiB")
-        from
+        FROM
           "store_size"
-        where
-          "time" >= strftime('%s', '{0}') and
-          "time" <  strftime('%s', '{1}')
-        """.format(fromTimeEffective, toTime)).fetchone()
+        WHERE
+          "time" BETWEEN strftime('%s', ?1) AND strftime('%s', ?2)
+        """, (fromTimeEffective, toTime)).fetchone()
 
         storeCapacity = float('nan')
         if sizeResult[1] != 0:
@@ -379,28 +378,26 @@ if args.runRRD:
             storeCapacity = meanDatastoreSize * effectiveSize * 1073741824 / 12
 
         refused = db.execute("""
-        select
+        SELECT
           count(*)
-        from
+        FROM
           "refused"
-        where
-          "time" >= strftime('%s', '{0}') and
-          "time" <  strftime('%s', '{1}')
-        """.format(fromTime, toTime)).fetchone()[0]
+        WHERE
+          "time" BETWEEN strftime('%s', ?1) AND "time" <  strftime('%s', ?2)
+        """, (fromTime, toTime)).fetchone()[0]
 
         # Get numbers of each error type.
         errors = []
         for errorType in errorTypes:
             errors.append(db.execute("""
-            select
+            SELECT
               count(*)
-            from
+            FROM
               "error"
-            where
-              "error_type" == '{0}' and
-              "time" >= strftime('%s', '{1}') and
-              "time" <  strftime('%s', '{2}')
-            """.format(errorType, fromTime, toTime)).fetchone()[0])
+            WHERE
+              "error_type" == ?1 AND
+              "time" BETWEEN strftime('%s', ?2) AND strftime('%s', ?3)
+            """, (errorType, fromTime, toTime)).fetchone()[0])
 
         # RRDTool format string to explicitly specify the order of the data sources.
         # The first one is implicitly the time of the sample.
@@ -512,7 +509,16 @@ def makeHistogram(histMax, results):
 
 if args.runLocation:
     log("Querying database for locations.")
-    locations = db.execute("""select distinct "location" from "location" where "time" > strftime('%s', '{0}') and "time" < strftime('%s', '{1}')""".format(recent, startTime)).fetchall()
+    locations = db.execute("""
+    SELECT
+      DISTINCT "location"
+    FROM
+      "location"
+    WHERE
+      "time" BETWEEN strftime('%s', ?1) AND strftime('%s', ?2)
+    """, (recent, startTime)).fetchall()
+    log(recent)
+    log(startTime)
 
     log("Writing results.")
     with open("locations_output", "w") as output:
@@ -524,7 +530,16 @@ if args.runLocation:
 
 if args.runPeerCount:
     log("Querying database for peer distribution histogram.")
-    rawPeerCounts = db.execute("""select peers, count("peers") from "peer_count" where "time" > strftime('%s', '{0}') and "time" < strftime('%s', '{1}') group by "peers" order by "peers" """.format(recent, startTime)).fetchall()
+    rawPeerCounts = db.execute("""
+    SELECT
+      peers, count("peers")
+    FROM
+      "peer_count"
+    WHERE
+      "time" BETWEEN strftime('%s', ?1) AND strftime('%s', ?2)
+      GROUP BY "peers"
+      ORDER BY "peers"
+    """, (recent, startTime)).fetchall()
 
     peerCounts = makeHistogram(args.histogramMax, rawPeerCounts)
 
