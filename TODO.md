@@ -1,3 +1,7 @@
+Output to a directory and insert the entire thing instead of requiring an explicit list of files.
+
+Use the Python Gnuplot library instead of using system calls and separate Gnuplot script files.
+
 Use Q-Q plots for link length distribution (logarithmic) and location. (uniform?)
 
 Database upgrade:
