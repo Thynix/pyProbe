@@ -57,6 +57,8 @@ parser.add_argument('--link-lengths', dest='runLinkLengths', default=False, acti
                     help='If specified plots link length distribution over the last recency period.')
 parser.add_argument('--uptime', dest='runUptime', default=False, action='store_true',
                     help='If specified plots uptime distribution over the last recency period.')
+parser.add_argument('--bulk-reject', dest='bulkReject', default=False, action='store_true',
+                    help='If specified plots bulk reject distribution over the last recency period.')
 
 args = parser.parse_args()
 
@@ -519,6 +521,33 @@ if args.runUptime:
 
     log("Plotting.")
     call(["gnuplot","uptime.gnu"])
+
+if args.bulkReject:
+    reject_types = [ "bulk_request_chk",
+                     "bulk_request_ssk",
+                     "bulk_insert_chk",
+                     "bulk_insert_ssk"  ]
+
+    for reject_type in reject_types:
+        log("Querying database for {0} reports.".format(reject_type))
+        # Report of -1 means no data.
+        rejects = db.execute("""
+        SELECT
+          {0}, count({0})
+        FROM
+          "reject_stats"
+        WHERE
+          "time" BETWEEN strftime('%s', ?1) AND strftime('%s', ?2)
+          AND {0} IS NOT -1
+        GROUP BY {0}
+        ORDER BY {0}
+        """.format(reject_type), (recent, startTime)).fetchall()
+
+        # Reject statistics results are capped to (0, 100)
+        writeHistogram(makeHistogram(100, rejects), reject_type)
+
+    log("Plotting.")
+    call(["gnuplot","reject.gnu"])
 
 log("Closing database.")
 db.close()
