@@ -423,6 +423,20 @@ def makeHistogram(histMax, results):
 
     return hist
 
+def writeHistogram(hist, output_name):
+    """
+    Writes a histogram made by makeHistogram.
+
+    Format is "value percentage\n".
+    """
+    total = max(1, sum(hist))
+    index = 0
+    log("Writing results.")
+    with open(output_name, 'w') as output:
+        for value in hist:
+            output.write("{0} {1:%}\n".format(index, value/total))
+            index += 1
+
 if args.runLocation:
     log("Querying database for locations.")
     locations = db.execute("""
@@ -457,15 +471,7 @@ if args.runPeerCount:
       ORDER BY "peers"
     """, (recent, startTime)).fetchall()
 
-    peerCounts = makeHistogram(args.histogramMax, rawPeerCounts)
-
-    log("Writing results.")
-    with open("peerDist.dat", 'w') as output:
-            totalReports = max(1, sum(peerCounts))
-            numberOfPeers = 0
-            for reports in peerCounts:
-                    output.write("{0} {1:%}\n".format(numberOfPeers, reports/totalReports))
-                    numberOfPeers += 1
+    writeHistogram(makeHistogram(args.histogramMax, rawPeerCounts), "peerDist.dat")
 
     log("Plotting.")
     call(["gnuplot","peer_count.gnu"])
@@ -509,14 +515,7 @@ if args.runUptime:
     ORDER BY "percent"
     """, (recent, startTime)).fetchall()
 
-    hist = makeHistogram(args.uptimeHistogramMax, uptimes)
-    log("Writing results.")
-    with open('uptimes', 'w') as output:
-        totalReports = max(1, sum(hist))
-        percent = 0
-        for reports in hist:
-            output.write("{0} {1:%}\n".format(percent, reports/totalReports))
-            percent += 1
+    writeHistogram(makeHistogram(args.uptimeHistogramMax, uptimes), 'uptimes')
 
     log("Plotting.")
     call(["gnuplot","uptime.gnu"])
