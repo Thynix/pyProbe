@@ -38,6 +38,10 @@ PROBE_IDENTIFIER = "ProbeIdentifier"
 UPTIME_PERCENT = "UptimePercent"
 LINK_LENGTHS = "LinkLengths"
 LOCATION = "Location"
+REJECT_BULK_REQUEST_CHK = "Rejects.Bulk.Request.CHK"
+REJECT_BULK_REQUEST_SSK = "Rejects.Bulk.Request.SSK"
+REJECT_BULK_INSERT_CHK = "Rejects.Bulk.Insert.CHK"
+REJECT_BULK_INSERT_SSK = "Rejects.Bulk.Insert.SSK"
 STORE_SIZE = "StoreSize"
 TYPE = "Type"
 HTL = "HopsToLive"
@@ -89,6 +93,8 @@ def insertResult(db, header, htl, result, now, duration, probe_type):
 		cur.close()
 	elif probe_type == "LOCATION":
 		db.execute("insert into location(time, htl, location, duration) values(?, ?, ?, ?)", (now, htl, result[LOCATION], duration))
+	elif probe_type == "REJECT_STATS":
+		db.execute("insert into reject_stats(time, htl, bulk_request_chk, bulk_request_ssk, bulk_insert_chk, bulk_insert_ssk) values(?, ?, ?, ?, ?, ?)", (now, htl, result[REJECT_BULK_REQUEST_CHK], result[REJECT_BULK_REQUEST_SSK], result[REJECT_BULK_INSERT_CHK], result[REJECT_BULK_INSERT_SSK]))
 	elif probe_type == "STORE_SIZE":
 		db.execute("insert into store_size(time, htl, GiB, duration) values(?, ?, ?, ?)", (now, htl, result[STORE_SIZE], duration))
 	elif probe_type == "UPTIME_48H":

@@ -8,7 +8,8 @@ import string
 # https://github.com/freenet/fred-official/blob/master/src/freenet/node/probe/Type.java
 # Then what... getarr?
 probeTypes = Enum('BANDWIDTH', 'BUILD', 'IDENTIFIER', 'LINK_LENGTHS',
-                  'LOCATION', 'STORE_SIZE', 'UPTIME_48H', 'UPTIME_7D')
+                  'LOCATION', 'STORE_SIZE', 'UPTIME_48H', 'UPTIME_7D',
+                  'REJECT_STATS')
 
 errorTypes = Enum('DISCONNECTED', 'OVERLOAD', 'TIMEOUT', 'UNKNOWN',
                   'UNRECOGNIZED_TYPE', 'CANNOT_FORWARD')
@@ -27,7 +28,7 @@ def init_database(db):
 
 def create_new(db):
 	logging.warning("Setting up new database.")
-	db.execute("PRAGMA user_version = 5")
+	db.execute("PRAGMA user_version = 6")
 
 	db.execute("""create table bandwidth(
 	                                     time     DATETIME,
@@ -191,6 +192,16 @@ def createVersion4(db):
 	                                    duration FLOAT
 	                                   )""")
 	db.execute("""create index location_time_index on location(time)""")
+
+	db.execute("""create table reject_stats(
+	                                        time DATETIME,
+	                                        htl  INTEGER,
+	                                        bulk_request_chk INTEGER,
+	                                        bulk_request_ssk INTEGER,
+	                                        bulk_insert_chk  INTEGER,
+	                                        bulk_insert_ssk  INTEGER
+	                                       )""")
+	db.execute("""create index reject_stats_time_index on reject_stats(time)""")
 
 	db.execute("""create table store_size(
 	                                      time     DATETIME,
@@ -380,4 +391,19 @@ def upgrade(db):
 		version = update_version(5)
 		logging.warning("Update from 4 to 5 complete.")
 
+	# In version 6: Add table reject_stats for new probe type REJECT_STATS.
+	if version == 5:
+		logging.warning("Upgrading from database version 5 to version 6.")
 
+		db.execute("""create table reject_stats(
+		                                        time DATETIME,
+		                                        htl  INTEGER,
+		                                        bulk_request_chk INTEGER,
+		                                        bulk_request_ssk INTEGER,
+		                                        bulk_insert_chk  INTEGER,
+		                                        bulk_insert_ssk  INTEGER
+		                                       )""")
+		db.execute("""create index reject_stats_time_index on reject_stats(time)""")
+
+		version = update_version(6)
+		logging.warning("Update from 5 to 6 complete.")
