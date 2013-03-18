@@ -540,7 +540,7 @@ if args.bulkReject:
         # Report of -1 means no data.
         rejects = db.execute("""
         SELECT
-          {0}
+          {0}, count({0})
         FROM
           "reject_stats"
         WHERE
