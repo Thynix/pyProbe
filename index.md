@@ -59,6 +59,10 @@ Freenet Statistics
 
 <img src="plot_week_uptime.png" alt="Plot of the past week of 7-day uptime" width="900" height="600"/>
 
+## Bulk Reject
+
+<img src="plot_week_reject" alt="Plot of the past week of bulk reject percentage by type" width="900" height="600"/>
+
 ## Explanation
 
 These estimates are based on results gathered with the probes introduced in build 1409.
@@ -80,9 +84,15 @@ Errors are:
 * Unrecognized Type: a remote node did not recognize the requested probe type.
 * Cannot Forward: a remote node understood the request but failed to forward it to another node.
 
-Link length, peer count, and uptime are from the past 7 days of results. All peer counts above 50 count towards 50. Reported uptime can exceed 100% due to the added random noise.
+Link length, peer count, bulk reject percentages, and uptime are from the past 7 days of results. All peer counts above 50 count towards 50. Reported uptime can exceed 100% due to the added random noise. Bulk reject percentages are restricted to between 0% and 100%.
+
+The bulk queue (therefore not realtime queue) reject percentages are an indicator of network health. My understanding is that a node will reject a request if it does not have sufficient bandwidth available to take on the commitment. This would mean that high reject percentages might indicate low bandwidth limits and problems with routing. I am currently collecting information on bandwidth limits, but I am not yet plotting that information.
 
 ## Changelog
+
+### March 17th, 2013
+
+Add bulk reject percentages plot.
 
 ### February 3rd, 2013
 
