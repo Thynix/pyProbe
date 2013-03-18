@@ -1,4 +1,5 @@
 Output to a directory and insert the entire thing instead of requiring an explicit list of files.
+	Would probably require something like using the Python Gnuplot library so that the output path could be changed.
 
 Use the Python Gnuplot library instead of using system calls and separate Gnuplot script files.
 
@@ -7,6 +8,7 @@ Use Q-Q plots for link length distribution (logarithmic) and location. (uniform?
 Database upgrade:
     Omit time and HTL from link_lengths entries: can select from peer_count and find same ID.
     Treating probe and error type as integers is incomplete. Existing occurances were converted in the upgrade to version 4, but they are still stored and retreived as text.
+    Likewise "local" for error is text when it should be a boolean.
 
 Use Greasemonkey in Firefox and Chrome native support for the same to have interactive Javascript plots.
     Possibilities:
