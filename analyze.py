@@ -60,13 +60,6 @@ parser.add_argument('--uptime', dest='runUptime', default=False, action='store_t
 parser.add_argument('--bulk-reject', dest='bulkReject', default=False, action='store_true',
                     help='If specified plots bulk reject distribution over the last recency period.')
 
-# TODO CURRENT WORK: Python Gnuplot so that there is no need to duplicate histogram gnuplot. Worthwhile? Hm. Maybe not.
-# So:
-# - Gnuplot for histograms. (Duplicate uptime file and modify plot / axis labels.)
-# - Test that fields are inserted correctly from probesim testbed nodes.
-# - Add rendering to update_site and upload.config.
-# - If time remaining: Change to Python Gnuplot; set up "output" directory, and insert that instead of the current upload.config files insanity. Also makes webserver mirror easier.
-
 args = parser.parse_args()
 
 def log(msg):
