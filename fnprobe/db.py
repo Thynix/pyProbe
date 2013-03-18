@@ -91,6 +91,16 @@ def create_new(db):
 	                                     )""")
 	db.execute("""create index store_size_time_index on store_size(time)""")
 
+	db.execute("""create table reject_stats(
+	                                        time DATETIME,
+	                                        htl  INTEGER,
+	                                        bulk_request_chk INTEGER,
+	                                        bulk_request_ssk INTEGER,
+	                                        bulk_insert_chk  INTEGER,
+	                                        bulk_insert_ssk  INTEGER
+	                                       )""")
+	db.execute("""create index reject_stats_time_index on reject_stats(time)""")
+
 	db.execute("""create table uptime_48h(
 	                                      time     DATETIME,
 	                                      htl      INTEGER,
@@ -192,16 +202,6 @@ def createVersion4(db):
 	                                    duration FLOAT
 	                                   )""")
 	db.execute("""create index location_time_index on location(time)""")
-
-	db.execute("""create table reject_stats(
-	                                        time DATETIME,
-	                                        htl  INTEGER,
-	                                        bulk_request_chk INTEGER,
-	                                        bulk_request_ssk INTEGER,
-	                                        bulk_insert_chk  INTEGER,
-	                                        bulk_insert_ssk  INTEGER
-	                                       )""")
-	db.execute("""create index reject_stats_time_index on reject_stats(time)""")
 
 	db.execute("""create table store_size(
 	                                      time     DATETIME,
