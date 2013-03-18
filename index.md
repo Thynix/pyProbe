@@ -61,7 +61,7 @@ Freenet Statistics
 
 ## Bulk Reject
 
-<img src="plot_week_reject" alt="Plot of the past week of bulk reject percentage by type" width="900" height="600"/>
+<img src="plot_week_reject.png" alt="Plot of the past week of bulk reject percentage by type" width="900" height="600"/>
 
 ## Explanation
 
