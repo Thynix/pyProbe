@@ -90,6 +90,10 @@ The bulk queue (therefore not realtime queue) reject percentages are an indicato
 
 ## Changelog
 
+### March 24th, 2013
+
+Change bulk reject percentages plot to log scale.
+
 ### March 17th, 2013
 
 Add bulk reject percentages plot.
