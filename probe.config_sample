@@ -23,7 +23,7 @@ port=9481
 # peers expected. Given stable connections this will happen if more than
 # 10 * (number of peers) probes are sent per minute.
 #
-probeRate=20
+probeRate=150
 
 #
 # Seconds to wait before timing out on a probe request.
@@ -33,11 +33,11 @@ probeRate=20
 # As of this writing, there is a base timeout of 15 seconds, and every HTL over
 # 1 adds 3 seconds,
 #
-# For the default HTL of 25, this means the local node has an 87-second timeout.
+# For the default HTL of 30, this means the local node has an 105-second timeout.
 # Increasing this to account for possible delay in the timeout firing and to
-# make it a round number results in a 95-second timeout.
+# make it a round number results in a 110-second timeout.
 #
-timeout=95
+timeout=110
 
 #
 # Database location.
@@ -69,10 +69,11 @@ logFile=probe.log
 # both BANDWIDTH and UPTIME_48H with BANDWIDTH more often one could use
 # "BANDWIDTH,BANDWIDTH,UPTIME_48H".
 #
-types=BANDWIDTH,BUILD,IDENTIFIER,LINK_LENGTHS,LOCATION,STORE_SIZE,UPTIME_48H,UPTIME_7D
+# 50% identifier, 10% bulk reject, 10% link lengths, 10% store size, 10% bandwidth, 10% build
+types=IDENTIFIER,IDENTIFIER,IDENTIFIER,IDENTIFIER,IDENTIFIER,REJECT_STATS,LINK_LENGTHS,STORE_SIZE,BANDWIDTH,BUILD
 
 #
 # Hops to live.
 #
-hopsToLive=25
+hopsToLive=30
 
