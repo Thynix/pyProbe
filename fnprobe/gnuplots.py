@@ -18,21 +18,20 @@ def CDF(in_list):
     Takes an input list as from a database query: a list of singleton tuples
     of values.
 
-    Returns a sorted version of the list of X values with  a Y value that sums
-    to 100 over the list.
+    Sorts the list and changes each item to be an x value followed by a y value
+    that sums to 100 over the list. Also returns the list.
     """
     # Appended for each entry - should all add up to 1.
     height = 100.0 / max(1.0, len(in_list))
 
     # For GNUPlot smooth cumulative to work as intended the input must be sorted.
-    # TODO: Might consider avoiding the copy and sorting the list in-place.
-    out_list = sorted(in_list)
+    in_list.sort()
 
     # TODO: This is strange. Is there a better way to add an element to each singleton tuple?
-    for index in xrange(len(out_list)):
-        out_list[index] = [out_list[index][0], height]
+    for index in xrange(len(in_list)):
+        in_list[index] = [in_list[index][0], height]
 
-    return out_list
+    return in_list
 
 
 def g_init(width, height, filename):
