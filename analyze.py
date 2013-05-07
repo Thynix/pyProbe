@@ -19,6 +19,7 @@ import re
 import logging
 import codecs
 from fnprobe.time import toPosix, totalSeconds, timestamp
+from fnprobe.gnuplots import plot_link_length, plot_location_dist, plot_peer_count, plot_reject_percentages, reject_types, plot_uptime
 
 parser = argparse.ArgumentParser(description="Analyze probe results for estimates of peer distribution and network interconnectedness; generate plots.")
 
@@ -411,33 +412,22 @@ def makeHistogram(histMax, results):
     The histogram is capped at histMax.
     results is a list of tuples of (value, occurances).
 
-    Returns a list of occurances indexed by value, with those at index maxHist
-    being a sum of those at and above that value.
+    Returns a list in which each element is [value, occurances] with those
+    at index maxHist being a sum of those at and above that value.
     """
     # The database does not return a row for unseen values - fill them in.
-    hist = [ 0, ] * (histMax + 1)
+    hist = []
+    for value in range(histMax + 1):
+        hist.append([value, 0])
 
     for result in results:
         if result[0] < len(hist):
-            hist[result[0]] = result[1]
+            hist[result[0]][1] = result[1]
         else:
-            hist[histMax] += result[1]
+            hist[histMax][1] += result[1]
 
     return hist
 
-def writeHistogram(hist, output_name):
-    """
-    Writes a histogram made by makeHistogram.
-
-    Format is "value percentage\n".
-    """
-    total = max(1, sum(hist))
-    index = 0
-    log("Writing results.")
-    with open(output_name, 'w') as output:
-        for value in hist:
-            output.write("{0} {1:%}\n".format(index, value/total))
-            index += 1
 
 if args.runLocation:
     log("Querying database for locations.")
@@ -449,16 +439,9 @@ if args.runLocation:
     WHERE
       "time" BETWEEN strftime('%s', ?1) AND strftime('%s', ?2)
     """, (recent, startTime)).fetchall()
-    log(recent)
-    log(startTime)
-
-    log("Writing results.")
-    with open("locations_output", "w") as output:
-        for location in locations:
-            output.write("{0} {1}\n".format(location[0], 1/len(locations)))
 
     log("Plotting.")
-    call(["gnuplot","location_dist.gnu"])
+    plot_location_dist(locations)
 
 if args.runPeerCount:
     log("Querying database for peer distribution histogram.")
@@ -473,19 +456,8 @@ if args.runPeerCount:
       ORDER BY "peers"
     """, (recent, startTime)).fetchall()
 
-    writeHistogram(makeHistogram(args.histogramMax, rawPeerCounts), "peerDist.dat")
-
     log("Plotting.")
-    call(["gnuplot","peer_count.gnu"])
-
-def writeCDF(data, filename):
-    log("Writing results.")
-    with open(filename, "w") as output:
-        height = 1.0/max(1.0, len(data))
-        #GNUPlot cumulative adds y values, should add to 1.0 in total.
-        # Lambda: get result out of singleton list so it can be sorted as a number.
-        for entry in sorted(map(lambda entry: entry[0], data)):
-            output.write("{0} {1:%}\n".format(entry, height))
+    plot_peer_count(makeHistogram(args.histogramMax, rawPeerCounts))
 
 if args.runLinkLengths:
     log("Querying database for link lengths.")
@@ -498,10 +470,8 @@ if args.runLinkLengths:
       "time" BETWEEN strftime('%s', ?1) AND strftime('%s', ?2)
     """, (recent, startTime)).fetchall()
 
-    writeCDF(links, 'links_output')
-
     log("Plotting.")
-    call(["gnuplot","link_length.gnu"])
+    plot_link_length(links)
 
 if args.runUptime:
     log("Querying database for uptime reported with identifiers.")
@@ -517,16 +487,11 @@ if args.runUptime:
     ORDER BY "percent"
     """, (recent, startTime)).fetchall()
 
-    writeHistogram(makeHistogram(args.uptimeHistogramMax, uptimes), 'uptimes')
-
     log("Plotting.")
-    call(["gnuplot","uptime.gnu"])
+    plot_uptime(makeHistogram(args.uptimeHistogramMax, uptimes))
 
 if args.bulkReject:
-    reject_types = [ "bulk_request_chk",
-                     "bulk_request_ssk",
-                     "bulk_insert_chk",
-                     "bulk_insert_ssk"  ]
+    counts = {}
 
     for reject_type in reject_types:
         log("Querying database for {0} reports.".format(reject_type))
@@ -544,10 +509,10 @@ if args.bulkReject:
         """.format(reject_type), (recent, startTime)).fetchall()
 
         # Reject statistics results are capped to (0, 100)
-        writeHistogram(makeHistogram(100, rejects), reject_type)
+        counts[reject_type] = makeHistogram(100, rejects)
 
     log("Plotting.")
-    call(["gnuplot","reject.gnu"])
+    plot_reject_percentages(counts)
 
 log("Closing database.")
 db.close()
