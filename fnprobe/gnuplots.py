@@ -34,6 +34,28 @@ def CDF(in_list):
     return in_list
 
 
+def makeHistogram(histMax, results):
+    """
+    The histogram is capped at histMax.
+    results is a list of tuples of (value, occurances).
+
+    Returns a list in which each element is [value, occurances] with those
+    at index maxHist being a sum of those at and above that value.
+    """
+    # The database does not return a row for unseen values - fill them in.
+    hist = []
+    for value in range(histMax + 1):
+        hist.append([value, 0])
+
+    for result in results:
+        if result[0] < len(hist):
+            hist[result[0]][1] = result[1]
+        else:
+            hist[histMax][1] += result[1]
+
+    return hist
+
+
 def g_init(width, height, filename):
     g = Gnuplot.Gnuplot()
     g('set terminal png size {:n},{:n}'.format(width, height))
@@ -79,10 +101,11 @@ def plot_location_dist(locations, width=default_width, height=default_height, fi
 
     g.plot(Gnuplot.Data(CDF(locations), smooth='cumulative'))
 
-def plot_peer_count(counts, width=default_width, height=default_height, filename='plot_peer_count.png'):
+
+def plot_peer_count(counts, histMax, width=default_width, height=default_height, filename='plot_peer_count.png'):
     if len(counts) is 0:
         logging.warning("No peer counts to plot.")
-        counts = [[0]]
+        counts = [[0, 0]]
 
     g = g_init(width, height, filename)
     g('set key off')
@@ -98,14 +121,17 @@ def plot_peer_count(counts, width=default_width, height=default_height, filename
     g.set(xrange='[1:50]')
     g('set xtics 5')
 
-    g.plot(Gnuplot.Data(counts, with_='boxes'))
+    g.plot(Gnuplot.Data(makeHistogram(histMax, counts), with_='boxes'))
 
 def plot_reject_percentages(counts, width=default_width, height=default_height, filename='plot_week_reject.png'):
     assert len(counts) > 0
-    for item in counts.iteritems():
-        if len(item) is 0:
+    for item in counts.items():
+        key = item[0]
+        if len(item[1]) is 0:
             logging.warning("No entries for {}.".format(item[0]))
-            item[1] = [[0, 0]]
+            counts[key] = [[0, 0]]
+
+        counts[key] = makeHistogram(100, item[1])
 
     g = g_init(width, height, filename)
 
@@ -122,7 +148,8 @@ def plot_reject_percentages(counts, width=default_width, height=default_height, 
     # Title of each is the database table name, which is the map key.
     g.plot(*[Gnuplot.Data(item[1], title=item[0], with_='lines') for item in counts.iteritems()])
 
-def plot_uptime(uptimes, width=default_width, height=default_height, filename='plot_week_uptime.png'):
+
+def plot_uptime(uptimes, histMax, width=default_width, height=default_height, filename='plot_week_uptime.png'):
     if len(uptimes) is 0:
         logging.warning("No uptimes to plot.")
         uptimes = [[0, 0]]
@@ -139,4 +166,4 @@ def plot_uptime(uptimes, width=default_width, height=default_height, filename='p
     g.set(xrange='[0:120]')
     g.set(yrange='[0:]')
 
-    g.plot(Gnuplot.Data(uptimes, with_='boxes'))
+    g.plot(Gnuplot.Data(makeHistogram(histMax, uptimes), with_='boxes'))

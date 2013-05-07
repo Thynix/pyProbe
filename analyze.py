@@ -407,28 +407,6 @@ if args.runRRD:
                             *refusedAndErrors
                          )
 
-def makeHistogram(histMax, results):
-    """
-    The histogram is capped at histMax.
-    results is a list of tuples of (value, occurances).
-
-    Returns a list in which each element is [value, occurances] with those
-    at index maxHist being a sum of those at and above that value.
-    """
-    # The database does not return a row for unseen values - fill them in.
-    hist = []
-    for value in range(histMax + 1):
-        hist.append([value, 0])
-
-    for result in results:
-        if result[0] < len(hist):
-            hist[result[0]][1] = result[1]
-        else:
-            hist[histMax][1] += result[1]
-
-    return hist
-
-
 if args.runLocation:
     log("Querying database for locations.")
     locations = db.execute("""
@@ -457,7 +435,7 @@ if args.runPeerCount:
     """, (recent, startTime)).fetchall()
 
     log("Plotting.")
-    plot_peer_count(makeHistogram(args.histogramMax, rawPeerCounts))
+    plot_peer_count(rawPeerCounts, args.histogramMax)
 
 if args.runLinkLengths:
     log("Querying database for link lengths.")
@@ -488,7 +466,7 @@ if args.runUptime:
     """, (recent, startTime)).fetchall()
 
     log("Plotting.")
-    plot_uptime(makeHistogram(args.uptimeHistogramMax, uptimes))
+    plot_uptime(uptimes, args.uptimeHistogramMax)
 
 if args.bulkReject:
     counts = {}
@@ -496,7 +474,7 @@ if args.bulkReject:
     for reject_type in reject_types:
         log("Querying database for {0} reports.".format(reject_type))
         # Report of -1 means no data.
-        rejects = db.execute("""
+        counts[reject_type] = db.execute("""
         SELECT
           {0}, count({0})
         FROM
@@ -507,9 +485,6 @@ if args.bulkReject:
         GROUP BY {0}
         ORDER BY {0}
         """.format(reject_type), (recent, startTime)).fetchall()
-
-        # Reject statistics results are capped to (0, 100)
-        counts[reject_type] = makeHistogram(100, rejects)
 
     log("Plotting.")
     plot_reject_percentages(counts)
