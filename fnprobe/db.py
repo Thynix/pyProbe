@@ -3,17 +3,6 @@ from fnprobe.time import toPosix, timestamp
 from enum import Enum
 import string
 
-# TODO: Enums between names and codes
-# http://pypi.python.org/pypi/enum/0.4.4
-# https://github.com/freenet/fred-official/blob/master/src/freenet/node/probe/Type.java
-# Then what... getarr?
-probeTypes = Enum('BANDWIDTH', 'BUILD', 'IDENTIFIER', 'LINK_LENGTHS',
-                  'LOCATION', 'STORE_SIZE', 'UPTIME_48H', 'UPTIME_7D',
-                  'REJECT_STATS')
-
-errorTypes = Enum('DISCONNECTED', 'OVERLOAD', 'TIMEOUT', 'UNKNOWN',
-                  'UNRECOGNIZED_TYPE', 'CANNOT_FORWARD')
-
 def init_database(db):
 	"""
 	Initialize the database if it does not already exist. If it already exists and
@@ -320,6 +309,12 @@ def upgrade(db):
 
 		# Lock the database. If other writes occur data could be left behind and lost.
 		db.execute("""begin immediate transaction""")
+
+		probeTypes = Enum('BANDWIDTH', 'BUILD', 'IDENTIFIER', 'LINK_LENGTHS',
+				  'LOCATION', 'STORE_SIZE', 'UPTIME_48H', 'UPTIME_7D',
+				  'REJECT_STATS')
+		errorTypes = Enum('DISCONNECTED', 'OVERLOAD', 'TIMEOUT', 'UNKNOWN',
+						  'UNRECOGNIZED_TYPE', 'CANNOT_FORWARD')
 
 		# Enable WAL.
 		journal_mode = db.execute("""pragma journal_mode=wal""").fetchone()[0]
