@@ -20,6 +20,7 @@ import logging
 import codecs
 from fnprobe.time import toPosix, totalSeconds, timestamp
 from fnprobe.gnuplots import plot_link_length, plot_location_dist, plot_peer_count, plot_reject_percentages, reject_types, plot_uptime
+from fnprobe.db import Database
 
 parser = argparse.ArgumentParser(description="Analyze probe results for estimates of peer distribution and network interconnectedness; generate plots.")
 
@@ -76,7 +77,7 @@ recent = startTime - datetime.timedelta(hours=args.recentHours)
 log("Recency boundary is {0} ({1}).".format(recent, toPosix(recent)))
 
 log("Connecting to database.")
-db = sqlite3.connect(args.databaseFile)
+db = Database(args.databaseFile)
 
 # Period of time to consider samples in a group for an instantaneous estimate.
 # Must be a day or less. If it is more than a day the RRDTool 5-year daily
@@ -213,20 +214,6 @@ if args.runRRD:
 
     log("Computing network plot data. In-progress segement is {0}. ({1})".format(startTime, toPosix(startTime)))
 
-    intersectionQuery = """
-    SELECT
-      COUNT(DISTINCT identifier), COUNT(identifier)
-    FROM
-      (SELECT
-        i1.identifier
-       FROM identifier i1
-         JOIN identifier i2
-         USING(identifier)
-       WHERE i1.time BETWEEN strftime('%s', ?1) AND strftime('%s', ?2)
-         AND i2.time BETWEEN strftime('%s', ?2) AND strftime('%s', ?3)
-      )
-    """
-
     #
     # Perform binary search for network size in:
     # (distinct samples) = (network size) * (1 - e^(-1 * (samples)/(network size)))
@@ -242,8 +229,7 @@ if args.runRRD:
         # Start of previous effective size estimate period.
         fromTimeEffectivePrevious = toTime - 2*longPeriod
 
-        weekEffectiveResult = db.execute(intersectionQuery,
-          (fromTimeEffectivePrevious, fromTimeEffective, toTime)).fetchone()
+        weekEffectiveResult = db.intersect_identifier(fromTimeEffectivePrevious, fromTimeEffective, toTime)
 
         effectiveSize = binarySearch(weekEffectiveResult[0], weekEffectiveResult[1])
 
@@ -255,8 +241,7 @@ if args.runRRD:
         # Start of previous daily effective size estimate period.
         fromTimeDailyPrevious = toTime - 2*mediumPeriod
 
-        dailyEffectiveResult = db.execute(intersectionQuery,
-          (fromTimeDailyPrevious, fromTimeDaily, toTime)).fetchone()
+        dailyEffectiveResult = db.intersect_identifier(fromTimeDailyPrevious, fromTimeDaily, toTime)
 
         dailySize = binarySearch(dailyEffectiveResult[0], dailyEffectiveResult[1])
 
@@ -265,28 +250,14 @@ if args.runRRD:
 
         # TODO: Add / remove / ignore refusals to provide error bars? More than that needs to be error bars though.
         # TODO: Take into account refuals for error bars.
-        instantaneousResult = db.execute("""
-        SELECT
-          COUNT(DISTINCT "identifier"), COUNT("identifier")
-        FROM
-          "identifier"
-        WHERE
-          time BETWEEN strftime('%s', ?1) AND strftime('%s', ?2)
-        """, (fromTime, toTime)).fetchone()
+        instantaneousResult = db.span_identifier(fromTime, toTime)
 
         instantaneousSize = binarySearch(instantaneousResult[0], instantaneousResult[1])
         log("{0}: {1} samples | {2} distinct samples | {3} estimated instantaneous size"
                .format(toTime, instantaneousResult[1], instantaneousResult[0], instantaneousSize))
 
         # Past week of datastore sizes.
-        sizeResult = db.execute("""
-        SELECT
-          sum("GiB"), count("GiB")
-        FROM
-          "store_size"
-        WHERE
-          "time" BETWEEN strftime('%s', ?1) AND strftime('%s', ?2)
-        """, (fromTimeEffective, toTime)).fetchone()
+        sizeResult = db.span_store_size(fromTimeEffective, toTime)
 
         storeCapacity = float('nan')
         if sizeResult[1] != 0:
@@ -296,27 +267,12 @@ if args.runRRD:
             # datastore size is store capacity.
             storeCapacity = meanDatastoreSize * effectiveSize * 1073741824 / 12
 
-        refused = db.execute("""
-        SELECT
-          count(*)
-        FROM
-          "refused"
-        WHERE
-          "time" BETWEEN strftime('%s', ?1) AND "time" <  strftime('%s', ?2)
-        """, (fromTime, toTime)).fetchone()[0]
+        refused = db.span_refused(fromTime, toTime)
 
         # Get numbers of each error type.
         errors = []
         for errorType in errorTypes:
-            errors.append(db.execute("""
-            SELECT
-              count(*)
-            FROM
-              "error"
-            WHERE
-              "error_type" == ?1 AND
-              "time" BETWEEN strftime('%s', ?2) AND strftime('%s', ?3)
-            """, (errorType, fromTime, toTime)).fetchone()[0])
+            errors.append(db.span_error_count(errorType, fromTime, toTime))
 
         # RRDTool format string to explicitly specify the order of the data sources.
         # The first one is implicitly the time of the sample.
@@ -409,44 +365,21 @@ if args.runRRD:
 
 if args.runLocation:
     log("Querying database for locations.")
-    locations = db.execute("""
-    SELECT
-      DISTINCT "location"
-    FROM
-      "location"
-    WHERE
-      "time" BETWEEN strftime('%s', ?1) AND strftime('%s', ?2)
-    """, (recent, startTime)).fetchall()
+    locations = db.span_locations(recent, startTime)
 
     log("Plotting.")
     plot_location_dist(locations)
 
 if args.runPeerCount:
     log("Querying database for peer distribution histogram.")
-    rawPeerCounts = db.execute("""
-    SELECT
-      peers, count("peers")
-    FROM
-      "peer_count"
-    WHERE
-      "time" BETWEEN strftime('%s', ?1) AND strftime('%s', ?2)
-      GROUP BY "peers"
-      ORDER BY "peers"
-    """, (recent, startTime)).fetchall()
+    rawPeerCounts = db.span_peer_count(recent, startTime)
 
     log("Plotting.")
     plot_peer_count(rawPeerCounts, args.histogramMax)
 
 if args.runLinkLengths:
     log("Querying database for link lengths.")
-    links = db.execute("""
-    SELECT
-      "length"
-    FROM
-      "link_lengths"
-    WHERE
-      "time" BETWEEN strftime('%s', ?1) AND strftime('%s', ?2)
-    """, (recent, startTime)).fetchall()
+    links = db.span_links(recent, startTime)
 
     log("Plotting.")
     plot_link_length(links)
@@ -454,16 +387,7 @@ if args.runLinkLengths:
 if args.runUptime:
     log("Querying database for uptime reported with identifiers.")
     # Note that the uptime percentage on the identifier probes is an integer.
-    uptimes = db.execute("""
-    SELECT
-      "percent", count("percent")
-    FROM
-      "identifier"
-    WHERE
-      "time" BETWEEN strftime('%s', ?1) AND strftime('%s', ?2)
-    GROUP BY "percent"
-    ORDER BY "percent"
-    """, (recent, startTime)).fetchall()
+    uptimes = db.span_uptimes(recent, startTime)
 
     log("Plotting.")
     plot_uptime(uptimes, args.uptimeHistogramMax)
@@ -473,24 +397,10 @@ if args.bulkReject:
 
     for reject_type in reject_types:
         log("Querying database for {0} reports.".format(reject_type))
-        # Report of -1 means no data.
-        counts[reject_type] = db.execute("""
-        SELECT
-          {0}, count({0})
-        FROM
-          "reject_stats"
-        WHERE
-          "time" BETWEEN strftime('%s', ?1) AND strftime('%s', ?2)
-          AND {0} IS NOT -1
-        GROUP BY {0}
-        ORDER BY {0}
-        """.format(reject_type), (recent, startTime)).fetchall()
+        counts[reject_type] = db.span_bulk_rejects(reject_type, recent, startTime)
 
     log("Plotting.")
     plot_reject_percentages(counts)
-
-log("Closing database.")
-db.close()
 
 # TODO: Instead of always appending ".html", replace an extension if it exists, otherwise append.
 # TODO: Different headers for different pages.
