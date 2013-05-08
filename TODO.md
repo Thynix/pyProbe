@@ -1,9 +1,14 @@
+https://en.wikipedia.org/wiki/Mann%E2%80%93Whitney_U
+
+Convert tabs to spaces as per PEP8.
+	Similarly line lengths below 80.
+
 Output to a directory and insert the entire thing instead of requiring an explicit list of files.
 	Would probably require something like using the Python Gnuplot library so that the output path could be changed.
 
-Use the Python Gnuplot library instead of using system calls and separate Gnuplot script files.
-
 Use Q-Q plots for link length distribution (logarithmic) and location. (uniform?)
+
+Switch to built-in Python logging module.
 
 Database upgrade:
     Omit time and HTL from link_lengths entries: can select from peer_count and find same ID.

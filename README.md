@@ -8,6 +8,7 @@ pyProbe is a collection of data gathering and analysis tools for [Freenet](https
     * [argparse]() (if using Python earlier than 2.7)
 * [Freenet](https://freenetproject.org/)
 * [gnuplot](http://www.gnuplot.info/) (for extra analyze.py plots)
+* [gnuplot-py](https://pypi.python.org/pypi/gnuplot-py/1.8)
 * [rrdtool] (http://oss.oetiker.ch/rrdtool/download.en.html) (rrdpython)
 * [Twisted](https://twistedmatrix.com/trac/)
 * [twistedfcp](https://github.com/AnIrishDuck/twistedfcp)
@@ -18,6 +19,8 @@ pyProbe is a collection of data gathering and analysis tools for [Freenet](https
 
 Freenet, Python, gnuplot, rrdtool, Twisted, and Markdown all have installation instructions on their respective sites.
 
+`pip install markdown enum gnuplot-py`
+
 ### argparse
 
 * argparse was added to Python in version 2.7. It is available for older versions on the package index: `# pip install argparse`
@@ -27,14 +30,6 @@ Freenet, Python, gnuplot, rrdtool, Twisted, and Markdown all have installation i
 * Clone [twistedfcp](https://github.com/AnIrishDuck/twistedfcp): `$ git clone https://github.com/AnIrishDuck/twistedfcp.git`
 * `$ cd twistedfcp`
 * `# python setup.py install`
-
-### Markdown
-
-* Available on the package index: `# pip install markdown`
-
-### enum
-
-* Available on the package index: `# pip install enum`
 
 ## Usage
 
