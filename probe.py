@@ -2,7 +2,6 @@ from __future__ import division
 import argparse
 import random
 import sqlite3
-from twisted.enterprise import adbapi
 import datetime
 import time
 from sys import exit, stderr
@@ -17,7 +16,7 @@ from string import split
 from twistedfcp.protocol import FreenetClientProtocol, IdentifiedMessage
 from twistedfcp import message
 from twisted.python import log
-from fnprobe.db import init_database
+from fnprobe.db import Database
 from fnprobe.time import toPosix, totalSeconds
 
 __version__ = "0.1"
@@ -124,11 +123,11 @@ class SendHook:
 	"""
 	Sends a probe of a random type and commits the result to the database.
 	"""
-	def __init__(self, args, proto, pool):
+	def __init__(self, args, proto, database):
 		self.sent = datetime.datetime.utcnow()
 		self.args = args
 		self.probeType = random.choice(self.args.types)
-		self.pool = pool
+		self.db = database.get_connection()
 		logging.debug("Sending {0}.".format(self.probeType))
 
 		proto.do_session(MakeRequest(self.probeType, self.args.hopsToLive), self)
@@ -137,8 +136,7 @@ class SendHook:
 		delta = datetime.datetime.utcnow() - self.sent
 		duration = totalSeconds(delta)
 		now = toPosix(datetime.datetime.utcnow())
-		#Commit results
-		self.pool.runWithConnection(insert, self.args, self.probeType, message, duration, now)
+		insert(self.db, self.args, self.probeType, message, duration, now)
 		return True
 
 class Complain:
@@ -160,9 +158,9 @@ class FCPReconnectingFactory(protocol.ReconnectingClientFactory):
 	#Log disconnection and reconnection attempts
 	noisy = True
 
-	def __init__(self, args, pool):
+	def __init__(self, args, database):
 		self.args = args
-		self.pool = pool
+		self.database = database
 
 	def buildProtocol(self, addr):
 		proto = FreenetClientProtocol()
@@ -172,7 +170,7 @@ class FCPReconnectingFactory(protocol.ReconnectingClientFactory):
 		proto.deferred['NodeHello'] = self
 		proto.deferred['ProtocolError'] = Complain()
 
-		self.sendLoop = LoopingCall(SendHook, self.args, proto, self.pool)
+		self.sendLoop = LoopingCall(SendHook, self.args, proto, self.database)
 
 		return proto
 
@@ -221,33 +219,9 @@ def main():
 	logging.basicConfig(format="%(asctime)s - %(levelname)s: %(message)s", level=getattr(logging, args.verbosity), filename=args.logFile)
 	logging.info("Starting up.")
 
-	# Sqlite does not support concurrent writes, so make only one connection.
-	# In this way adbapi provides a dedicated database thread so that waiting
-	# for a lock does not block the reactor thread. It will close the connection
-	# in a separate thread, so the Python module should not prevent doing so.
-	# Versions of sqlite prior to 3.3.1 are not thread-safe.
-	# See https://www.sqlite.org/releaselog/3_3_1.html
-	#     https://www.sqlite.org/faq.html#q6
-	pool = adbapi.ConnectionPool('sqlite3', args.databaseFile, timeout=args.databaseTimeout, cp_max=1, check_same_thread=False)
+	database = Database(args.databaseFile)
 
-	# Ensure the database holds the required tables, columns, and indicies.
-	# Connect and start sending probes only if this is successful.
-	# Note that runWithConnection() commits if no exceptions are thrown.
-	init = pool.runWithConnection(init_database)
-
-	def databaseInitFailure(failure):
-		logging.error("Database initialization failed: '{0}'".format(failure))
-		exit(1)
-
-	def databaseInitSuccess(d):
-		reactor.connectTCP(args.host, args.port, FCPReconnectingFactory(args, pool))
-
-	init.addErrback(databaseInitFailure)
-	init.addCallback(databaseInitSuccess)
-
-	handler = sigint_handler(pool)
-	reactor.callWhenRunning(signal, SIGINT, handler)
-	reactor.callWhenRunning(signal, SIGTERM, handler)
+	reactor.connectTCP(args.host, args.port, FCPReconnectingFactory(args, database))
 
 #run main if run with twistd: it will start the reactor.
 if __name__ == "__builtin__":
