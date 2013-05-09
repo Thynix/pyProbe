@@ -58,7 +58,7 @@ def makeHistogram(histMax, results):
 
 def g_init(width, height, filename):
     g = Gnuplot.Gnuplot()
-    g('set terminal png size {:n},{:n}'.format(width, height))
+    g('set terminal png size {0:n},{1:n}'.format(width, height))
     g.set(output=filename)
 
     return g
@@ -132,7 +132,7 @@ def plot_bulk_reject(counts, width=default_width, height=default_height,
     for item in counts.items():
         key = item[0]
         if len(item[1]) is 0:
-            logging.warning("No entries for {}.".format(item[0]))
+            logging.warning("No entries for {0}.".format(item[0]))
             counts[key] = [[0, 0]]
 
         counts[key] = makeHistogram(100, item[1])
