@@ -9,7 +9,7 @@ from itertools import izip_longest
 
 locale.setlocale(locale.LC_ALL, '')
 
-parser = argparse.ArgumentParser(description="Offer statistics on the amount of information the database holds and expose sqlite3 \"vaccum\" and \"analyze\" operations.")
+parser = argparse.ArgumentParser(description="Offer statistics on the amount of information the database holds and expose sqlite3 \"vacuum\" and \"analyze\" operations.")
 parser.add_argument('-d, --database-file', dest="databaseFile", default="database.sql",\
                     help="Database file to open, default \"database.sql\"")
 
@@ -30,7 +30,7 @@ def times(func, tables):
     #None evaluates to False; remove None.
     return filter(None, results)
 
-choice = str(raw_input("Enter:\n * a to analyze\n * e to view per-type error breakdown\n * r to view mean response rate\n * s to view overall statistics\n * v to vaccuum (requires no open transactions or active SQL statements)\n * anything else to exit\n> "))
+choice = str(raw_input("Enter:\n * a to analyze\n * e to view per-type error breakdown\n * r to view mean response rate\n * s to view overall statistics\n * v to vacuum (requires no open transactions or active SQL statements)\n * anything else to exit\n> "))
 with sqlite3.connect(args.databaseFile) as db:
     if choice == 'a':
         print("Analyzing...")
@@ -41,7 +41,7 @@ with sqlite3.connect(args.databaseFile) as db:
         errors = {}
         total_count = 0
 
-        class error_occurences:
+        class error_occurrences:
             def __init__(self, error_list):
                 self.error_list = error_list
                 self.count = 0
@@ -49,7 +49,7 @@ with sqlite3.connect(args.databaseFile) as db:
                     self.count += error[1]
 
         for probe_type in probe_types:
-            errors[probe_type] = error_occurences(db.execute("""select "error_type", count(*) from "error" where "probe_type" == '{0}' group by "error_type" """.format(probe_type)).fetchall())
+            errors[probe_type] = error_occurrences(db.execute("""select "error_type", count(*) from "error" where "probe_type" == '{0}' group by "error_type" """.format(probe_type)).fetchall())
             total_count += errors[probe_type].count
 
         print("Errors stored: {0:n} total".format(total_count))

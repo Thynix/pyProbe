@@ -12,7 +12,7 @@ Switch to built-in Python logging module.
 
 Database upgrade:
     Omit time and HTL from link_lengths entries: can select from peer_count and find same ID.
-    Treating probe and error type as integers is incomplete. Existing occurances were converted in the upgrade to version 4, but they are still stored and retreived as text.
+    Treating probe and error type as integers is incomplete. Existing occurrences were converted in the upgrade to version 4, but they are still stored and retrieved as text.
     Likewise "local" for error is text when it should be a boolean.
 
 Use Greasemonkey in Firefox and Chrome native support for the same to have interactive Javascript plots.

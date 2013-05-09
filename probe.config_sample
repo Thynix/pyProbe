@@ -65,7 +65,7 @@ logFile=probe.log
 #
 # Result types are documented in more detail in src/freenet/node/probe/Type.java
 #
-# Multiple occurances of the same type are considered separately, so to send
+# Multiple occurrences of the same type are considered separately, so to send
 # both BANDWIDTH and UPTIME_48H with BANDWIDTH more often one could use
 # "BANDWIDTH,BANDWIDTH,UPTIME_48H".
 #

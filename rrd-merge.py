@@ -64,7 +64,7 @@ for inFile in argv[1:-1]:
             exit(2)
 
     # Find the data sources in each file.
-    # Use each occurance from the first file it appears in.
+    # Use each occurrence from the first file it appears in.
     # Index is which of the data sources in the file is used.
     index = 0
     for dataSource in [ ds.find('name').text for ds in root.findall('ds') ]:
@@ -87,7 +87,7 @@ for item in prelude.iteritems():
     out.append(element)
 
 # Though dataSources is a dictionary, as no further modifications are made to it
-# iteration over its pairs will be consistant. This is important as the order of
+# iteration over its pairs will be consistent. This is important as the order of
 # the data source definitions must match that of the values in the RRA rows.
 # See http://docs.python.org/2/library/stdtypes.html#dict.items
 

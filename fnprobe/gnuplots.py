@@ -37,9 +37,9 @@ def CDF(in_list):
 def makeHistogram(histMax, results):
     """
     The histogram is capped at histMax.
-    results is a list of tuples of (value, occurances).
+    results is a list of tuples of (value, occurrences).
 
-    Returns a list in which each element is [value, occurances] with those
+    Returns a list in which each element is [value, occurrences] with those
     at index maxHist being a sum of those at and above that value.
     """
     # The database does not return a row for unseen values - fill them in.

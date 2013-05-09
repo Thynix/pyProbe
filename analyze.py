@@ -42,7 +42,7 @@ parser.add_argument('--store-graph', dest='storeGraph', default='plot_store_capa
 parser.add_argument('--error-refused-graph', dest='errorRefusedGraph', default='plot_error_refused.png',
                     help='Path to the errors and refusals graph.')
 parser.add_argument('--uptime-histogram-max', dest="uptimeHistogramMax", default=120, type=int,
-                    help='Maxmimum percentage to include in the uptime histogram. Default 120')
+                    help='Maximum percentage to include in the uptime histogram. Default 120')
 
 parser.add_argument('--output-dir', dest='outputDir', default='output',
                     help='Path to output directory.')
@@ -53,7 +53,7 @@ parser.add_argument('--locations-filename', dest='locationGraphFile',
                     default='plot_location_dist.png')
 parser.add_argument('--peer-count-filename', dest='peerCountGraphFile',
                     default='plot_peer_count.png')
-parser.add_argument('--link-length-filebane', dest='linkGraphFile',
+parser.add_argument('--link-length-filename', dest='linkGraphFile',
                     default='plot_link_length.png')
 parser.add_argument('--uptime-filename', dest='uptimeGraphFile',
                     default='plot_week_uptime.png')
@@ -64,7 +64,9 @@ parser.add_argument('--bulk-reject-filename', dest='bulkRejectFile',
 parser.add_argument('--upload', dest='uploadConfig', default=None,
                     help='Path to the upload configuration file. See upload.conf_sample. No uploading is attempted if this is not specified.')
 parser.add_argument('--markdown', dest='markdownFiles', default=None,
-                    help='Comma-separated list of markdown files to parse. Output filenames are the input filename appended with ".html".')
+                    help='Comma-separated list of markdown files to parse. '
+                         'The output filename is the input filename '
+                         'appended with ".html".')
 parser.add_argument('--rrd', dest='runRRD', default=False, action='store_true',
                     help='If specified updates and renders the RRDTool plots.')
 
@@ -116,7 +118,8 @@ mediumPeriod = datetime.timedelta(hours=24)
 # One week: 24 hours/day * 7 days = 168 hours.
 longPeriod = datetime.timedelta(hours=168)
 
-# The order and length of these must match. It'd be less convinent as a list of tuples though.
+# The order and length of these must match. It'd be more nested and thus less
+# convenient as a list of tuples though.
 errorTypes = [  "DISCONNECTED",
                 "OVERLOAD",
                 "TIMEOUT",
@@ -125,7 +128,7 @@ errorTypes = [  "DISCONNECTED",
                 "CANNOT_FORWARD" ]
 
 # Names can be up to 19 characters.
-errorDataSources = ['error-disconnected',   # Error occurances in the past shortPeriod.
+errorDataSources = ['error-disconnected',   # Error occurrences in the past shortPeriod.
                     'error-overload',       # TODO: This will include both local and remote errors.
                     'error-timeout',        # It may be more informative to treat local and remote separately.
                     'error-unknown',
@@ -172,7 +175,7 @@ except:
                 '--start', str(toPosix(toTime) - 1),
                 # Once each hour.
                 '--step', '{0}'.format(shortPeriodSeconds),
-                # Lossless for a year of instantanious; longer for effective estimate. No unknowns allowed.
+                # Lossless for a year of instantaneous; longer for effective estimate. No unknowns allowed.
                 # (60 * 60 * 24 * 365 = 31536000 seconds per year)
                 'RRA:AVERAGE:0:1:{0}'.format(int(31536000/shortPeriodSeconds)),
                 # Daily average for five years; longer for effective estimate.
@@ -229,7 +232,7 @@ if args.runRRD:
                 # current == distinctSamples:
                 return mid
 
-    log("Computing network plot data. In-progress segement is {0}. ({1})".format(startTime, toPosix(startTime)))
+    log("Computing network plot data. In-progress segment is {0}. ({1})".format(startTime, toPosix(startTime)))
 
     #
     # Perform binary search for network size in:

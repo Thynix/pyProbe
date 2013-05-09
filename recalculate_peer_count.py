@@ -1,7 +1,7 @@
 import sqlite3
 
 # This script recalculates the peer counts by counting the link lengths which
-# were saved at the same time. This is not guarenteed to work, because a
+# were saved at the same time. This is not guaranteed to work, because a
 # timestamp is not an ID, and exists to recover from a peer count bug.
 
 db = sqlite3.connect("database.sql")
