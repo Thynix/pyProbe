@@ -19,7 +19,7 @@ import re
 import logging
 import codecs
 from fnprobe.time import toPosix, totalSeconds, timestamp
-from fnprobe.gnuplots import plot_link_length, plot_location_dist, plot_peer_count, plot_reject_percentages, reject_types, plot_uptime
+from fnprobe.gnuplots import plot_link_length, plot_location_dist, plot_peer_count, plot_bulk_reject, reject_types, plot_uptime
 from fnprobe.db import Database
 
 parser = argparse.ArgumentParser(description="Analyze probe results for estimates of peer distribution and network interconnectedness; generate plots.")
@@ -44,6 +44,22 @@ parser.add_argument('--error-refused-graph', dest='errorRefusedGraph', default='
 parser.add_argument('--uptime-histogram-max', dest="uptimeHistogramMax", default=120, type=int,
                     help='Maxmimum percentage to include in the uptime histogram. Default 120')
 
+parser.add_argument('--output-dir', dest='outputDir', default='output',
+                    help='Path to output directory.')
+
+# Gnuplot Output filenames
+
+parser.add_argument('--locations-filename', dest='locationGraphFile',
+                    default='plot_location_dist.png')
+parser.add_argument('--peer-count-filename', dest='peerCountGraphFile',
+                    default='plot_peer_count.png')
+parser.add_argument('--link-length-filebane', dest='linkGraphFile',
+                    default='plot_link_length.png')
+parser.add_argument('--uptime-filename', dest='uptimeGraphFile',
+                    default='plot_week_uptime.png')
+parser.add_argument('--bulk-reject-filename', dest='bulkRejectFile',
+                    default='plot_week_reject.png')
+
 # Which segments of analysis to run.
 parser.add_argument('--upload', dest='uploadConfig', default=None,
                     help='Path to the upload configuration file. See upload.conf_sample. No uploading is attempted if this is not specified.')
@@ -51,6 +67,7 @@ parser.add_argument('--markdown', dest='markdownFiles', default=None,
                     help='Comma-separated list of markdown files to parse. Output filenames are the input filename appended with ".html".')
 parser.add_argument('--rrd', dest='runRRD', default=False, action='store_true',
                     help='If specified updates and renders the RRDTool plots.')
+
 parser.add_argument('--location', dest='runLocation', default=False, action='store_true',
                     help='If specified plots location distribution over the last recency period.')
 parser.add_argument('--peer-count', dest='runPeerCount', default=False, action='store_true',
@@ -322,7 +339,7 @@ if args.runRRD:
     for period in [ ('year', lastResult - 31536000), ('month', lastResult - 2592000), ('week', lastResult - 604800) ]:
         # Width, height.
         for dimension in [ (900, 300), (1200, 400) ]:
-            rrdtool.graph(  '{0}_{1}x{2}_{3}'.format(period[0], dimension[0], dimension[1], args.sizeGraph),
+            rrdtool.graph(args.outputDir + '/{0}_{1}x{2}_{3}'.format(period[0],dimension[0], dimension[1], args.sizeGraph),
                             '--start', str(period[1]),
                             '--end', str(lastResult),
                             # Each data source has a new value each shortPeriod,
@@ -340,7 +357,7 @@ if args.runRRD:
                             '--height', str(dimension[1])
                          )
 
-            rrdtool.graph(  '{0}_{1}x{2}_{3}'.format(period[0], dimension[0], dimension[1], args.storeGraph),
+            rrdtool.graph(args.outputDir + '/{0}_{1}x{2}_{3}'.format(period[0], dimension[0], dimension[1], args.storeGraph),
                             '--start', str(period[1]),
                             '--end', str(lastResult),
                             'DEF:store-capacity={0}:store-capacity:AVERAGE:step={1}'.format(args.rrd, int(totalSeconds(shortPeriod))),
@@ -352,7 +369,7 @@ if args.runRRD:
                             '--height', str(dimension[1])
                          )
 
-            rrdtool.graph(  '{0}_{1}x{2}_{3}'.format(period[0], dimension[0], dimension[1], args.errorRefusedGraph),
+            rrdtool.graph(args.outputDir + '/{0}_{1}x{2}_{3}'.format(period[0], dimension[0], dimension[1], args.errorRefusedGraph),
                             '--start', str(period[1]),
                             '--end', str(lastResult),
                             '-v', 'Errors and Refused',
@@ -368,21 +385,24 @@ if args.runLocation:
     locations = db.span_locations(recent, startTime)
 
     log("Plotting.")
-    plot_location_dist(locations)
+    plot_location_dist(locations,
+                       filename=args.outputDir + '/' + args.locationGraphFile)
 
 if args.runPeerCount:
     log("Querying database for peer distribution histogram.")
     rawPeerCounts = db.span_peer_count(recent, startTime)
 
     log("Plotting.")
-    plot_peer_count(rawPeerCounts, args.histogramMax)
+    plot_peer_count(rawPeerCounts, args.histogramMax,
+                    filename=args.outputDir + '/' + args.peerCountGraphFile)
 
 if args.runLinkLengths:
     log("Querying database for link lengths.")
     links = db.span_links(recent, startTime)
 
     log("Plotting.")
-    plot_link_length(links)
+    plot_link_length(links,
+                     filename=args.outputDir + '/' + args.linkGraphFile)
 
 if args.runUptime:
     log("Querying database for uptime reported with identifiers.")
@@ -390,7 +410,8 @@ if args.runUptime:
     uptimes = db.span_uptimes(recent, startTime)
 
     log("Plotting.")
-    plot_uptime(uptimes, args.uptimeHistogramMax)
+    plot_uptime(uptimes, args.uptimeHistogramMax,
+                filename=args.outputDir + '/' + args.uptimeGraphFile)
 
 if args.bulkReject:
     counts = {}
@@ -400,7 +421,8 @@ if args.bulkReject:
         counts[reject_type] = db.span_bulk_rejects(reject_type, recent, startTime)
 
     log("Plotting.")
-    plot_reject_percentages(counts)
+    plot_bulk_reject(counts,
+                     filename=args.outputDir + '/' + args.bulkRejectFile)
 
 # TODO: Instead of always appending ".html", replace an extension if it exists, otherwise append.
 # TODO: Different headers for different pages.
@@ -411,7 +433,8 @@ if args.markdownFiles is not None:
 
     for markdownFile in split(args.markdownFiles, ','):
         with codecs.open(markdownFile, mode='r', encoding='utf-8') as markdownInput:
-            with codecs.open(markdownFile + '.html', 'w', encoding='utf-8') as markdownOutput:
+            with codecs.open(args.outputDir + '/' + markdownFile + '.html',
+                             'w', encoding='utf-8') as markdownOutput:
 
                 # NOTE: If the input file is large this will mean lots of memory usage
                 # when it is all read into memory. Perhaps if it is a problem one could
@@ -456,15 +479,14 @@ defaults = config.defaults()
 
 privkey = defaults['privkey']
 path = defaults['path']
-files = split(defaults['insertfiles'], ';')
 host = defaults['host']
 port = int(defaults['port'])
 scriptPath = os.path.dirname(os.path.realpath(__file__))
 
 class InsertFCPFactory(protocol.ClientFactory):
     """
-    Upon connection, inserts the requested statistics site, then disconnects
-    and ends the program.
+    Inserts the site upon connection, then waits for success or failure
+    before exiting.
     """
     protocol = FreenetClientProtocol
 
@@ -473,22 +495,12 @@ class InsertFCPFactory(protocol.ClientFactory):
                     ('URI', '{0}/{1}/0/'.format(privkey, path)),
                     ('Identifier', 'Statistics Page Insert {0}'.format(startTime)),
                     ('MaxRetries', '-1'),
-                    ('Global', 'true'),
-                    ('Persistence', 'forever'),
-                    ('DefaultName', 'index.html')
+                    ('Persistence', 'reboot'),
+                    ('DefaultName', 'index.html'),
+                    ('Filename', os.path.abspath(args.outputDir)),
+                    # Send PutFetchable
+                    ('Verbosity', 64),
                  ]
-
-        fileNum = 0
-        for filename in files:
-            base = 'Files.{0}'.format(fileNum)
-            fileNum += 1
-
-            def attr(field):
-                return '{0}.{1}'.format(base, field)
-
-            self.fields.append((attr('Name'), filename))
-            self.fields.append((attr('UploadFrom'), 'disk'))
-            self.fields.append((attr('Filename'), '{0}/{1}'.format(scriptPath, filename)))
 
     def Done(self, message):
         print message.name, message.args
@@ -507,21 +519,26 @@ class InsertFCPFactory(protocol.ClientFactory):
         reactor.stop()
 
     def IdentifierCollision(self, message):
-        sys.stderr.write('Error in insert!')
-        sys.stderr.write('The previous upload was done the same day as the last.')
-        sys.stderr.write('Please remove the upload from the queue.')
+        sys.stderr.write('Identifier collision in insert!')
         self.Done(message)
 
     def PutFetchable(self, message):
-        log("Insert successful.")
+        log("Insert fetchable.")
+        print(message.name)
+        print(message.args)
+
+    def PutSuccessful(self, message):
+        log("Insert complete.")
+        self.Done(message)
+
+    def PutFailed(self, message):
+        log("Insert failed.")
         self.Done(message)
 
     def Insert(self, message):
         # TODO: Run custom Fred build which prints names of messages as they are received - is the disconnect beind receivied first? Why would disconnecting without a delay lead to the upload not being queued?
         log("Connected. Sending insert request.")
-        self.proto.sendMessage(Message('ClientPutComplexDir', self.fields))
-        # TODO: What other messages can be used? Perhaps have a do_session() for a timeout?
-        self.proto.sendMessage(Message('Disconnect', []))
+        self.proto.sendMessage(Message('ClientPutDiskDir', self.fields))
 
     def buildProtocol(self, addr):
         log("Connecting.")
@@ -531,6 +548,8 @@ class InsertFCPFactory(protocol.ClientFactory):
 
         proto.deferred['NodeHello'].addCallback(self.Insert)
         proto.deferred['PutFetchable'].addCallback(self.PutFetchable)
+        proto.deferred['PutSuccessful'].addCallback(self.PutSuccessful)
+        proto.deferred['PutFailed'].addCallback(self.PutFailed)
 
         proto.deferred['ProtocolError'].addCallback(self.ProtocolError)
         proto.deferred['IdentifierCollision'].addCallback(self.IdentifierCollision)
