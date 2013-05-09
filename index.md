@@ -90,6 +90,12 @@ The bulk queue (therefore not realtime queue) reject percentages are an indicato
 
 ## Changelog
 
+### May 9th, 2013
+
+Fix typos.
+
+Backend changes and refactoring.
+
 ### March 24th, 2013
 
 Change bulk reject percentages plot to log scale.
@@ -145,4 +151,4 @@ Initial release.
 * A download of the network and usable store size estimate RRD.
 * Plots of the past 7 days of link length and peer count distribution.
 
-_Generated [GENERATED-DATE] by [operhiem1](/USK@pxtehd-TmfJwyNUAW2Clk4pwv7Nshyg21NNfXcqzFv4,LTjcTWqvsq3ju6pMGe9Cqb3scvQgECG81hRdgj5WO4s,AQACAAE/blog/12/). [RRD](size.xml). Made with [pyProbe](/USK@pxtehd-TmfJwyNUAW2Clk4pwv7Nshyg21NNfXcqzFv4,LTjcTWqvsq3ju6pMGe9Cqb3scvQgECG81hRdgj5WO4s,AQACAAE/pyProbe.R1/6)._
+_Generated [GENERATED-DATE] by [operhiem1](/USK@pxtehd-TmfJwyNUAW2Clk4pwv7Nshyg21NNfXcqzFv4,LTjcTWqvsq3ju6pMGe9Cqb3scvQgECG81hRdgj5WO4s,AQACAAE/blog/17/). [RRD](size.xml). Made with [pyProbe](/USK@pxtehd-TmfJwyNUAW2Clk4pwv7Nshyg21NNfXcqzFv4,LTjcTWqvsq3ju6pMGe9Cqb3scvQgECG81hRdgj5WO4s,AQACAAE/pyProbe.R1/9)._
