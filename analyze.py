@@ -268,8 +268,6 @@ if args.runRRD:
         log("{0}: {1} samples | {2} distinct samples | {3} estimated daily effective size"
                .format(toTime, dailyEffectiveResult[1], dailyEffectiveResult[0], dailySize))
 
-        # TODO: Add / remove / ignore refusals to provide error bars? More than that needs to be error bars though.
-        # TODO: Take into account refuals for error bars.
         instantaneousResult = db.span_identifier(fromTime, toTime)
 
         instantaneousSize = binarySearch(instantaneousResult[0], instantaneousResult[1])
@@ -539,7 +537,6 @@ class InsertFCPFactory(protocol.ClientFactory):
         self.Done(message)
 
     def Insert(self, message):
-        # TODO: Run custom Fred build which prints names of messages as they are received - is the disconnect beind receivied first? Why would disconnecting without a delay lead to the upload not being queued?
         log("Connected. Sending insert request.")
         self.proto.sendMessage(Message('ClientPutDiskDir', self.fields))
 

@@ -1,5 +1,8 @@
 https://en.wikipedia.org/wiki/Mann%E2%80%93Whitney_U
 
+Move from command line arguments for settings such as filenames to config
+files.
+
 Convert tabs to spaces as per PEP8.
 	Similarly line lengths below 80.
 
