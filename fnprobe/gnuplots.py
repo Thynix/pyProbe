@@ -123,7 +123,7 @@ def plot_peer_count(counts, histMax, width=default_width, height=default_height,
 
     g.plot(Gnuplot.Data(makeHistogram(histMax, counts), with_='boxes'))
 
-def plot_reject_percentages(counts, width=default_width, height=default_height, filename='plot_week_reject.png'):
+def plot_bulk_reject(counts, width=default_width, height=default_height, filename='plot_week_reject.png'):
     assert len(counts) > 0
     for item in counts.items():
         key = item[0]

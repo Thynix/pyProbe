@@ -22,11 +22,11 @@ cd $(dirname "$0")
 $analyze -q --rrd --peer-count --link-lengths --uptime --bulk-reject --markdown index.md || exit 1
 
 # Move index render to index.html.
-mv index.md.html index.html || exit 2
+mv output/index.md.html output/index.html || exit 2
 
 # Dump RRD database to XML.
 # Official Python RRDTool bindings do not expose this.
-rrdtool dump size.rrd size.xml || exit 3
+rrdtool dump size.rrd output/size.xml || exit 3
 
 # Insert site, including RRD dump.
 $analyze -q --upload "$uploadConfig" || exit 4
