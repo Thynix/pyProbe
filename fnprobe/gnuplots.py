@@ -64,7 +64,8 @@ def g_init(width, height, filename):
     return g
 
 
-def plot_link_length(lengths, width=default_width, height=default_height, filename='plot_link_length.png'):
+def plot_link_length(lengths, width=default_width, height=default_height,
+                     filename=None):
     if len(lengths) is 0:
         logging.warning("No link lengths to plot.")
         lengths = [[0.01]]
@@ -83,7 +84,8 @@ def plot_link_length(lengths, width=default_width, height=default_height, filena
 
     g.plot(Gnuplot.Data(CDF(lengths), smooth='cumulative'))
 
-def plot_location_dist(locations, width=default_width, height=default_height, filename='plot_location_dist.png'):
+def plot_location_dist(locations, width=default_width, height=default_height,
+                       filename=None):
     if len(locations) is 0:
         logging.warning("No locations to plot.")
         locations = [[0.5]]
@@ -102,7 +104,8 @@ def plot_location_dist(locations, width=default_width, height=default_height, fi
     g.plot(Gnuplot.Data(CDF(locations), smooth='cumulative'))
 
 
-def plot_peer_count(counts, histMax, width=default_width, height=default_height, filename='plot_peer_count.png'):
+def plot_peer_count(counts, histMax, width=default_width,
+                    height=default_height, filename=None):
     if len(counts) is 0:
         logging.warning("No peer counts to plot.")
         counts = [[0, 0]]
@@ -123,7 +126,8 @@ def plot_peer_count(counts, histMax, width=default_width, height=default_height,
 
     g.plot(Gnuplot.Data(makeHistogram(histMax, counts), with_='boxes'))
 
-def plot_bulk_reject(counts, width=default_width, height=default_height, filename='plot_week_reject.png'):
+def plot_bulk_reject(counts, width=default_width, height=default_height,
+                     filename=None):
     assert len(counts) > 0
     for item in counts.items():
         key = item[0]
@@ -149,7 +153,8 @@ def plot_bulk_reject(counts, width=default_width, height=default_height, filenam
     g.plot(*[Gnuplot.Data(item[1], title=item[0], with_='lines') for item in counts.iteritems()])
 
 
-def plot_uptime(uptimes, histMax, width=default_width, height=default_height, filename='plot_week_uptime.png'):
+def plot_uptime(uptimes, histMax, width=default_width, height=default_height,
+                filename=None):
     if len(uptimes) is 0:
         logging.warning("No uptimes to plot.")
         uptimes = [[0, 0]]
