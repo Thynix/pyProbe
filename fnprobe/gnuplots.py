@@ -122,6 +122,7 @@ def plot_peer_count(counts, histMax, width=default_width,
 
     # Could mean missing the details of things beyond the bounds.
     g.set(xrange='[1:50]')
+    g.set(yrange='[0:]')
     g('set xtics 5')
 
     g.plot(Gnuplot.Data(makeHistogram(histMax, counts), with_='boxes'))
