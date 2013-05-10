@@ -105,8 +105,7 @@ def plot_location_dist(locations, width=default_width, height=default_height,
     g.ylabel('Percent nodes with this location or less')
 
     g.set(xrange='[0:1.0]')
-    # TODO: Percentage goes to 100, not 1.
-    g.set(yrange='[0:1]')
+    g.set(yrange='[0:100]')
 
     g.plot(Gnuplot.Data(CDF(locations), smooth='cumulative'))
 
