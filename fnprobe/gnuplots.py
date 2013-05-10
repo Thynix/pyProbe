@@ -1,3 +1,4 @@
+from __future__ import division
 import Gnuplot
 import logging
 
@@ -34,12 +35,12 @@ def CDF(in_list):
     return in_list
 
 
-def makeHistogram(histMax, results):
+def makePercentageHistogram(histMax, results):
     """
     The histogram is capped at histMax.
     results is a list of tuples of (value, occurrences).
 
-    Returns a list in which each element is [value, occurrences] with those
+    Returns a list in which each element is [value, percentage] with those
     at index maxHist being a sum of those at and above that value.
     """
     # The database does not return a row for unseen values - fill them in.
@@ -47,11 +48,17 @@ def makeHistogram(histMax, results):
     for value in range(histMax + 1):
         hist.append([value, 0])
 
+    # Find count per value
     for result in results:
         if result[0] < len(hist):
             hist[result[0]][1] = result[1]
         else:
             hist[histMax][1] += result[1]
+
+    # Replace each occurrence count with percentage.
+    total = max(1.0, sum([x[1] for x in hist]))
+    for entry in hist:
+        entry[1] = 100 * entry[1] / total
 
     return hist
 
@@ -125,7 +132,7 @@ def plot_peer_count(counts, histMax, width=default_width,
     g.set(yrange='[0:]')
     g('set xtics 5')
 
-    g.plot(Gnuplot.Data(makeHistogram(histMax, counts), with_='boxes'))
+    g.plot(Gnuplot.Data(makePercentageHistogram(histMax, counts), with_='boxes'))
 
 def plot_bulk_reject(counts, width=default_width, height=default_height,
                      filename=None):
@@ -136,7 +143,7 @@ def plot_bulk_reject(counts, width=default_width, height=default_height,
             logging.warning("No entries for {0}.".format(item[0]))
             counts[key] = [[0, 0]]
 
-        counts[key] = makeHistogram(100, item[1])
+        counts[key] = makePercentageHistogram(100, item[1])
 
     g = g_init(width, height, filename)
 
@@ -172,4 +179,4 @@ def plot_uptime(uptimes, histMax, width=default_width, height=default_height,
     g.set(xrange='[0:120]')
     g.set(yrange='[0:]')
 
-    g.plot(Gnuplot.Data(makeHistogram(histMax, uptimes), with_='boxes'))
+    g.plot(Gnuplot.Data(makePercentageHistogram(histMax, uptimes), with_='boxes'))
