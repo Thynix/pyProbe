@@ -65,6 +65,7 @@ def insert(db, args, probe_type, result, duration, now):
 			logging.warning("Got operational error '{0}'. Tried {1} times before. Retrying.".format(ex, tries))
 			tries += 1
 
+	db.commit()
 	logging.debug("Committed {0} ({1}) in {2}.".format(header, probe_type, datetime.datetime.utcnow() - start))
 
 def insertResult(db, header, htl, result, now, duration, probe_type):
