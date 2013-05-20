@@ -73,7 +73,7 @@ def insertResult(db, header, htl, result, now, duration, probe_type):
 		#type should always be defined, but the code might not be.
 		code = None
 		if CODE in result:
-			description = result[CODE]
+			code = result[CODE]
 		db.execute("insert into error(time, htl, probe_type, error_type, code, duration, local) values(?, ?, ?, ?, ?, ?, ?)", (now, htl, probe_type, result[TYPE], code, duration, result[LOCAL]))
 	elif header == "ProbeRefused":
 		db.execute("insert into refused(time, htl, probe_type, duration) values(?, ?, ?, ?)", (now, htl, probe_type, duration))
