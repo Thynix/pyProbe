@@ -13,7 +13,7 @@ from ConfigParser import SafeConfigParser
 from string import split
 from twistedfcp.protocol import FreenetClientProtocol, IdentifiedMessage
 from twisted.python import log
-from fnprobe.db import Database
+from fnprobe.db import Database, probeTypes, errorTypes
 from fnprobe.time import toPosix, totalSeconds
 
 __version__ = "0.1"
@@ -76,9 +76,22 @@ def insertResult(db, header, htl, result, now, duration, probe_type):
         code = None
         if CODE in result:
             code = result[CODE]
+
+        local = 0
+        if result[LOCAL] == "true":
+            local = 1
+        elif result[LOCAL] == "false":
+            local = 0
+        else:
+            logging.error("Node gave '{0}' as ProbeError Local, "
+                          "which is neither 'true' nor 'false'.".format(
+                result[LOCAL]))
+
+        error_type = getattr(errorTypes, result[TYPE]).index
+
         db.execute(
             "insert into error(time, htl, probe_type, error_type, code, duration, local) values(?, ?, ?, ?, ?, ?, ?)",
-            (now, htl, probe_type, result[TYPE], code, duration, result[LOCAL]))
+            (now, htl, probe_type, error_type, code, duration, local))
     elif header == "ProbeRefused":
         db.execute(
             "insert into refused(time, htl, probe_type, duration) values(?, ?, ?, ?)",
@@ -171,7 +184,8 @@ class SendHook:
         delta = datetime.datetime.utcnow() - self.sent
         duration = totalSeconds(delta)
         now = toPosix(datetime.datetime.utcnow())
-        insert(self.db, self.args, self.probeType, message, duration, now)
+        probe_type_code = getattr(probeTypes, self.probeType).index
+        insert(self.db, self.args, probe_type_code, message, duration, now)
         return True
 
 

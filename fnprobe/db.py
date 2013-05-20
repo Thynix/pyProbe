@@ -4,6 +4,13 @@ from enum import Enum
 import sqlite3
 import string
 
+# Current mapping between probe and error types. Used for storage (probe) and
+# analysis. (analyze)
+probeTypes = Enum('BANDWIDTH', 'BUILD', 'IDENTIFIER', 'LINK_LENGTHS',
+                  'LOCATION', 'STORE_SIZE', 'UPTIME_48H',
+                  'UPTIME_7D', 'REJECT_STATS')
+errorTypes = Enum('DISCONNECTED', 'OVERLOAD', 'TIMEOUT', 'UNKNOWN',
+                  'UNRECOGNIZED_TYPE', 'CANNOT_FORWARD')
 
 def stringToPosix(string):
     """
@@ -418,6 +425,60 @@ class Database:
 
             version = update_version(6)
             logging.warning("Update from 5 to 6 complete.")
+
+        # In version 7: Convert probe and error types to integer codes again,
+        # this time with a corresponding change to how results are saved.
+        # Similarly for the locality boolean.
+        if version == 6:
+            logging.warning("Upgrading from database version 6 to version 7.")
+            probeTypes = Enum('BANDWIDTH', 'BUILD', 'IDENTIFIER', 'LINK_LENGTHS',
+                              'LOCATION', 'STORE_SIZE', 'UPTIME_48H',
+                              'UPTIME_7D', 'REJECT_STATS')
+            errorTypes = Enum('DISCONNECTED', 'OVERLOAD', 'TIMEOUT', 'UNKNOWN',
+                              'UNRECOGNIZED_TYPE', 'CANNOT_FORWARD')
+
+            for table in [ "error", "refused" ]:
+                for probeType in probeTypes:
+                    db.execute("""
+                    UPDATE
+                      "{0}"
+                    SET
+                      "probe_type" = ?1
+                    WHERE
+                      "probe_type" = ?2 """.format(table),
+                               (probeType.index, str(probeType)))
+
+            for errorType in errorTypes:
+                db.execute("""
+                UPDATE
+                  "error"
+                SET
+                  "error_type" = ?1
+                WHERE
+                  "error_type" = ?2 """, (errorType.index, str(errorType)))
+
+            # Update locality. SQLite does not support booleans apart from
+            # integers.
+            db.execute("""
+            UPDATE
+              "error"
+            SET
+              "local" = 1
+            WHERE
+              "local" = "true"
+            """)
+            db.execute("""
+            UPDATE
+              "error"
+            SET
+              "local" = 0
+            WHERE
+              "local" = "false"
+            """)
+
+            version = update_version(7)
+            logging.warning("Update from 6 to 7 complete.")
+
 
     def intersect_identifier(self, earliest, mid, latest):
         """
