@@ -1,20 +1,17 @@
 from __future__ import division
-import argparse
 import random
 import sqlite3
 import datetime
-import time
-from sys import exit, stderr
+from sys import stderr
 from twisted.internet import reactor, protocol
 from twisted.internet.task import LoopingCall
-from signal import signal, SIGINT, SIGTERM, SIG_DFL
+from signal import signal, SIGINT, SIG_DFL
 import thread
 import logging
 from twisted.application import service
 from ConfigParser import SafeConfigParser
 from string import split
 from twistedfcp.protocol import FreenetClientProtocol, IdentifiedMessage
-from twistedfcp import message
 from twisted.python import log
 from fnprobe.db import Database
 from fnprobe.time import toPosix, totalSeconds
