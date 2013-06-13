@@ -1,3 +1,22 @@
+Consistently use quoted or unquoted identifiers.
+    http://www.postgresql.org/docs/9.2/static/sql-syntax-lexical.html
+    Is my understanding correct that parameter substitution will always
+    produce literals, not identifiers? (So that string formatting operations
+    must be used to insert identifiers like table names?)
+
+Run "explain" on all queries.
+
+Things should be in directories more. Making a /config/ and /logs/
+
+Look into whether to implement database rotation.
+
+Perhaps replace RRDTool with another PostgreSQL table and some R / knitr? Maybe only if it is clear it would not involve reinventing parts of RRDTool.
+
+Specifying probe types by repeated occurances to get ratios is annoying. How to better specify distribution? Percentages / fractions?
+
+Does PostgreSQL / psycopg handle time zone conversion? Can I insert a datetime() or select by it and have time zones converted to and from when appropriate?
+    Probably. Datetime conversion would be insane otherwise.
+
 https://en.wikipedia.org/wiki/Mann%E2%80%93Whitney_U
 
 Move from command line arguments for settings such as filenames to config
@@ -13,9 +32,6 @@ Use Q-Q plots for link length distribution (logarithmic) and location. (uniform?
 
 Switch to built-in Python logging module.
 
-Database upgrade:
-    Omit time and HTL from link_lengths entries: can select from peer_count and find same ID.
-
 Use Greasemonkey in Firefox and Chrome native support for the same to have interactive Javascript plots.
     Possibilities:
         http://dygraphs.com/
@@ -28,15 +44,10 @@ Keep list of notable dates, insert labeled vertical lines in the plots at those 
     Version releases
     Changes to probe gathering techniques
 
-`link_lengths`:
-
-* Could save space by omitting `time` and `htl` and instead finding peer_count entries with the same `id`.
-
 `store_size`:
 
 * Correct terminology errors - the datastore contains the store and the cache.
 
-* Consistently use and specify UTC.
 * Clean up analyze by breaking into functions instead of a serial script. Perhaps a frontend and backend module?
 
 Stats sites for R - hopefully better population estimation:
