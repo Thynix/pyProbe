@@ -14,12 +14,15 @@ pyProbe is a collection of data gathering and analysis tools for [Freenet](https
 * [twistedfcp](https://github.com/AnIrishDuck/twistedfcp)
 * [Markdown](http://packages.python.org/Markdown/index.html)
 * [enum](http://pypi.python.org/pypi/enum/0.4.4)
+* [postgresql](http://www.postgresql.org/)
+* [psycopg](http://initd.org/psycopg/)
+* [python-dateutil](http://labix.org/python-dateutil)
 
 ## Installation
 
 Freenet, Python, gnuplot, rrdtool, Twisted, and Markdown all have installation instructions on their respective sites.
 
-`pip install markdown enum gnuplot-py`
+`pip install markdown enum gnuplot-py psycopg2 python-dateutil`
 
 ### argparse
 
@@ -30,6 +33,33 @@ Freenet, Python, gnuplot, rrdtool, Twisted, and Markdown all have installation i
 * Clone [twistedfcp](https://github.com/AnIrishDuck/twistedfcp): `$ git clone https://github.com/AnIrishDuck/twistedfcp.git`
 * `$ cd twistedfcp`
 * `# python setup.py install`
+
+### PostgreSQL
+
+After [installing](http://www.postgresql.org/download/), [create](http://www.postgresql.org/docs/9.2/interactive/database-roles.html) [roles](http://www.postgresql.org/docs/9.2/interactive/role-attributes.html).
+
+pyProbe uses the database in three capacities:
+
+* Table creation, updating, and alteration for database initialization and upgrades.
+* Inserting for data gathering.
+* Reading for data analysis.
+
+**Please note: I don't know if I'm setting this up in a sane way. If not, please yell at me about it.**
+
+If appropriate roles for these don't already exist, create them. Then create the database and grant sufficient privileges.
+
+    # su postgres
+    $ createuser -P pyprobe-maint
+    $ createuser -P pyprobe-add
+    $ createuser -P pyprobe-read
+    $ createdb probe-results
+    $ psql -c 'GRANT CREATE ON DATABASE "probe-results" TO "pyprobe-maint"'
+
+The tables do not exist yet, so privileges cannot be assigned for them. They will be assigned by the maintenance user after creating the tables.
+
+If first setting things up, copy `probe.config_sample` and `analyze.config_sample` to `probe.config` and `analyze.config` respectively. Then set the usernames, passwords, and database name, and run `tools/update_db.py` to create the tables and set privileges.
+
+If migrating from from the sqlite version of pyProbe, run `tools/migrate_from_sqlite.py`.
 
 ## Usage
 

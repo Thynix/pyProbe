@@ -1,3 +1,12 @@
+Look into whether to implement database rotation.
+
+Specifying probe types by repeated occurances to get ratios is annoying. How to better specify distribution? Percentages / fractions?
+
+Is it odd that the database name is specified in duplicate between the probe and analyze config?
+	They do share more than just that: node IP and port? Would reduce flexibility, though? Maybe not.
+
+Does PostgreSQL / psycopg handle time zone conversion? Can I insert a datetime() or select by it and have time zones converted to and from when appropriate?
+
 https://en.wikipedia.org/wiki/Mann%E2%80%93Whitney_U
 
 Move from command line arguments for settings such as filenames to config

@@ -1,8 +1,7 @@
 import logging
 from fnprobe.time import toPosix, timestamp
 from enum import Enum
-import sqlite3
-import string
+import psycopg2
 
 # Current mapping between probe and error types. Used for storage (probe) and
 # analysis. (analyze)
@@ -28,23 +27,19 @@ class Database:
         is not the latest version, upgrade it.
         """
 
-        self.db = sqlite3.connect(filename)
+        # TODO: Args for maint, read.
+        self.conn = psycopg2.connect(database="", user="", password="")
 
         # If there are no tables in this database, it is new, so set up the latest version.
-        if self.db.execute("""SELECT count(*) FROM "sqlite_master" WHERE type == 'table'""").fetchone()[0] == 0:
+        if False:
             self.create_new()
         else:
             # The database has already been set up. Upgrade to the latest version if necessary.
             self.upgrade()
 
-    # TODO: Is there something preferable to expose .rollback(), .cursor(), .execute(), ect?
-    def get_connection(self):
-        return self.db
-
     def create_new(self):
         logging.warning("Setting up new database.")
-        db = self.db
-        db.execute("PRAGMA user_version = 6")
+        cur = self.conn.cursor()
 
         db.execute("""create table bandwidth(
                                              time     DATETIME,
@@ -83,6 +78,7 @@ class Database:
                                                )""")
         db.execute("""create index link_lengths_time_index on link_lengths(time)""")
 
+        # TODO: Continue here.
         db.execute("""create table peer_count(
                                               time     DATETIME,
                                               htl      INTEGER,

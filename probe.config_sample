@@ -17,6 +17,23 @@ host=127.0.0.1
 port=9481
 
 #
+# Name of probe result PostgreSQL database.
+#
+dbName=probe-results
+
+#
+# PostgreSQL table maintenance credentials.
+#
+dbMaintUser=pyprobe-maint
+dbMaintPass=
+
+#
+# PostgreSQL record addition credentials.
+#
+dbInsertUser=pyprobe-add
+dbInsertPass=
+
+#
 # Number of probes to send per minute.
 #
 # This should be set so that it does not overwhelm the number of sustained
