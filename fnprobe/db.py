@@ -109,9 +109,9 @@ class Database:
           bandwidth(
                     id       SERIAL PRIMARY KEY,
                     time     TIMESTAMP WITH TIME ZONE,
+                    duration INTERVAL,
                     htl      INTEGER,
-                    KiB      FLOAT,
-                    duration INTERVAL
+                    KiB      FLOAT
                    )""")
         cur.execute("""
         CREATE INDEX
@@ -124,9 +124,9 @@ class Database:
           build(
                 id       SERIAL PRIMARY KEY,
                 time     TIMESTAMP WITH TIME ZONE,
+                duration INTERVAL,
                 htl      INTEGER,
-                build    INTEGER,
-                duration INTERVAL
+                build    INTEGER
                )""")
         cur.execute("""
         CREATE INDEX
@@ -139,10 +139,10 @@ class Database:
           identifier(
                      id         SERIAL PRIMARY KEY,
                      time       TIMESTAMP WITH TIME ZONE,
+                     duration   INTERVAL,
                      htl        INTEGER,
                      identifier INTEGER,
-                     percent    INTEGER,
-                     duration   INTERVAL
+                     percent    INTEGER
                     )""")
         cur.execute("""
         CREATE INDEX
@@ -164,9 +164,9 @@ class Database:
           peer_count(
                      id       SERIAL PRIMARY KEY,
                      time     TIMESTAMP WITH TIME ZONE,
+                     duration INTERVAL,
                      htl      INTEGER,
-                     peers    INTEGER,
-                     duration INTERVAL
+                     peers    INTEGER
                     )""")
         cur.execute("""
         CREATE INDEX
@@ -183,15 +183,14 @@ class Database:
                        count_id INTEGER REFERENCES peer_count
                       )""")
 
-        # TODO: "id" here and below. Is serial equivalent to AUTOINCREMENT?
         cur.execute("""
         CREATE TABLE
           location(
                    id       SERIAL PRIMARY KEY,
                    time     TIMESTAMP WITH TIME ZONE,
+                   duration INTERVAL,
                    htl      INTEGER,
-                   location FLOAT,
-                   duration INTERVAL
+                   location FLOAT
                   )""")
         cur.execute("""
         CREATE INDEX
@@ -204,9 +203,9 @@ class Database:
           store_size(
                      id       SERIAL PRIMARY KEY,
                      time     TIMESTAMP WITH TIME ZONE,
+                     duration INTERVAL,
                      htl      INTEGER,
-                     GiB      FLOAT,
-                     duration INTERVAL
+                     GiB      FLOAT
                     )""")
         cur.execute("""
         CREATE INDEX
@@ -219,12 +218,12 @@ class Database:
           reject_stats(
                        id               SERIAL PRIMARY KEY,
                        time             TIMESTAMP WITH TIME ZONE,
+                       duration         INTERVAL,
                        htl              INTEGER,
                        bulk_request_chk INTEGER,
                        bulk_request_ssk INTEGER,
                        bulk_insert_chk  INTEGER,
-                       bulk_insert_ssk  INTEGER,
-                       duration         INTERVAL
+                       bulk_insert_ssk  INTEGER
                       )""")
         cur.execute("""
         CREATE INDEX
@@ -236,9 +235,9 @@ class Database:
           uptime_48h(
                      id       SERIAL PRIMARY KEY,
                      time     TIMESTAMP WITH TIME ZONE,
+                     duration INTERVAL,
                      htl      INTEGER,
-                     percent  FLOAT,
-                     duration INTERVAL
+                     percent  FLOAT
                     )""")
         cur.execute("""
         CREATE INDEX
@@ -251,9 +250,9 @@ class Database:
           uptime_7d(
                     id       SERIAL PRIMARY KEY,
                     time     TIMESTAMP WITH TIME ZONE,
+                    duration INTERVAL,
                     htl      INTEGER,
-                    percent  FLOAT,
-                    duration INTERVAL
+                    percent  FLOAT
                    )""")
         cur.execute("""
         CREATE INDEX
@@ -266,12 +265,12 @@ class Database:
           error(
                 id         SERIAL PRIMARY KEY,
                 time       TIMESTAMP WITH TIME ZONE,
+                duration   INTERVAL,
                 htl        INTEGER,
+                local      BOOLEAN,
                 probe_type INTEGER,
                 error_type INTEGER,
-                code       INTEGER,
-                local      BOOLEAN,
-                duration   INTERVAL
+                code       INTEGER
                )""")
         cur.execute("""
         CREATE INDEX
@@ -283,9 +282,9 @@ class Database:
           refused(
                   id         SERIAL PRIMARY KEY,
                   time       TIMESTAMP WITH TIME ZONE,
+                  duration   INTERVAL,
                   htl        INTEGER,
-                  probe_type INTEGER,
-                  duration   INTERVAL
+                  probe_type INTEGER
                  )""")
         cur.execute("""
         CREATE INDEX
