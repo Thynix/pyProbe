@@ -78,11 +78,11 @@ def insertResult(db, header, htl, result, now, duration, probe_type):
         if CODE in result:
             code = result[CODE]
 
-        local = 0
+        local = None
         if result[LOCAL] == "true":
-            local = 1
+            local = True
         elif result[LOCAL] == "false":
-            local = 0
+            local = False
         else:
             logging.error("Node gave '{0}' as ProbeError Local, "
                           "which is neither 'true' nor 'false'.".format(

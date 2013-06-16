@@ -22,9 +22,6 @@ Use Q-Q plots for link length distribution (logarithmic) and location. (uniform?
 
 Switch to built-in Python logging module.
 
-Database upgrade:
-    Omit time and HTL from link_lengths entries: can select from peer_count and find same ID.
-
 Use Greasemonkey in Firefox and Chrome native support for the same to have interactive Javascript plots.
     Possibilities:
         http://dygraphs.com/

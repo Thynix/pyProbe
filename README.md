@@ -16,7 +16,6 @@ pyProbe is a collection of data gathering and analysis tools for [Freenet](https
 * [enum](http://pypi.python.org/pypi/enum/0.4.4)
 * [postgresql](http://www.postgresql.org/)
 * [psycopg](http://initd.org/psycopg/)
-* [python-dateutil](http://labix.org/python-dateutil)
 
 ## Installation
 
@@ -36,7 +35,7 @@ Freenet, Python, gnuplot, rrdtool, Twisted, and Markdown all have installation i
 
 ### PostgreSQL
 
-After [installing](http://www.postgresql.org/download/), [create](http://www.postgresql.org/docs/9.2/interactive/database-roles.html) [roles](http://www.postgresql.org/docs/9.2/interactive/role-attributes.html).
+After [installing](http://www.postgresql.org/download/), [create](http://www.postgresql.org/docs/current/interactive/database-roles.html) [roles](http://www.postgresql.org/docs/current/interactive/role-attributes.html). This guide was written using PostgreSQL 9.2.
 
 pyProbe uses the database in three capacities:
 
@@ -46,20 +45,32 @@ pyProbe uses the database in three capacities:
 
 **Please note: I don't know if I'm setting this up in a sane way. If not, please yell at me about it.**
 
-If appropriate roles for these don't already exist, create them. Then create the database and grant sufficient privileges.
+If appropriate roles for these don't already exist, create them. Then create the database and grant sufficient privileges. There are many ways to authenticate; this guide will use [peer authentication](http://www.postgresql.org/docs/current/static/auth-methods.html#AUTH-PEER), which maps operating system user names to PostgreSQL users.
 
     # su postgres
-    $ createuser -P pyprobe-maint
-    $ createuser -P pyprobe-add
-    $ createuser -P pyprobe-read
+    $ createuser pyprobe-maint
+    $ createuser pyprobe-add
+    $ createuser pyprobe-read
     $ createdb probe-results
     $ psql -c 'GRANT CREATE ON DATABASE "probe-results" TO "pyprobe-maint"'
 
 The tables do not exist yet, so privileges cannot be assigned for them. They will be assigned by the maintenance user after creating the tables.
 
-If first setting things up, copy `probe.config_sample` and `analyze.config_sample` to `probe.config` and `analyze.config` respectively. Then set the usernames, passwords, and database name, and run `tools/update_db.py` to create the tables and set privileges.
+Copy `database.config_sample` to `database.config` and set the usernames and database name. (Passwords need not be specified if they are not used.) Set the mapping between system users and PostgreSQL users - this may involve `/etc/postgresql/9.2/main/pg_ident.conf` and `/etc/postgresql/9.2/main/pg_hba.conf`. For example, in `pg_ident.conf`:
 
-If migrating from from the sqlite version of pyProbe, run `tools/migrate_from_sqlite.py`.
+    # MAPNAME       SYSTEM-USERNAME         PG-USERNAME
+    pyprobe         freenet                 pyprobe-maint
+    pyprobe         freenet                 pyprobe-read
+    pyprobe         freenet                 pyprobe-add
+
+And in `pg_hba.conf`:
+
+    # TYPE  DATABASE        USER            ADDRESS                 METHOD
+    local   probe-results   pyprobe-maint                           peer map=pyprobe
+    local   probe-results   pyprobe-add                             peer map=pyprobe
+    local   probe-results   pyprobe-read                            peer map=pyprobe
+
+Then reload the PostgreSQL configuration. If there is nothing to migrate, run `fnprobe/update_db.py` to create the tables and set privileges. If migrating from from the sqlite version of pyProbe, run `fnprobe/migrate_from_sqlite.py` to do the same and then insert records from SQLite.
 
 ## Usage
 
