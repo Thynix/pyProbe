@@ -183,9 +183,11 @@ class Database:
                        count_id INTEGER REFERENCES peer_count
                       )""")
 
+        # TODO: "id" here and below. Is serial equivalent to AUTOINCREMENT?
         cur.execute("""
         CREATE TABLE
           location(
+                   id       SERIAL PRIMARY KEY,
                    time     TIMESTAMP WITH TIME ZONE,
                    htl      INTEGER,
                    location FLOAT,
@@ -200,6 +202,7 @@ class Database:
         cur.execute("""
         CREATE TABLE
           store_size(
+                     id       SERIAL PRIMARY KEY,
                      time     TIMESTAMP WITH TIME ZONE,
                      htl      INTEGER,
                      GiB      FLOAT,
@@ -214,6 +217,7 @@ class Database:
         cur.execute("""
         CREATE TABLE
           reject_stats(
+                       id               SERIAL PRIMARY KEY,
                        time             TIMESTAMP WITH TIME ZONE,
                        htl              INTEGER,
                        bulk_request_chk INTEGER,
@@ -230,6 +234,7 @@ class Database:
 
         cur.execute("""CREATE TABLE
           uptime_48h(
+                     id       SERIAL PRIMARY KEY,
                      time     TIMESTAMP WITH TIME ZONE,
                      htl      INTEGER,
                      percent  FLOAT,
@@ -244,6 +249,7 @@ class Database:
         cur.execute("""
         CREATE TABLE
           uptime_7d(
+                    id       SERIAL PRIMARY KEY,
                     time     TIMESTAMP WITH TIME ZONE,
                     htl      INTEGER,
                     percent  FLOAT,
@@ -258,6 +264,7 @@ class Database:
         cur.execute("""
         CREATE TABLE
           error(
+                id         SERIAL PRIMARY KEY,
                 time       TIMESTAMP WITH TIME ZONE,
                 htl        INTEGER,
                 probe_type INTEGER,
@@ -274,6 +281,7 @@ class Database:
 
         cur.execute("""CREATE TABLE
           refused(
+                  id         SERIAL PRIMARY KEY,
                   time       TIMESTAMP WITH TIME ZONE,
                   htl        INTEGER,
                   probe_type INTEGER,
