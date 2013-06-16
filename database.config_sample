@@ -1,0 +1,28 @@
+#
+# Passwords need not be defined if they are not used to authenticate. Additional
+# keywords are passed to the connection setup.
+#
+# See http://www.postgresql.org/docs/current/static/libpq-connect.html#LIBPQ-PARAMKEYWORDS
+[DEFAULT]
+#
+# Name of probe result PostgreSQL database.
+#
+database=probe-results
+
+#
+# PostgreSQL table maintenance credentials.
+#
+maintenance_user=pyprobe-maint
+#maintenance_pass=maintpass
+
+#
+# PostgreSQL record addition credentials.
+#
+add_user=pyprobe-add
+#add_pass=addpass
+
+#
+# PostgreSQL record reading credentials.
+#
+read_user=pyprobe-read
+#read_pass=readpass
