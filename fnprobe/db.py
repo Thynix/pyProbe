@@ -141,7 +141,7 @@ class Database:
                      time       TIMESTAMP WITH TIME ZONE,
                      duration   INTERVAL,
                      htl        INTEGER,
-                     identifier INTEGER,
+                     identifier BIGINT,
                      percent    INTEGER
                     )""")
         cur.execute("""
