@@ -113,11 +113,6 @@ class Database:
                     htl      INTEGER,
                     KiB      FLOAT
                    )""")
-        cur.execute("""
-        CREATE INDEX
-          bandwidth_time_index
-        ON
-          bandwidth(time)""")
 
         cur.execute("""
         CREATE TABLE
@@ -128,11 +123,6 @@ class Database:
                 htl      INTEGER,
                 build    INTEGER
                )""")
-        cur.execute("""
-        CREATE INDEX
-          build_time_index
-        ON
-          build(time)""")
 
         cur.execute("""
         CREATE TABLE
@@ -144,16 +134,6 @@ class Database:
                      identifier BIGINT,
                      percent    INTEGER
                     )""")
-        cur.execute("""
-        CREATE INDEX
-          identifier_identifier_time
-        ON
-          identifier(identifier, time)""")
-        cur.execute("""
-        CREATE INDEX
-          identifier_time_identifier
-        ON
-          identifier(time, identifier)""")
 
         # peer_count is out of alphabetical order here, but it must exist before
         # link_lengths because link_lengths REFERENCES this table.
@@ -168,12 +148,6 @@ class Database:
                      htl      INTEGER,
                      peers    INTEGER
                     )""")
-        cur.execute("""
-        CREATE INDEX
-          peer_count_time_index
-        ON
-          peer_count(time)
-        """)
 
         cur.execute("""
         CREATE TABLE
@@ -192,11 +166,6 @@ class Database:
                    htl      INTEGER,
                    location FLOAT
                   )""")
-        cur.execute("""
-        CREATE INDEX
-          location_time_index
-        ON
-          location(time)""")
 
         cur.execute("""
         CREATE TABLE
@@ -207,11 +176,6 @@ class Database:
                      htl      INTEGER,
                      GiB      FLOAT
                     )""")
-        cur.execute("""
-        CREATE INDEX
-          store_size_time_index
-        ON
-          store_size(time)""")
 
         cur.execute("""
         CREATE TABLE
@@ -225,11 +189,6 @@ class Database:
                        bulk_insert_chk  INTEGER,
                        bulk_insert_ssk  INTEGER
                       )""")
-        cur.execute("""
-        CREATE INDEX
-          reject_stats_time_index
-        ON
-          reject_stats(time)""")
 
         cur.execute("""CREATE TABLE
           uptime_48h(
@@ -239,11 +198,6 @@ class Database:
                      htl      INTEGER,
                      percent  FLOAT
                     )""")
-        cur.execute("""
-        CREATE INDEX
-          uptime_48h_time_index
-        ON
-          uptime_48h(time)""")
 
         cur.execute("""
         CREATE TABLE
@@ -254,11 +208,6 @@ class Database:
                     htl      INTEGER,
                     percent  FLOAT
                    )""")
-        cur.execute("""
-        CREATE INDEX
-          uptime_7d_time_index
-        ON
-          uptime_7d(time)""")
 
         cur.execute("""
         CREATE TABLE
@@ -272,11 +221,6 @@ class Database:
                 error_type INTEGER,
                 code       INTEGER
                )""")
-        cur.execute("""
-        CREATE INDEX
-          error_time_index
-        ON
-          error(time)""")
 
         cur.execute("""CREATE TABLE
           refused(
@@ -286,11 +230,6 @@ class Database:
                   htl        INTEGER,
                   probe_type INTEGER
                  )""")
-        cur.execute("""
-        CREATE INDEX
-          refused_time_index
-        ON
-          refused(time)""")
 
         cur.execute("""
         CREATE TABLE
@@ -303,7 +242,89 @@ class Database:
           values(0)""")
 
         self.maintenance.commit()
+        self.create_indexes()
         logging.warning("Table setup complete.")
+
+    def create_indexes(self):
+        cur = self.maintenance.cursor()
+
+        cur.execute("""
+        CREATE INDEX
+          bandwidth_time_index
+        ON
+          bandwidth(time)""")
+        cur.execute("""
+        CREATE INDEX
+          build_time_index
+        ON
+          build(time)""")
+        cur.execute("""
+        CREATE INDEX
+          identifier_identifier_time
+        ON
+          identifier(identifier, time)""")
+        cur.execute("""
+        CREATE INDEX
+          identifier_time_identifier
+        ON
+          identifier(time, identifier)""")
+        cur.execute("""
+        CREATE INDEX
+          peer_count_time_index
+        ON
+          peer_count(time)
+        """)
+        cur.execute("""
+        CREATE INDEX
+          location_time_index
+        ON
+          location(time)""")
+        cur.execute("""
+        CREATE INDEX
+          store_size_time_index
+        ON
+          store_size(time)""")
+        cur.execute("""
+        CREATE INDEX
+          reject_stats_time_index
+        ON
+          reject_stats(time)""")
+        cur.execute("""
+        CREATE INDEX
+          uptime_48h_time_index
+        ON
+          uptime_48h(time)""")
+        cur.execute("""
+        CREATE INDEX
+          uptime_7d_time_index
+        ON
+          uptime_7d(time)""")
+        cur.execute("""
+        CREATE INDEX
+          error_time_index
+        ON
+          error(time)""")
+        cur.execute("""
+        CREATE INDEX
+          refused_time_index
+        ON
+          refused(time)""")
+
+        self.maintenance.commit()
+
+    def drop_indexes(self):
+        cur = self.maintenance.cursor()
+
+        for index in ['bandwidth_time_index', 'build_time_index',
+                      'identifier_identifier_time',
+                      'identifier_time_identifier', 'peer_count_time_index',
+                      'location_time_index', 'store_size_time_index',
+                      'reject_stats_time_index', 'uptime_48h_time_index',
+                      'uptime_7d_time_index', 'error_time_index',
+                      'refused_time_index']:
+            cur.execute("""DROP INDEX {0}""".format(index))
+
+        self.maintenance.commit()
 
     def upgrade(self, version, config):
         # The user names (in config) will be needed to modify permissions as
