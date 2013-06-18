@@ -23,9 +23,10 @@ class Database:
         maintenance, add, and read respectively.
 
         :type config: dict contains at least database, maintenance_user,
-        read_user, add_user. maintenance_pass, read_pass, and add_pass are also
-        recognized. Other parameters are passed to the database as keyword
-        arguments.
+        read_user, add_user.
+
+        maintenance_pass, read_pass, and add_pass are also recognized. Other
+        parameters are passed to the database as keyword arguments.
         """
 
         auth = {}
