@@ -300,7 +300,7 @@ for row in SQLite.execute("""
 
     Postgres_add.execute("""
     INSERT INTO
-      error(id, time, duration, htl, local, probe_type, error_type, code
+      error(id, time, duration, htl, local, probe_type, error_type, code)
     VALUES
       (%s, %s, %s, %s, %s, %s, %s, %s)
     """, row)
