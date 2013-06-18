@@ -34,8 +34,14 @@ class Database:
         # specified again as additional keyword arguments. Passwords need not
         # be specified as there are methods of authentication that do not use
         # them.
-        for parameter in ['maintenance_user', 'maintenance_pass',
-                          'read_user', 'read_pass', 'add_user', 'add_pass']:
+
+        # Mandatory configuration.
+        for parameter in ['maintenance_user', 'read_user', 'add_user']:
+            auth[parameter] = config[parameter]
+            del config[parameter]
+
+        # Optional configuration.
+        for parameter in ['maintenance_pass', 'read_pass', 'add_pass']:
             auth[parameter] = config.get(parameter)
             if parameter in config:
                 del config[parameter]
