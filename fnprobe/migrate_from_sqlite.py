@@ -330,6 +330,5 @@ new_database.create_indexes()
 
 logging.warning("Migration complete. Analyzing.")
 Postgres_read.execute("""ANALYZE VERBOSE""")
-print(Postgres_read.fetchall())
 new_database.read.commit()
 logging.warning("Done.")
