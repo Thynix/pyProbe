@@ -11,6 +11,30 @@ errorTypes = Enum('DISCONNECTED', 'OVERLOAD', 'TIMEOUT', 'UNKNOWN',
                   'UNRECOGNIZED_TYPE', 'CANNOT_FORWARD')
 
 
+def list_tables(cur):
+    """
+    Return a list of the names of public tables in the database (excluding
+    "meta") in ascending alphabetical order.
+
+    Requires a cursor.
+    """
+    # Ignore meta - it is just a version number. It need not be dumped or
+    # hold probe results or be analyzed.
+    cur.execute("""
+    SELECT
+      table_name
+    FROM
+      information_schema.tables
+    WHERE
+      table_schema = 'public' AND table_name != 'meta'
+    ORDER BY
+      table_name
+    """)
+
+    # Each element will be a singleton tuple, but we want just a string.
+    return [x[0] for x in cur.fetchall()]
+
+
 class Database:
     """Handles database connection, initialization, and analysis queries."""
 
@@ -330,26 +354,9 @@ class Database:
 
     def list_tables(self):
         """
-        Return a list of the names of public tables in the database (excluding
-        "meta") in ascending alphabetical order.
+        Internal wrapper for Database.list_tables.
         """
-        cur = self.read.cursor()
-
-        # Ignore meta - it is just a version number. It need not be dumped or
-        # hold probe results or be analyzed.
-        cur.execute("""
-        SELECT
-          table_name
-        FROM
-          information_schema.tables
-        WHERE
-          table_schema = 'public' AND table_name != 'meta'
-        ORDER BY
-          table_name
-        """)
-
-        # Each element will be a singleton tuple, but we want just a string.
-        return [x[0] for x in cur.fetchall()]
+        return list_tables(self.read.cursor())
 
     def upgrade(self, version, config):
         # The user names (in config) will be needed to modify permissions as
