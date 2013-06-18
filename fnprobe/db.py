@@ -43,6 +43,10 @@ class Database:
         self.maintenance = psycopg2.connect(user=auth['maintenance_user'],
                                             password=auth['maintenance_pass'],
                                             **config)
+        self.read = psycopg2.connect(user=auth['read_user'],
+                                     password=auth['read_pass'], **config)
+        self.add = psycopg2.connect(user=auth['add_user'],
+                                    password=auth['add_pass'], **config)
 
         cur = self.maintenance.cursor()
         try:
@@ -94,11 +98,6 @@ class Database:
             """.format(tables, auth['read_user']))
 
             self.maintenance.commit()
-
-        self.read = psycopg2.connect(user=auth['read_user'],
-                                     password=auth['read_pass'], **config)
-        self.add = psycopg2.connect(user=auth['add_user'],
-                                    password=auth['add_pass'], **config)
 
     def create_new(self):
         logging.warning("Setting up new tables.")
