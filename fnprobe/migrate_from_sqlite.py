@@ -12,6 +12,7 @@ Postgres_read = new_database.read.cursor()
 
 # Remove indexes during import for performance.
 # See http://www.postgresql.org/docs/current/interactive/populate.html
+# TODO: Catch exception in case this is a resumed import?
 new_database.drop_indexes()
 
 # TODO: Output records / second and see what changes things?
