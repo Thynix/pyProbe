@@ -1,6 +1,6 @@
 import logging
 import sqlite3
-from psycopg2 import TimestampFromTicks, IntegrityError
+from psycopg2 import TimestampFromTicks
 from datetime import timedelta
 import update_db
 import signal

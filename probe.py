@@ -15,7 +15,6 @@ from twistedfcp.protocol import FreenetClientProtocol, IdentifiedMessage
 from twisted.python import log
 from fnprobe.db import Database, probeTypes, errorTypes
 from fnprobe.time import toPosix, totalSeconds
-from dateutil.tz import tzlocal
 
 __version__ = "0.1"
 application = service.Application("pyProbe")
