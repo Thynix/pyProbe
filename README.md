@@ -54,7 +54,7 @@ If appropriate roles for these don't already exist, create them. Then create the
     $ createdb probe-results
     $ psql -c 'GRANT CREATE ON DATABASE "probe-results" TO "pyprobe-maint"'
 
-The tables do not exist yet, so privileges cannot be assigned for them. They will be assigned by the maintenance user after creating the tables.
+The tables do not exist yet, so privileges cannot be assigned for them. They will be assigned by the maintenance user after creating the tables. Note that pyProbe will modify permissions for all tables in the public schema of the database. This means it does not coexist nicely with other applications in the same database. (This was to avoid maintaining a separate hardcoded list of what tables exist, see db.Database initialization.)
 
 Copy `database.config_sample` to `database.config` and set the usernames and database name. (Passwords need not be specified if they are not used.) Set the mapping between system users and PostgreSQL users - this may involve `/etc/postgresql/9.2/main/pg_ident.conf` and `/etc/postgresql/9.2/main/pg_hba.conf`. For example, in `pg_ident.conf`:
 

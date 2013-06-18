@@ -62,6 +62,8 @@ class Database:
             # version if necessary.
             logging.info("Found version {0}.".format(version))
             self.upgrade(version, config)
+
+            self.table_names = self.list_tables()
         except psycopg2.ProgrammingError, e:
             logging.debug("Got '{0}' when querying version.".format(e.pgerror))
             # If there are no tables in this database, it is new, so set up the
@@ -69,16 +71,10 @@ class Database:
             self.maintenance.commit()
             self.create_new()
 
+            self.table_names = self.list_tables()
+
             # Grant permissions to the newly created tables.
-            # TODO: This list is brittle if new tables are added as it must
-            # also be updated. Would it make sense to instead assume that
-            # only pyProbe stuff is in the database and grant permissions to
-            # all tables? (select table_name from {database}.tables...)
-            tables = """
-                      "bandwidth", "build", "identifier", "peer_count",
-                      "link_lengths", "location", "store_size", "reject_stats",
-                      "uptime_48h", "uptime_7d", "error", "refused"
-                     """
+            tables = ','.join(self.table_names)
 
             cur.execute("""
             GRANT
@@ -325,6 +321,29 @@ class Database:
             cur.execute("""DROP INDEX {0}""".format(index))
 
         self.maintenance.commit()
+
+    def list_tables(self):
+        """
+        Return a list of the names of public tables in the database (excluding
+        "meta") in ascending alphabetical order.
+        """
+        cur = self.read.cursor()
+
+        # Ignore meta - it is just a version number. It need not be dumped or
+        # hold probe results or be analyzed.
+        cur.execute("""
+        SELECT
+          table_name
+        FROM
+          information_schema.tables
+        WHERE
+          table_schema = 'public' AND table_name != 'meta'
+        ORDER BY
+          table_name
+        """)
+
+        # Each element will be a singleton tuple, but we want just a string.
+        return [x[0] for x in cur.fetchall()]
 
     def upgrade(self, version, config):
         # The user names (in config) will be needed to modify permissions as
