@@ -1,11 +1,11 @@
+Things should be in directories more. Making a /config/ and /logs/
+
 Look into whether to implement database rotation.
 
 Specifying probe types by repeated occurances to get ratios is annoying. How to better specify distribution? Percentages / fractions?
 
-Is it odd that the database name is specified in duplicate between the probe and analyze config?
-	They do share more than just that: node IP and port? Would reduce flexibility, though? Maybe not.
-
 Does PostgreSQL / psycopg handle time zone conversion? Can I insert a datetime() or select by it and have time zones converted to and from when appropriate?
+    Probably. Datetime conversion would be insane otherwise.
 
 https://en.wikipedia.org/wiki/Mann%E2%80%93Whitney_U
 
@@ -34,15 +34,10 @@ Keep list of notable dates, insert labeled vertical lines in the plots at those 
     Version releases
     Changes to probe gathering techniques
 
-`link_lengths`:
-
-* Could save space by omitting `time` and `htl` and instead finding peer_count entries with the same `id`.
-
 `store_size`:
 
 * Correct terminology errors - the datastore contains the store and the cache.
 
-* Consistently use and specify UTC.
 * Clean up analyze by breaking into functions instead of a serial script. Perhaps a frontend and backend module?
 
 Stats sites for R - hopefully better population estimation:
