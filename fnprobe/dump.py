@@ -5,14 +5,16 @@ import datetime
 from sys import exit, stderr
 import psycopg2
 import db
+from psycopg2.tz import LocalTimezone
 
-today = datetime.date.today().strftime('%Y-%m-%d')
+# TODO: up_to_date between here and analyze.py
+today = datetime.datetime.now(LocalTimezone()).strftime('%Y-%m-%d %Z')
 
 parser = argparse.ArgumentParser(description='Dumps spans of time from each '
                                              'table.')
 parser.add_argument('--up-to', dest='up_to', default=today,
-                    help='Dump up to the given date. Defaults to today. Takes'
-                         ' ISO 8601: 2013-02-27 is February 27th, 2013.')
+                    help='Dump up to the given date. Defaults to today. '
+                         '2013-02-27 EST is February 27th, 2013 midnight EST.')
 parser.add_argument('--days', dest='days', type=int, default=7,
                     help='Number of days back to dump. Defaults to 7.')
 parser.add_argument('--suffix', dest='suffix', default='week',
@@ -26,7 +28,7 @@ parser.add_argument('--output-dir', dest='out_dir',
 args = parser.parse_args()
 
 
-up_to_date = datetime.datetime.strptime(args.up_to, '%Y-%m-%d')
+up_to_date = datetime.datetime.strptime(args.up_to, '%Y-%m-%d %Z')
 start_date = up_to_date - datetime.timedelta(days=args.days)
 
 if not args.days > 0:
@@ -46,6 +48,7 @@ cur = psycopg2.connect(database=config['database'], user='postgres').cursor()
 
 for table in db.list_tables(cur):
     # link_lengths does not have a "time" column.
+    # TODO: Dump joined with peer count for times.
     if table == 'link_lengths':
         continue
 
