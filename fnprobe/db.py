@@ -440,7 +440,7 @@ class Database:
             FROM
               "error"
             WHERE
-              "error_type" == %(errorType)s AND
+              "error_type" = %(errorType)s AND
               "time" BETWEEN %(start)s AND %(end)s
             """, {'errorType': errorType, 'start': start,
                   'end': end})
