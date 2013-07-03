@@ -380,8 +380,8 @@ class Database:
                  JOIN identifier i2
                  USING(identifier)
                WHERE i1.time BETWEEN %(earliest)s AND %(mid)s
-                 AND i2.time BETWEEN %(mid) AND %(latest)s
-              )
+                 AND i2.time BETWEEN %(mid)s AND %(latest)s
+              ) _
             """, {'earliest': earliest, 'mid': mid,
                   'latest': latest})
         return cur.fetchone()
