@@ -20,7 +20,11 @@ import logging
 import codecs
 from fnprobe.time import toPosix, totalSeconds, timestamp
 from fnprobe.gnuplots import plot_link_length, plot_location_dist, plot_peer_count, plot_bulk_reject, reject_types, plot_uptime
-from fnprobe.db import Database
+from fnprobe.db import Database, errorTypes
+from psycopg2.tz import LocalTimezone
+
+# TODO: up_to_date duplicated between here and dump.py
+today = datetime.datetime.now(LocalTimezone()).strftime('%Y-%m-%d %Z')
 
 parser = argparse.ArgumentParser(description="Analyze probe results for estimates of peer distribution and network interconnectedness; generate plots.")
 
@@ -43,6 +47,9 @@ parser.add_argument('--error-refused-graph', dest='errorRefusedGraph', default='
                     help='Path to the errors and refusals graph.')
 parser.add_argument('--uptime-histogram-max', dest="uptimeHistogramMax", default=120, type=int,
                     help='Maximum percentage to include in the uptime histogram. Default 120')
+parser.add_argument('--up-to', dest='up_to', default=today,
+                    help='Dump up to midnight on the given date. Defaults to '
+                         'today. 2013-02-27 EST is February 27th, 2013 EST.')
 
 parser.add_argument('--output-dir', dest='outputDir', default='output',
                     help='Path to output directory.')
@@ -83,20 +90,25 @@ parser.add_argument('--bulk-reject', dest='bulkReject', default=False, action='s
 
 args = parser.parse_args()
 
+parser = SafeConfigParser()
+parser.read("database.config")
+config = parser.defaults()
+
 def log(msg):
     if not args.quiet:
         print("{0}: {1}".format(datetime.datetime.now(), msg))
 
 # Store the time the script started so that all database queries can cover
 # the same time span by only including up to this point in time.
+# This allows times other than the current one.
 # If a time period for RRD includes this start time it is considered
 # incomplete and not computed.
-startTime = datetime.datetime.utcnow()
+startTime = datetime.datetime.strptime(args.up_to, '%Y-%m-%d %Z')
 recent = startTime - datetime.timedelta(hours=args.recentHours)
 log("Recency boundary is {0} ({1}).".format(recent, toPosix(recent)))
 
 log("Connecting to database.")
-db = Database(args.databaseFile)
+db = Database(config)
 
 # Period of time to consider samples in a group for an instantaneous estimate.
 # Must be a day or less. If it is more than a day the RRDTool 5-year daily
@@ -119,13 +131,7 @@ mediumPeriod = datetime.timedelta(hours=24)
 longPeriod = datetime.timedelta(hours=168)
 
 # The order and length of these must match. It'd be more nested and thus less
-# convenient as a list of tuples though.
-errorTypes = [  "DISCONNECTED",
-                "OVERLOAD",
-                "TIMEOUT",
-                "UNKNOWN",
-                "UNRECOGNIZED_TYPE",
-                "CANNOT_FORWARD" ]
+# convenient as a list of tuples though. See also the db.errorTypes enum.
 
 # Names can be up to 19 characters.
 errorDataSources = ['error-disconnected',   # Error occurrences in the past shortPeriod.
@@ -155,7 +161,8 @@ except:
     #
     # An entry is computed including the start of the period and excluding the end.
     #
-    fromTime = datetime.datetime.utcfromtimestamp(db.execute("""select min("time") from "identifier" """).fetchone()[0])
+    db.read.execute("""select min("time") from "identifier" """)
+    fromTime = datetime.datetime.utcfromtimestamp(db.read.fetchone()[0])
     toTime = fromTime + shortPeriod
     shortPeriodSeconds = int(totalSeconds(shortPeriod))
     log("Creating round robin network size database.")
@@ -194,13 +201,13 @@ if args.runRRD:
     toTime = fromTime + shortPeriod
     log("Resuming network size computation for {0}.".format(toTime))
 
-
     def formula(samples, networkSize):
         return networkSize * (1 - math.e**(-samples/networkSize))
 
     def binarySearch(distinctSamples, samples):
+        # TODO: Is 3 reasonable? Seems arbitrary. How to tell better?
         if math.fabs(samples - distinctSamples) < 3:
-            """Not enough information to make an estimate."""
+            # Not enough information to make an estimate.
             return float('NaN')
         # Upper and lower are network size guesses.
         lower = distinctSamples
@@ -290,7 +297,8 @@ if args.runRRD:
         # Get numbers of each error type.
         errors = []
         for errorType in errorTypes:
-            errors.append(db.span_error_count(errorType, fromTime, toTime))
+            errors.append(db.span_error_count(errorType.index, fromTime,
+                                              toTime))
 
         # RRDTool format string to explicitly specify the order of the data sources.
         # The first one is implicitly the time of the sample.
