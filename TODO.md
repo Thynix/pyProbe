@@ -2,6 +2,8 @@ Things should be in directories more. Making a /config/ and /logs/
 
 Look into whether to implement database rotation.
 
+Perhaps replace RRDTool with another PostgreSQL table and some R / knitr? Maybe only if it is clear it would not involve reinventing parts of RRDTool.
+
 Specifying probe types by repeated occurances to get ratios is annoying. How to better specify distribution? Percentages / fractions?
 
 Does PostgreSQL / psycopg handle time zone conversion? Can I insert a datetime() or select by it and have time zones converted to and from when appropriate?
