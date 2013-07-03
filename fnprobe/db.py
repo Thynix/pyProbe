@@ -200,7 +200,7 @@ class Database:
                      time     TIMESTAMP WITH TIME ZONE,
                      duration INTERVAL,
                      htl      INTEGER,
-                     GiB      FLOAT
+                     gib      FLOAT
                     )""")
 
         cur.execute("""
@@ -410,7 +410,7 @@ class Database:
         cur = self.read.cursor()
         cur.execute("""
             SELECT
-              sum("GiB"), count("GiB")
+              sum("gib"), count("gib")
             FROM
               "store_size"
             WHERE
