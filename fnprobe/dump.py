@@ -47,21 +47,39 @@ config = parser.defaults()
 cur = psycopg2.connect(database=config['database'], user='postgres').cursor()
 
 for table in db.list_tables(cur):
-    # link_lengths does not have a "time" column.
-    # TODO: Dump joined with peer count for times.
-    if table == 'link_lengths':
-        continue
-
     filename = '{0}/{1}-{2}-{3}.sql'.format(args.out_dir, args.up_to, table,
                                             args.suffix)
     print("Copying '{0}' to '{1}'.".format(table, filename), file=stderr)
-    cur.execute("""
-        COPY
-          (SELECT
-            *
-          FROM
-            "{0}"
-          WHERE
-            "time" BETWEEN %(start)s AND %(end)s)
-        TO %(file)s""".format(table), {'start': start_date,
-                                       'end': up_to_date, 'file': filename})
+
+    # link_lengths does not have a "time" column, nor does one need to be
+    # dumped, yet it's needed for time span restriction.
+    # TODO: Is this an appropriate use for a view?
+    if table == 'link_lengths':
+        cur.execute("""
+            COPY
+              (SELECT
+                id, length, count_id
+              FROM
+                (SELECT
+                  lengths.id, length, count_id, time
+                 FROM
+                   "link_lengths" lengths
+                 JOIN
+                   "peer_count" counts
+                 ON
+                   counts.id = lengths.count_id) _
+              WHERE
+                "time" between %(start)s AND %(end)s)
+            TO %(file)s""", {'start': start_date, 'end': up_to_date,
+                             'file': filename})
+    else:
+        cur.execute("""
+            COPY
+              (SELECT
+                *
+              FROM
+                "{0}"
+              WHERE
+                "time" BETWEEN %(start)s AND %(end)s)
+            TO %(file)s""".format(table), {'start': start_date,
+                                           'end': up_to_date, 'file': filename})
