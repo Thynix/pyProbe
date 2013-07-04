@@ -1,3 +1,5 @@
+Run "explain" on all queries.
+
 Things should be in directories more. Making a /config/ and /logs/
 
 Look into whether to implement database rotation.

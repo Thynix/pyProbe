@@ -481,7 +481,10 @@ class Database:
         SELECT
           "length"
         FROM
-          "link_lengths"
+          "link_lengths" lengths
+        JOIN
+          "peer_count" counts
+            ON counts.id = lengths.count_id
         WHERE
           "time" BETWEEN %s AND %s
         """, (start, end))
