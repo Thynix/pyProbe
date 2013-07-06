@@ -35,6 +35,34 @@ def list_tables(cur):
     return [x[0] for x in cur.fetchall()]
 
 
+# Changes made to sequences are not transactional, no need to commit after.
+# See http://www.postgresql.org/docs/current/static/functions-sequence.html
+# Apparently without PostgreSQL extensions is awful.
+#
+# Via RhodiumToad in Freenode #postgresql:
+# "trust me, you don't want to see the standards-compliant way. in practice
+# every db does sequences and automated generation of surrogate keys
+# differently. if any db actually supports the standard way I haven't seen it
+# yet. probably only DB2 does so, since that's where the spec gets most of its
+# features from."
+def update_id_sequence(cur, table_name):
+    """
+    Update the sequence behind the "id" column of the specified table.
+
+    It will start above the maximum current value, which takes into account
+    newly inserted values. This is relevant to manually inserting records,
+    which avoids updating the sequence.
+    """
+    cur.execute("""
+    SELECT
+      setval(
+        pg_get_serial_sequence('{0}','id'),
+        max("id"))
+    FROM
+      "{0}"
+    """.format(table_name))
+
+
 class Database:
     """Handles database connection, initialization, and analysis queries."""
 

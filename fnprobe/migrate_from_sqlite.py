@@ -5,8 +5,10 @@ from datetime import timedelta
 import update_db
 import signal
 import sys
+from db import update_id_sequence
 
 new_database = update_db.main()
+Postgres_maint = new_database.maintenance.cursor()
 Postgres_add = new_database.add.cursor()
 Postgres_read = new_database.read.cursor()
 
@@ -95,6 +97,7 @@ for row in SQLite.execute("""
       (%s, %s, %s, %s, %s)
     """, row)
 new_database.add.commit()
+update_id_sequence(Postgres_maint, 'bandwidth')
 
 for row in SQLite.execute("""
     SELECT
@@ -115,6 +118,7 @@ for row in SQLite.execute("""
       (%s, %s, %s, %s, %s)
     """, row)
 new_database.add.commit()
+update_id_sequence(Postgres_maint, 'build')
 
 for row in SQLite.execute("""
     SELECT
@@ -135,6 +139,7 @@ for row in SQLite.execute("""
       (%s, %s, %s, %s, %s, %s)
     """, row)
 new_database.add.commit()
+update_id_sequence(Postgres_maint, 'identifier')
 
 for row in SQLite.execute("""
     SELECT
@@ -155,6 +160,7 @@ for row in SQLite.execute("""
       (%s, %s, %s, %s, %s)
     """, row)
 new_database.add.commit()
+update_id_sequence(Postgres_maint, 'peer_count')
 
 # Link lengths is out of alphabetical order to be after peer_count. It
 # references peer_count IDs. Early ids might be broken as 0.
@@ -175,6 +181,7 @@ for row in SQLite.execute("""
       (%s, %s, %s)
     """, row)
 new_database.add.commit()
+update_id_sequence(Postgres_maint, 'link_lengths')
 
 for row in SQLite.execute("""
     SELECT
@@ -195,6 +202,7 @@ for row in SQLite.execute("""
       (%s, %s, %s, %s, %s)
     """, row)
 new_database.add.commit()
+update_id_sequence(Postgres_maint, 'location')
 
 for row in SQLite.execute("""
     SELECT
@@ -215,6 +223,7 @@ for row in SQLite.execute("""
       (%s, %s, %s, %s, %s)
     """, row)
 new_database.add.commit()
+update_id_sequence(Postgres_maint, 'store_size')
 
 # reject_stats was missing duration in the SQLite version.
 for row in SQLite.execute("""
@@ -241,6 +250,7 @@ for row in SQLite.execute("""
       (%s, %s, %s, %s, %s, %s, %s)
     """, row)
 new_database.add.commit()
+update_id_sequence(Postgres_maint, 'reject_stats')
 
 for row in SQLite.execute("""
     SELECT
@@ -261,6 +271,7 @@ for row in SQLite.execute("""
       (%s, %s, %s, %s, %s)
     """, row)
 new_database.add.commit()
+update_id_sequence(Postgres_maint, 'uptime_48h')
 
 for row in SQLite.execute("""
     SELECT
@@ -281,6 +292,7 @@ for row in SQLite.execute("""
       (%s, %s, %s, %s, %s)
     """, row)
 new_database.add.commit()
+update_id_sequence(Postgres_maint, 'uptime_7d')
 
 for row in SQLite.execute("""
     SELECT
@@ -306,6 +318,7 @@ for row in SQLite.execute("""
       (%s, %s, %s, %s, %s, %s, %s, %s)
     """, row)
 new_database.add.commit()
+update_id_sequence(Postgres_maint, 'error')
 
 for row in SQLite.execute("""
     SELECT
@@ -326,6 +339,7 @@ for row in SQLite.execute("""
       (%s, %s, %s, %s, %s)
     """, row)
 new_database.add.commit()
+update_id_sequence(Postgres_maint, 'refused')
 
 logging.warning("Migration complete. Recreating indexes.")
 new_database.create_indexes()
