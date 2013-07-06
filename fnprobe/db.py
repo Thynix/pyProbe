@@ -225,6 +225,8 @@ class Database:
                        id       SERIAL PRIMARY KEY,
                        length   FLOAT,
                        count_id INTEGER REFERENCES peer_count
+                                                   ON DELETE CASCADE
+                                                   ON UPDATE CASCADE
                       )""")
 
         cur.execute("""
