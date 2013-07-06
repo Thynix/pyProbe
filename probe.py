@@ -1,6 +1,5 @@
 from __future__ import division
 import random
-import sqlite3
 import datetime
 from sys import stderr
 from twisted.internet import reactor, protocol
@@ -13,8 +12,9 @@ from ConfigParser import SafeConfigParser
 from string import split
 from twistedfcp.protocol import FreenetClientProtocol, IdentifiedMessage
 from twisted.python import log
-from fnprobe.db import Database, probeTypes, errorTypes
-from fnprobe.time import toPosix, totalSeconds
+from fnprobe import update_db
+from fnprobe.db import probeTypes, errorTypes
+from psycopg2.tz import LocalTimezone
 
 __version__ = "0.1"
 application = service.Application("pyProbe")
@@ -44,28 +44,15 @@ HTL = "HopsToLive"
 LOCAL = "Local"
 
 
-def insert(db, args, probe_type, result, duration, now):
+def insert(cur, args, probe_type, result, duration, now):
     start = datetime.time.monotonic()
 
     header = result.name
     htl = args.hopsToLive
 
-    # Retry insert on locking timeout.
-    tries = 0
-    success = False
-    while not success:
-        try:
-            insertResult(db, header, htl, result, now, duration, probe_type)
-            success = True
-        except sqlite3.OperationalError as ex:
-            # Database locked. Try again.
-            db.rollback()
-            logging.warning(
-                "Got operational error '{0}'. Tried {1} times before. Retrying.".format(
-                    ex, tries))
-            tries += 1
+    insertResult(cur, header, htl, result, now, duration, probe_type)
 
-    db.commit()
+    cur.commit()
     logging.debug("Committed {0} ({1}) in {2}.".format(header, probe_type,
                                                        datetime.time.monotonic()
                                                        - start))
@@ -120,14 +107,23 @@ def insertResult(cur, header, htl, result, now, duration, probe_type):
               duration))
     elif probe_type == "LINK_LENGTHS":
         lengths = split(result[LINK_LENGTHS], ';')
-        cur.execute(
-            "insert into peer_count(time, htl, peers, duration) values(?, ?, ?, ?)",
-            (now, htl, len(lengths), duration))
-        new_id = cur.lastrowid
+        cur.execute("""
+        INSERT INTO
+          peer_count(time, htl, peers, duration)
+          values(?, ?, ?, ?)
+        RETURNING
+          id
+        """, (now, htl, len(lengths), duration))
+        # PostgreSQL does not use OIDs by default, which would be exposed on
+        # lastrowid. As a PostgreSQL extension it can return values from an
+        # insert.
+        new_id = cur.fetchone()[0]
         for length in lengths:
-            cur.execute(
-                "insert into link_lengths(time, htl, length, id) values(?, ?, ?, ?)",
-                (now, htl, length, new_id))
+            cur.execute("""
+            INSERT INTO
+              link_lengths(time, htl, length, id)
+              values(?, ?, ?, ?)
+            """, (now, htl, length, new_id))
     elif probe_type == "LOCATION":
         cur.execute("""
         INSERT INTO
@@ -164,12 +160,14 @@ def insertResult(cur, header, htl, result, now, duration, probe_type):
 
 
 class sigint_handler:
-    def __init__(self, pool):
+    def __init__(self, pool, cur):
         self.pool = pool
+        self.cur = cur
 
     def __call__(self, signum, frame):
         logging.warning("Got signal {0}. Shutting down.".format(signum))
         self.pool.close()
+        self.cur.commit()
         signal(SIGINT, SIG_DFL)
         reactor.stop()
 
@@ -190,21 +188,21 @@ class SendHook:
     """
 
     def __init__(self, args, proto, database):
-        self.sent = datetime.datetime.utcnow()
+        self.sent = datetime.time.monotonic()
         self.args = args
         self.probeType = random.choice(self.args.types)
-        self.db = database.get_connection()
+        self.cur = database.add
         logging.debug("Sending {0}.".format(self.probeType))
 
         proto.do_session(MakeRequest(self.probeType, self.args.hopsToLive),
                          self)
 
     def __call__(self, message):
-        delta = datetime.datetime.utcnow() - self.sent
-        duration = totalSeconds(delta)
-        now = toPosix(datetime.datetime.utcnow())
+        duration = datetime.timedelta(seconds=datetime.time.monotonic() -
+                                      self.sent)
+        now = datetime.datetime.now(LocalTimezone)
         probe_type_code = getattr(probeTypes, self.probeType).index
-        insert(self.db, self.args, probe_type_code, message, duration, now)
+        insert(self.cur, self.args, probe_type_code, message, duration, now)
         return True
 
 
@@ -296,10 +294,10 @@ def main():
                         filename=args.logFile)
     logging.info("Starting up.")
 
-    database = Database(args.databaseFile)
+    cur = update_db.main().add
 
     reactor.connectTCP(args.host, args.port,
-                       FCPReconnectingFactory(args, database))
+                       FCPReconnectingFactory(args, cur))
 
 #run main if run with twistd: it will start the reactor.
 if __name__ == "__builtin__":
