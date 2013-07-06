@@ -10,6 +10,11 @@ fi
 pidFile="probe.pid"
 logFile="probe.log"
 
+remove_stale() {
+    echo "Removing stale PID file."
+    rm "$1"
+}
+
 start() {
     if [[ -e "$pidFile" ]]
     then
@@ -18,8 +23,7 @@ start() {
             echo "Probe is already running."
             return
         else
-            echo "Removing stale PID file."
-            rm "$pidFile"
+            remove_stale "$pidFile"
         fi
     fi
     echo "Starting probe."
@@ -45,6 +49,8 @@ stop() {
             done
             echo "Probe stopped".
             return
+        else
+            remove_stale "$pidFile"
         fi
     fi
     echo "Probe is not running."
