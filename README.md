@@ -74,11 +74,10 @@ Then reload the PostgreSQL configuration. If there is nothing to migrate, run `f
 
 ## Usage
 
-The three tools are:
+The tools are:
 
-* `probe.py`: connects to a Freenet node to make probe requests, and stores the results.
+* `probe.py`: connects to a Freenet node, makes probe requests, and stores the results.
 * `analyze.py`: analyzes stored probe results, and generates plots of the data.
-* `util.py`: provides statistics on the stored probe results.
 
 ### `probe.py`
 
@@ -100,16 +99,6 @@ When run without arguments, analyzes the past week of probe data to generate sta
 * Plot of location distribution
 * Plot of peer count distribution
 * Plot of link length distribution
-
-For command line argument documentation run with `--help`.
-
-### `util.py`
-
-Presents a menu with sqlite utility functions and probe collection statistics:
-
-* Result collection rate
-* Distribution of error types over probe types
-* Success, refusal, and error percentages
 
 For command line argument documentation run with `--help`.
 
