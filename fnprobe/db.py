@@ -348,7 +348,7 @@ class Database:
                       'reject_stats_time_index', 'uptime_48h_time_index',
                       'uptime_7d_time_index', 'error_time_index',
                       'refused_time_index']:
-            cur.execute("""DROP INDEX {0}""".format(index))
+            cur.execute("""DROP INDEX IF EXISTS {0}""".format(index))
 
         self.maintenance.commit()
 
