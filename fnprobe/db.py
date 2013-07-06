@@ -154,8 +154,8 @@ class Database:
             # Must be able to update sequences to insert using the default
             # value of the next one from the sequence.
             # TODO: More idiomatic way to append to each element?
-            sequences = ','.join(map(lambda name:
-                                     name + '_id_seq', self.table_names))
+            sequences = ','.join(map(lambda name: name + '_id_seq',
+                                     self.table_names))
 
             cur.execute("""
             GRANT
