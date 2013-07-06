@@ -71,7 +71,7 @@ def insert(db, args, probe_type, result, duration, now):
                                                        - start))
 
 
-def insertResult(db, header, htl, result, now, duration, probe_type):
+def insertResult(cur, header, htl, result, now, duration, probe_type):
     if header == "ProbeError":
         #type should always be defined, but the code might not be.
         code = None
@@ -90,28 +90,35 @@ def insertResult(db, header, htl, result, now, duration, probe_type):
 
         error_type = getattr(errorTypes, result[TYPE]).index
 
-        db.execute(
-            "insert into error(time, htl, probe_type, error_type, code, duration, local) values(?, ?, ?, ?, ?, ?, ?)",
-            (now, htl, probe_type, error_type, code, duration, local))
+        cur.execute("""
+        INSERT INTO
+          error(time, htl, probe_type, error_type, code, duration, local)
+          values(?, ?, ?, ?, ?, ?, ?)
+        """, (now, htl, probe_type, error_type, code, duration, local))
     elif header == "ProbeRefused":
-        db.execute(
-            "insert into refused(time, htl, probe_type, duration) values(?, ?, ?, ?)",
-            (now, htl, probe_type, duration))
+        cur.execute("""
+        INSERT INTO
+          refused(time, htl, probe_type, duration)
+          values(?, ?, ?, ?)
+        """, (now, htl, probe_type, duration))
     elif probe_type == "BANDWIDTH":
-        db.execute(
-            "insert into bandwidth(time, htl, KiB, duration) values(?, ?, ?, ?)",
-            (now, htl, result[BANDWIDTH], duration))
+        cur.execute("""
+        INSERT INTO
+          bandwidth(time, htl, KiB, duration)
+          values(?, ?, ?, ?)
+        """, (now, htl, result[BANDWIDTH], duration))
     elif probe_type == "BUILD":
-        db.execute(
+        cur.execute(
             "insert into build(time, htl, build, duration) values(?, ?, ?, ?)",
             (now, htl, result[BUILD], duration))
     elif probe_type == "IDENTIFIER":
-        db.execute(
-            "insert into identifier(time, htl, identifier, percent, duration) values(?, ?, ?, ?, ?)",
-            (now, htl, result[PROBE_IDENTIFIER], result[UPTIME_PERCENT],
-             duration))
+        cur.execute("""
+        INSERT INTO
+          identifier(time, htl, identifier, percent, duration)
+          values(?, ?, ?, ?, ?)
+        """, (now, htl, result[PROBE_IDENTIFIER], result[UPTIME_PERCENT],
+              duration))
     elif probe_type == "LINK_LENGTHS":
-        cur = db.cursor()
         lengths = split(result[LINK_LENGTHS], ';')
         cur.execute(
             "insert into peer_count(time, htl, peers, duration) values(?, ?, ?, ?)",
@@ -121,29 +128,39 @@ def insertResult(db, header, htl, result, now, duration, probe_type):
             cur.execute(
                 "insert into link_lengths(time, htl, length, id) values(?, ?, ?, ?)",
                 (now, htl, length, new_id))
-        cur.close()
     elif probe_type == "LOCATION":
-        db.execute(
-            "insert into location(time, htl, location, duration) values(?, ?, ?, ?)",
-            (now, htl, result[LOCATION], duration))
+        cur.execute("""
+        INSERT INTO
+          location(time, htl, location, duration)
+          values(?, ?, ?, ?)
+        """, (now, htl, result[LOCATION], duration))
     elif probe_type == "REJECT_STATS":
-        db.execute(
-            "insert into reject_stats(time, htl, bulk_request_chk, bulk_request_ssk, bulk_insert_chk, bulk_insert_ssk) values(?, ?, ?, ?, ?, ?)",
-            (now, htl, result[REJECT_BULK_REQUEST_CHK],
-             result[REJECT_BULK_REQUEST_SSK], result[REJECT_BULK_INSERT_CHK],
-             result[REJECT_BULK_INSERT_SSK]))
+        cur.execute("""
+        INSERT INTO
+          reject_stats(time, htl, bulk_request_chk, bulk_request_ssk,
+                       bulk_insert_chk, bulk_insert_ssk)
+          values(?, ?, ?, ?, ?, ?)
+        """, (now, htl, result[REJECT_BULK_REQUEST_CHK],
+              result[REJECT_BULK_REQUEST_SSK], result[REJECT_BULK_INSERT_CHK],
+              result[REJECT_BULK_INSERT_SSK]))
     elif probe_type == "STORE_SIZE":
-        db.execute(
-            "insert into store_size(time, htl, GiB, duration) values(?, ?, ?, ?)",
-            (now, htl, result[STORE_SIZE], duration))
+        cur.execute("""
+        INSERT INTO
+          store_size(time, htl, GiB, duration)
+          values(?, ?, ?, ?)
+        """, (now, htl, result[STORE_SIZE], duration))
     elif probe_type == "UPTIME_48H":
-        db.execute(
-            "insert into uptime_48h(time, htl, percent, duration) values(?, ?, ?, ?)",
-            (now, htl, result[UPTIME_PERCENT], duration))
+        cur.execute("""
+        insert into
+          uptime_48h(time, htl, percent, duration)
+          values(?, ?, ?, ?)
+        """, (now, htl, result[UPTIME_PERCENT], duration))
     elif probe_type == "UPTIME_7D":
-        db.execute(
-            "insert into uptime_7d(time, htl, percent, duration) values(?, ?, ?, ?)",
-            (now, htl, result[UPTIME_PERCENT], duration))
+        cur.execute("""
+        INSERT INTO
+          uptime_7d(time, htl, percent, duration)
+          values(?, ?, ?, ?)
+        """, (now, htl, result[UPTIME_PERCENT], duration))
 
 
 class sigint_handler:
@@ -212,9 +229,9 @@ class FCPReconnectingFactory(protocol.ReconnectingClientFactory):
     #Log disconnection and reconnection attempts
     noisy = True
 
-    def __init__(self, args, database):
+    def __init__(self, args, cur):
         self.args = args
-        self.database = database
+        self.cur = cur
 
     def buildProtocol(self, addr):
         proto = FreenetClientProtocol()
@@ -224,7 +241,7 @@ class FCPReconnectingFactory(protocol.ReconnectingClientFactory):
         proto.deferred['NodeHello'] = self
         proto.deferred['ProtocolError'] = Complain()
 
-        self.sendLoop = LoopingCall(SendHook, self.args, proto, self.database)
+        self.sendLoop = LoopingCall(SendHook, self.args, proto, self.cur)
 
         return proto
 
