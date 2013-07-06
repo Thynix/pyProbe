@@ -41,11 +41,12 @@ stop() {
             #twistd removes the pid file on shutdown.
             while [[ -e "$pidFile" ]]
             do
-                if (( i++ == 100 ))
+                if (( i++ == 5 ))
                 then
                     echo "Waiting..."
                     i=0
                 fi
+                sleep 1
             done
             echo "Probe stopped".
             return
