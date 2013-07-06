@@ -94,9 +94,11 @@ def insertResult(cur, header, htl, result, now, duration, probe_type):
           values(%s, %s, %s, %s)
         """, (now, htl, result[BANDWIDTH], duration))
     elif probe_type == "BUILD":
-        cur.execute(
-            "insert into build(time, htl, build, duration) values(%s, %s, %s, %s)",
-            (now, htl, result[BUILD], duration))
+        cur.execute("""
+        INSERT INTO
+          build(time, htl, build, duration)
+          values(%s, %s, %s, %s)
+        """, (now, htl, result[BUILD], duration))
     elif probe_type == "IDENTIFIER":
         cur.execute("""
         INSERT INTO
