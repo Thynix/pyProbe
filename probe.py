@@ -206,7 +206,7 @@ class Complain:
         errStr = "Got ProtocolError - node does not support probes."
         logging.error(errStr)
         stderr.write(errStr + '\n')
-        thread.interrupt_main()
+        reactor.stop()
 
 
 class FCPReconnectingFactory(protocol.ReconnectingClientFactory):
