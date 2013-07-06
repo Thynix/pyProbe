@@ -45,7 +45,7 @@ LOCAL = "Local"
 
 
 def insert(cur, args, probe_type, result, duration, now):
-    start = datetime.time.monotonic()
+    start = datetime.datetime.utcnow()
 
     header = result.name
     htl = args.hopsToLive
@@ -54,8 +54,7 @@ def insert(cur, args, probe_type, result, duration, now):
 
     cur.commit()
     logging.debug("Committed {0} ({1}) in {2}.".format(header, probe_type,
-                                                       datetime.time.monotonic()
-                                                       - start))
+                                                       datetime.datetime.utcnow() - start))
 
 
 def insertResult(cur, header, htl, result, now, duration, probe_type):
