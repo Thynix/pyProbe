@@ -12,6 +12,7 @@ Postgres_read = new_database.read.cursor()
 
 # Remove indexes during import for performance.
 # See http://www.postgresql.org/docs/current/interactive/populate.html
+logging.warning("Dropping indexes to speed import.")
 # TODO: Catch exception in case this is a resumed import?
 new_database.drop_indexes()
 
@@ -327,9 +328,10 @@ for row in SQLite.execute("""
     """, row)
 new_database.add.commit()
 
+logging.warning("Migration complete. Recreating indexes.")
 new_database.create_indexes()
 
-logging.warning("Migration complete. Analyzing.")
+logging.warning("Analyzing.")
 Postgres_read.execute("""ANALYZE VERBOSE""")
 new_database.read.commit()
 logging.warning("Done.")
