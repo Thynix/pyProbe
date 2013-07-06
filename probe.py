@@ -164,9 +164,11 @@ class sigint_handler:
         self.cur = cur
 
     def __call__(self, signum, frame):
-        logging.warning("Got signal {0}. Shutting down.".format(signum))
+        logging.warning("Got signal {0}. Closing connections and committing."
+                        .format(signum))
         self.pool.close()
         self.cur.commit()
+        logging.warning("Shutting down")
         signal(SIGINT, SIG_DFL)
         reactor.stop()
 
