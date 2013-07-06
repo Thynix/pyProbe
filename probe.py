@@ -85,7 +85,7 @@ def insertResult(db, header, htl, result, now, duration, probe_type):
         else:
             logging.error("Node gave '{0}' as ProbeError Local, "
                           "which is neither 'true' nor 'false'.".format(
-                result[LOCAL]))
+                          result[LOCAL]))
 
         error_type = getattr(errorTypes, result[TYPE]).index
 
@@ -162,7 +162,7 @@ class Arguments(object):
 
 
 def MakeRequest(ProbeType, HopsToLive):
-    return IdentifiedMessage("ProbeRequest", \
+    return IdentifiedMessage("ProbeRequest",
                              [(TYPE, ProbeType), (HTL, HopsToLive)])
 
 
@@ -205,7 +205,7 @@ class Complain:
 
 
 class FCPReconnectingFactory(protocol.ReconnectingClientFactory):
-    "A protocol factory that uses FCP."
+    """A protocol factory that uses FCP."""
     protocol = FreenetClientProtocol
 
     #Log disconnection and reconnection attempts
