@@ -123,6 +123,21 @@ class Database:
               "{1}"
             """.format(tables, auth['read_user']))
 
+            # Must be able to update sequences to insert using the default
+            # value of the next one from the sequence.
+            # TODO: More idiomatic way to append to each element?
+            sequences = ','.join(map(lambda name:
+                                     name + '_id_seq', self.table_names))
+
+            cur.execute("""
+            GRANT
+              UPDATE
+            ON SEQUENCE
+              {0}
+            TO
+              "{1}"
+            """.format(sequences, auth['add_user']))
+
             self.maintenance.commit()
 
     def create_new(self):
@@ -175,6 +190,7 @@ class Database:
                      peers    INTEGER
                     )""")
 
+        # TODO: Cascade on update / delete.
         cur.execute("""
         CREATE TABLE
           link_lengths(
