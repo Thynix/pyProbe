@@ -42,7 +42,7 @@ def resume_id(table_name):
         # FROM
         #   "{0}"
         # """.format(table_name)).fetchone()[0] - 1
-        logging.info("Starting import for table '{0}' at ROWID {1}".format(
+        logging.info("Starting import for table '{0}' at id {1}".format(
             table_name, max_id))
     else:
         logging.info("Resuming import for table '{0}' at id {1}".format(
