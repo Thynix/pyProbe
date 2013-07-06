@@ -44,15 +44,15 @@ HTL = "HopsToLive"
 LOCAL = "Local"
 
 
-def insert(cur, args, probe_type, result, duration, now):
+def insert(conn, args, probe_type, result, duration, now):
     start = datetime.datetime.utcnow()
 
     header = result.name
     htl = args.hopsToLive
 
-    insertResult(cur, header, htl, result, now, duration, probe_type)
+    insertResult(conn.cursor(), header, htl, result, now, duration, probe_type)
 
-    cur.commit()
+    conn.commit()
     logging.debug("Committed {0} ({1}) in {2}.".format(header, probe_type,
                                                        datetime.datetime.utcnow() - start))
 
@@ -159,15 +159,15 @@ def insertResult(cur, header, htl, result, now, duration, probe_type):
 
 
 class sigint_handler:
-    def __init__(self, pool, cur):
+    def __init__(self, pool, conn):
         self.pool = pool
-        self.cur = cur
+        self.conn = conn
 
     def __call__(self, signum, frame):
         logging.warning("Got signal {0}. Closing connections and committing."
                         .format(signum))
         self.pool.close()
-        self.cur.commit()
+        self.conn.commit()
         logging.warning("Shutting down")
         signal(SIGINT, SIG_DFL)
         reactor.stop()
@@ -188,23 +188,23 @@ class SendHook:
     Sends a probe of a random type and commits the result to the database.
     """
 
-    def __init__(self, args, proto, database):
+    def __init__(self, args, proto, conn):
         self.sent = datetime.datetime.now(LocalTimezone())
         self.args = args
         self.probeType = random.choice(self.args.types)
-        self.cur = database.add
+        self.conn = conn
         logging.debug("Sending {0}.".format(self.probeType))
 
         proto.do_session(MakeRequest(self.probeType, self.args.hopsToLive),
                          self)
 
     def __call__(self, message):
-        now = datetime.datetime.now(LocalTimezone)
+        now = datetime.datetime.now(LocalTimezone())
         # TODO: This may be inaccurate or even negative due to time changes.
         # However Python 2 does not have Python 3.3's time.monotonic().
         duration = now - self.sent
         probe_type_code = getattr(probeTypes, self.probeType).index
-        insert(self.cur, self.args, probe_type_code, message, duration, now)
+        insert(self.conn, self.args, probe_type_code, message, duration, now)
         return True
 
 
@@ -229,9 +229,9 @@ class FCPReconnectingFactory(protocol.ReconnectingClientFactory):
     #Log disconnection and reconnection attempts
     noisy = True
 
-    def __init__(self, args, cur):
+    def __init__(self, args, conn):
         self.args = args
-        self.cur = cur
+        self.conn = conn
 
     def buildProtocol(self, addr):
         proto = FreenetClientProtocol()
@@ -241,7 +241,7 @@ class FCPReconnectingFactory(protocol.ReconnectingClientFactory):
         proto.deferred['NodeHello'] = self
         proto.deferred['ProtocolError'] = Complain()
 
-        self.sendLoop = LoopingCall(SendHook, self.args, proto, self.cur)
+        self.sendLoop = LoopingCall(SendHook, self.args, proto, self.conn)
 
         return proto
 
@@ -296,10 +296,10 @@ def main():
                         filename=args.logFile)
     logging.info("Starting up.")
 
-    cur = update_db.main().add
+    conn = update_db.main().add
 
     reactor.connectTCP(args.host, args.port,
-                       FCPReconnectingFactory(args, cur))
+                       FCPReconnectingFactory(args, conn))
 
 #run main if run with twistd: it will start the reactor.
 if __name__ == "__builtin__":
