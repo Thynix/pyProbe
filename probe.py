@@ -155,6 +155,7 @@ class sigint_handler:
         signal(SIGINT, SIG_DFL)
         reactor.stop()
 
+
 #Inactive class for holding arguments in attributes.
 class Arguments(object):
     pass
@@ -167,8 +168,8 @@ def MakeRequest(ProbeType, HopsToLive):
 
 class SendHook:
     """
-	Sends a probe of a random type and commits the result to the database.
-	"""
+    Sends a probe of a random type and commits the result to the database.
+    """
 
     def __init__(self, args, proto, database):
         self.sent = datetime.datetime.utcnow()
@@ -191,10 +192,10 @@ class SendHook:
 
 class Complain:
     """
-	Registered on ProtocolError. If the callback is hit, complains loudly
-	and exits, as it's an indication that probes are not supported on the
-	target node.
-	"""
+    Registered on ProtocolError. If the callback is hit, complains loudly
+    and exits, as it's an indication that probes are not supported on the
+    target node.
+    """
 
     def callback(self, message):
         errStr = "Got ProtocolError - node does not support probes."
@@ -249,6 +250,7 @@ def main():
     def get(option):
         return config.get("OVERRIDE", option) or defaults[option]
 
+    # TODO: Config as dictionary
     args = Arguments()
     for arg in defaults.keys():
         setattr(args, arg, get(arg))
