@@ -42,7 +42,8 @@ config = parser.defaults()
 # The database user is the one writing to the file, not this client,
 # Cannot meaningfully check for output directory access here. In order to
 # COPY TO a file, must connect as super user. (Attempting to COPY TO STDOUT
-# causes a segmentation fault,)
+# causes a segmentation fault,) update_db is not appopriate either as using
+# COPY TO requires superuser access.
 
 cur = psycopg2.connect(database=config['database'], user='postgres').cursor()
 
