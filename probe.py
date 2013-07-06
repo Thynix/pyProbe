@@ -158,21 +158,6 @@ def insertResult(cur, header, htl, result, now, duration, probe_type):
         """, (now, htl, result[UPTIME_PERCENT], duration))
 
 
-class sigint_handler:
-    def __init__(self, pool, conn):
-        self.pool = pool
-        self.conn = conn
-
-    def __call__(self, signum, frame):
-        logging.warning("Got signal {0}. Closing connections and committing."
-                        .format(signum))
-        self.pool.close()
-        self.conn.commit()
-        logging.warning("Shutting down")
-        signal(SIGINT, SIG_DFL)
-        reactor.stop()
-
-
 #Inactive class for holding arguments in attributes.
 class Arguments(object):
     pass
