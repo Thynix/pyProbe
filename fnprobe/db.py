@@ -520,7 +520,7 @@ class Database:
               "reject_stats"
             WHERE
               "time" BETWEEN %s AND %s
-              AND {0} IS NOT -1
+              AND {0} != -1
             GROUP BY {0}
             ORDER BY {0}
             """.format(queue_type), (start, end))
