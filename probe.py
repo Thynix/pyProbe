@@ -79,29 +79,29 @@ def insertResult(cur, header, htl, result, now, duration, probe_type):
         cur.execute("""
         INSERT INTO
           error(time, htl, probe_type, error_type, code, duration, local)
-          values(?, ?, ?, ?, ?, ?, ?)
+          values(%s, %s, %s, %s, %s, %s, %s)
         """, (now, htl, probe_type, error_type, code, duration, local))
     elif header == "ProbeRefused":
         cur.execute("""
         INSERT INTO
           refused(time, htl, probe_type, duration)
-          values(?, ?, ?, ?)
+          values(%s, %s, %s, %s)
         """, (now, htl, probe_type, duration))
     elif probe_type == "BANDWIDTH":
         cur.execute("""
         INSERT INTO
           bandwidth(time, htl, KiB, duration)
-          values(?, ?, ?, ?)
+          values(%s, %s, %s, %s)
         """, (now, htl, result[BANDWIDTH], duration))
     elif probe_type == "BUILD":
         cur.execute(
-            "insert into build(time, htl, build, duration) values(?, ?, ?, ?)",
+            "insert into build(time, htl, build, duration) values(%s, %s, %s, %s)",
             (now, htl, result[BUILD], duration))
     elif probe_type == "IDENTIFIER":
         cur.execute("""
         INSERT INTO
           identifier(time, htl, identifier, percent, duration)
-          values(?, ?, ?, ?, ?)
+          values(%s, %s, %s, %s, %s)
         """, (now, htl, result[PROBE_IDENTIFIER], result[UPTIME_PERCENT],
               duration))
     elif probe_type == "LINK_LENGTHS":
@@ -109,7 +109,7 @@ def insertResult(cur, header, htl, result, now, duration, probe_type):
         cur.execute("""
         INSERT INTO
           peer_count(time, htl, peers, duration)
-          values(?, ?, ?, ?)
+          values(%s, %s, %s, %s)
         RETURNING
           id
         """, (now, htl, len(lengths), duration))
@@ -121,20 +121,20 @@ def insertResult(cur, header, htl, result, now, duration, probe_type):
             cur.execute("""
             INSERT INTO
               link_lengths(time, htl, length, id)
-              values(?, ?, ?, ?)
+              values(%s, %s, %s, %s)
             """, (now, htl, length, new_id))
     elif probe_type == "LOCATION":
         cur.execute("""
         INSERT INTO
           location(time, htl, location, duration)
-          values(?, ?, ?, ?)
+          values(%s, %s, %s, %s)
         """, (now, htl, result[LOCATION], duration))
     elif probe_type == "REJECT_STATS":
         cur.execute("""
         INSERT INTO
           reject_stats(time, htl, bulk_request_chk, bulk_request_ssk,
                        bulk_insert_chk, bulk_insert_ssk)
-          values(?, ?, ?, ?, ?, ?)
+          values(%s, %s, %s, %s, %s, %s)
         """, (now, htl, result[REJECT_BULK_REQUEST_CHK],
               result[REJECT_BULK_REQUEST_SSK], result[REJECT_BULK_INSERT_CHK],
               result[REJECT_BULK_INSERT_SSK]))
@@ -142,19 +142,19 @@ def insertResult(cur, header, htl, result, now, duration, probe_type):
         cur.execute("""
         INSERT INTO
           store_size(time, htl, GiB, duration)
-          values(?, ?, ?, ?)
+          values(%s, %s, %s, %s)
         """, (now, htl, result[STORE_SIZE], duration))
     elif probe_type == "UPTIME_48H":
         cur.execute("""
         insert into
           uptime_48h(time, htl, percent, duration)
-          values(?, ?, ?, ?)
+          values(%s, %s, %s, %s)
         """, (now, htl, result[UPTIME_PERCENT], duration))
     elif probe_type == "UPTIME_7D":
         cur.execute("""
         INSERT INTO
           uptime_7d(time, htl, percent, duration)
-          values(?, ?, ?, ?)
+          values(%s, %s, %s, %s)
         """, (now, htl, result[UPTIME_PERCENT], duration))
 
 
