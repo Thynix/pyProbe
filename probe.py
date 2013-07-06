@@ -187,7 +187,7 @@ class SendHook:
     """
 
     def __init__(self, args, proto, database):
-        self.sent = datetime.time.monotonic()
+        self.sent = datetime.datetime.now(LocalTimezone())
         self.args = args
         self.probeType = random.choice(self.args.types)
         self.cur = database.add
@@ -197,9 +197,10 @@ class SendHook:
                          self)
 
     def __call__(self, message):
-        duration = datetime.timedelta(seconds=datetime.time.monotonic() -
-                                      self.sent)
         now = datetime.datetime.now(LocalTimezone)
+        # TODO: This may be inaccurate or even negative due to time changes.
+        # However Python 2 does not have Python 3.3's time.monotonic().
+        duration = now - self.sent
         probe_type_code = getattr(probeTypes, self.probeType).index
         insert(self.cur, self.args, probe_type_code, message, duration, now)
         return True
