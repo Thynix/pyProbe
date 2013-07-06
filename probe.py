@@ -4,8 +4,6 @@ import datetime
 from sys import stderr
 from twisted.internet import reactor, protocol
 from twisted.internet.task import LoopingCall
-from signal import signal, SIGINT, SIG_DFL
-import thread
 import logging
 from twisted.application import service
 from ConfigParser import SafeConfigParser
