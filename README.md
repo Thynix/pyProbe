@@ -93,14 +93,17 @@ Configured with the self-documenting [`probe.config`](https://github.com/Thynix/
 
 ### `analyze.py`
 
-When run without arguments, analyzes the past week of probe data to generate statistics:
+Can perform analysis of gathered probe data:
 
 * Network size estimate
-* Plot of location distribution
-* Plot of peer count distribution
-* Plot of link length distribution
+* Store size estimate
+* Location distribution
+* Peer count distribution
+* Link length distribution
+* Uptime distribution (using that included with `identifier`)
+* Bulk reject percentage distribution
 
-For command line argument documentation run with `--help`.
+For documentation on using it run `analyze` with `--help`.
 
 ## Database Schema
 
