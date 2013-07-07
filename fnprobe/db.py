@@ -56,11 +56,11 @@ def update_id_sequence(cur, table_name):
     cur.execute("""
     SELECT
       setval(
-        pg_get_serial_sequence('{0}','id'),
+        pg_get_serial_sequence(%(table)s,'id'),
         max("id"))
     FROM
       "{0}"
-    """.format(table_name))
+    """.format(table_name), {'table': table_name})
 
 
 class Database:
