@@ -35,7 +35,7 @@ Freenet, Python, gnuplot, rrdtool, Twisted, and Markdown all have installation i
 
 ### PostgreSQL
 
-After [installing](http://www.postgresql.org/download/), [create](http://www.postgresql.org/docs/current/interactive/database-roles.html) [roles](http://www.postgresql.org/docs/current/interactive/role-attributes.html). This guide was written using PostgreSQL 9.2.
+After [installing](http://www.postgresql.org/download/), [create](http://www.postgresql.org/docs/current/interactive/database-roles.html) [roles](http://www.postgresql.org/docs/current/interactive/role-attributes.html). This guide was written using PostgreSQL 9.2 and assumes Debian-ish tendencies.
 
 pyProbe uses the database in three capacities:
 
