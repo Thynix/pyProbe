@@ -313,8 +313,8 @@ class Database:
           meta(schema_version)
           values(0)""")
 
-        self.create_indexes()
         self.maintenance.commit()
+        self.create_indexes()
         logging.warning("Table setup complete.")
 
     def create_indexes(self):
