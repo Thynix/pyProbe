@@ -134,6 +134,7 @@ class Database:
             self.table_names = list_tables(cur)
 
             # Grant permissions to the newly created tables.
+            # TODO: More idiomatic way to append to each element?
             tables = ','.join(map(lambda name: '"' + name + '"',
                                   self.table_names))
 
@@ -156,7 +157,6 @@ class Database:
 
             # Must be able to update sequences to insert using the default
             # value of the next one from the sequence.
-            # TODO: More idiomatic way to append to each element?
             def get_id_sequence(table_name):
                 cur.execute("""
                 SELECT
