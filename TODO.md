@@ -1,3 +1,9 @@
+Consistently use quoted or unquoted identifiers.
+    http://www.postgresql.org/docs/9.2/static/sql-syntax-lexical.html
+    Is my understanding correct that parameter substitution will always
+    produce literals, not identifiers? (So that string formatting operations
+    must be used to insert identifiers like table names?)
+
 Run "explain" on all queries.
 
 Things should be in directories more. Making a /config/ and /logs/
