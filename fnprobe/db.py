@@ -157,8 +157,14 @@ class Database:
             # Must be able to update sequences to insert using the default
             # value of the next one from the sequence.
             # TODO: More idiomatic way to append to each element?
-            sequences = ','.join(map(lambda name: '"' + name + '_id_seq"',
-                                     self.table_names))
+            def get_id_sequence(table_name):
+                cur.execute("""
+                SELECT
+                  pg_get_serial_sequence(%(table)s, 'id')
+                """, {'table': table_name})
+                return cur.fetchone()[0]
+
+            sequences = ','.join(map(get_id_sequence, self.table_names))
 
             cur.execute("""
             GRANT
