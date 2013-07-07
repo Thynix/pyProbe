@@ -129,7 +129,9 @@ class Database:
             self.maintenance.commit()
             self.create_new()
 
-            self.table_names = self.list_tables()
+            # self.list_tables() uses the read user, and it doesn't have
+            # permissions yet.
+            self.table_names = list_tables(cur)
 
             # Grant permissions to the newly created tables.
             tables = ','.join(self.table_names)
