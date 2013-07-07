@@ -148,7 +148,7 @@ class Database:
             cur.execute("""
             GRANT
               SELECT
-            ON
+            ON TABLE
               {0}
             TO
               "{1}"
