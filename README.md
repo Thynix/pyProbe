@@ -70,7 +70,7 @@ And in `pg_hba.conf`:
     local   probe-results   pyprobe-add                             peer map=pyprobe
     local   probe-results   pyprobe-read                            peer map=pyprobe
 
-Then reload the PostgreSQL configuration. If there is nothing to migrate, run `fnprobe/update_db.py` to create the tables and set privileges. If migrating from from the sqlite version of pyProbe, run `fnprobe/migrate_from_sqlite.py` to do the same and then insert records from SQLite.
+Then reload the PostgreSQL configuration. If there is nothing to migrate, run `python fnprobe/update_db.py` to create the tables and set privileges. If migrating from from the sqlite version of pyProbe, run `python fnprobe/migrate_from_sqlite.py` to do the same and then insert records from SQLite. If importing the database dumps, after `update_db.py` use [COPY FROM](http://www.postgresql.org/docs/9.2/static/sql-copy.html) - something like `COPY identifier FROM /absolute/path/to/identifier.sql` - then run `python fnprobe/update_ids.py`.
 
 ## Usage
 
