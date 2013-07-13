@@ -215,8 +215,6 @@ class Database:
 
         # peer_count is out of alphabetical order here, but it must exist before
         # link_lengths because link_lengths REFERENCES this table.
-        # TODO: Does that actually matter? Is there a nicer way to format all
-        # these statements?
         cur.execute("""
         CREATE TABLE
           peer_count(
@@ -227,7 +225,6 @@ class Database:
                      peers    INTEGER
                     )""")
 
-        # TODO: Cascade on update / delete.
         cur.execute("""
         CREATE TABLE
           link_lengths(
