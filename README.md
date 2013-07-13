@@ -35,7 +35,7 @@ Freenet, Python, gnuplot, rrdtool, Twisted, and Markdown all have installation i
 
 ### PostgreSQL
 
-After [installing](http://www.postgresql.org/download/), [create](http://www.postgresql.org/docs/current/interactive/database-roles.html) [roles](http://www.postgresql.org/docs/current/interactive/role-attributes.html). This guide was written using PostgreSQL 9.2 and assumes Debian-ish tendencies.
+After [installing](http://www.postgresql.org/download/), [create](http://www.postgresql.org/docs/current/interactive/database-roles.html) [roles](http://www.postgresql.org/docs/current/interactive/role-attributes.html). This guide was written using PostgreSQL 9.2 and assumes Debian-ish tendencies. An example package name is `postgresql-9.2`.
 
 pyProbe uses the database in three capacities:
 
@@ -59,9 +59,9 @@ The tables do not exist yet, so privileges cannot be assigned for them. They wil
 Copy `database.config_sample` to `database.config` and set the usernames and database name. (Passwords need not be specified if they are not used.) Set the mapping between system users and PostgreSQL users - this may involve `/etc/postgresql/9.2/main/pg_ident.conf` and `/etc/postgresql/9.2/main/pg_hba.conf`. For example, in `pg_ident.conf`:
 
     # MAPNAME       SYSTEM-USERNAME         PG-USERNAME
-    pyprobe         freenet                 pyprobe-maint
-    pyprobe         freenet                 pyprobe-read
-    pyprobe         freenet                 pyprobe-add
+    pyprobe         pyprobe                 pyprobe-maint
+    pyprobe         pyprobe                 pyprobe-read
+    pyprobe         pyprobe                 pyprobe-add
 
 And in `pg_hba.conf`:
 
@@ -70,7 +70,7 @@ And in `pg_hba.conf`:
     local   probe-results   pyprobe-add                             peer map=pyprobe
     local   probe-results   pyprobe-read                            peer map=pyprobe
 
-Then reload the PostgreSQL configuration. If there is nothing to migrate, run `python fnprobe/update_db.py` to create the tables and set privileges. If migrating from from the sqlite version of pyProbe, run `python fnprobe/migrate_from_sqlite.py` to do the same and then insert records from SQLite. If importing the database dumps, after `update_db.py` use [COPY FROM](http://www.postgresql.org/docs/9.2/static/sql-copy.html) - something like `COPY identifier FROM /absolute/path/to/identifier.sql` - then run `python fnprobe/update_ids.py`.
+Then reload the PostgreSQL configuration. If there is nothing to migrate, run `python fnprobe/update_db.py` to create the tables and set privileges. If migrating from from the sqlite version of pyProbe, run `python fnprobe/migrate_from_sqlite.py`. If importing the database dumps, run `python fnprobe/copy_from.py`.
 
 ## Usage
 
