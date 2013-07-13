@@ -134,9 +134,7 @@ class Database:
             self.table_names = list_tables(cur)
 
             # Grant permissions to the newly created tables.
-            # TODO: More idiomatic way to append to each element?
-            tables = ','.join(map(lambda name: '"' + name + '"',
-                                  self.table_names))
+            tables = ','.join(['"' + name + '"' for name in self.table_names])
 
             cur.execute("""
             GRANT
