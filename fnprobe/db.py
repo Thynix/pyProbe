@@ -228,7 +228,7 @@ class Database:
         cur.execute("""
         CREATE TABLE
           link_lengths(
-                       id       SERIAL PRIMARY KEY,
+                       id       BIGSERIAL PRIMARY KEY,
                        length   FLOAT,
                        count_id INTEGER REFERENCES peer_count
                                                    ON DELETE CASCADE
