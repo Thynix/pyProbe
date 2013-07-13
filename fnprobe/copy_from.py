@@ -35,3 +35,6 @@ for table in list_tables(cur):
 
 logging.warning("Copy complete. Recreating indexes.")
 database.create_indexes()
+logging.warning("Analyzing.")
+cur.execute("ANALYZE")
+database.maintenance.commit()
