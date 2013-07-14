@@ -1,24 +1,18 @@
 from __future__ import division
 import argparse
-import sqlite3
 import datetime
-from subprocess import call
 import rrdtool
-import calendar
 import math
-import time
 from ConfigParser import SafeConfigParser
 from twistedfcp.protocol import FreenetClientProtocol, Message
-from twistedfcp import message
 from twisted.internet import reactor, protocol
 import sys
 from string import split, join
 import os
 import markdown
-import re
 import logging
 import codecs
-from fnprobe.time import toPosix, totalSeconds, timestamp
+from fnprobe.time import toPosix, totalSeconds
 from fnprobe.gnuplots import plot_link_length, plot_location_dist, plot_peer_count, plot_bulk_reject, reject_types, plot_uptime
 from fnprobe.db import Database, errorTypes
 from psycopg2.tz import LocalTimezone
