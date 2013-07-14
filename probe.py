@@ -8,18 +8,20 @@ import logging
 from twisted.application import service
 from ConfigParser import SafeConfigParser
 from string import split
+from twisted.python.log import ILogObserver
 from twistedfcp.protocol import FreenetClientProtocol, IdentifiedMessage
 from twisted.python import log
 from fnprobe import update_db
 from fnprobe.db import probeTypes, errorTypes
 from psycopg2.tz import LocalTimezone
+from twisted.application import internet
 
 __version__ = "0.1"
 application = service.Application("pyProbe")
 
 #Log twisted events to Python's standard logging. This will log reconnection
 #information at INFO.
-log.PythonLoggingObserver().start()
+application.setComponent(ILogObserver, log.PythonLoggingObserver().emit)
 
 #Which random generator to use.
 rand = random.SystemRandom()
@@ -284,14 +286,14 @@ def main():
 
     conn = update_db.main().add
 
-    reactor.connectTCP(args.host, args.port,
-                       FCPReconnectingFactory(args, conn))
+    return internet.TCPClient(args.host, args.port,
+                              FCPReconnectingFactory(args, conn))
 
-#run main if run with twistd: it will start the reactor.
+# Run with twistd: set up application; let it start the reactor.
 if __name__ == "__builtin__":
-    main()
+    client = main()
+    client.setServiceParent(application)
 
-#Run main and start reactor if run as script
+# Run as a script: complain.
 if __name__ == '__main__':
-    main()
-    reactor.run()
+    print('Run this with twistd.')
