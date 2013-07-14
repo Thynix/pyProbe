@@ -42,8 +42,8 @@ parser.add_argument('--error-refused-graph', dest='errorRefusedGraph', default='
 parser.add_argument('--uptime-histogram-max', dest="uptimeHistogramMax", default=120, type=int,
                     help='Maximum percentage to include in the uptime histogram. Default 120')
 parser.add_argument('--up-to', dest='up_to', default=today,
-                    help='Dump up to midnight on the given date. Defaults to '
-                         'today. 2013-02-27 EST is February 27th, 2013 EST.')
+                    help='Analyze up to midnight on the given date. Defaults '
+                         'to today. 2013-02-27 EST is February 27th, 2013 EST.')
 
 parser.add_argument('--output-dir', dest='outputDir', default='output',
                     help='Path to output directory.')
