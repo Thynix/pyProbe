@@ -50,7 +50,7 @@ for inFile in argv[1:-1]:
     root = parse(inFile).getroot()
 
     # Check the RRAs. No elements means first file.
-    if rras == None:
+    if rras is None:
         rras = getRraCheck(root)
         prelude = dict()
         for key in [ 'version', 'step', 'lastupdate' ]:
