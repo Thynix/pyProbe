@@ -163,6 +163,8 @@ def insertResult(cur, header, htl, result, now, duration, probe_type,
           uptime_7d(time, htl, percent, duration)
           values(%s, %s, %s, %s)
         """, (now, htl, result[UPTIME_PERCENT], duration))
+    else:
+        logging.warning("Unrecognized result type '%s'" % probe_type)
 
 
 #Inactive class for holding arguments in attributes.
