@@ -180,6 +180,9 @@ class SendHook:
     """
     Sends a probe of a random type and commits the result to the database.
     """
+    class Log:
+        def __call__(self, message):
+            logging.error(message)
 
     def __init__(self, args, proto, conn):
         self.sent = datetime.datetime.now(LocalTimezone())
@@ -188,8 +191,10 @@ class SendHook:
         self.conn = conn
         logging.debug("Sending {0}.".format(self.probeType))
 
-        proto.do_session(MakeRequest(self.probeType, self.args.hopsToLive),
-                         self)
+        request = proto.do_session(MakeRequest(self.probeType,
+                                               self.args.hopsToLive), self)
+
+        request.addErrback(SendHook.Log())
 
     def __call__(self, message):
         now = datetime.datetime.now(LocalTimezone())
