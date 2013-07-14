@@ -145,7 +145,7 @@ errorPlotNames = [  'Disconnected',
 try:
     f = open(args.rrd, "r")
     f.close()
-except:
+except IOError:
     # Database does not exist - create it.
     #
     # Data cannot be added at the time the database starts, and it should have
