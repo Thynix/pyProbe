@@ -133,11 +133,11 @@ def insertResult(cur, header, htl, result, now, duration, probe_type):
         cur.execute("""
         INSERT INTO
           reject_stats(time, htl, bulk_request_chk, bulk_request_ssk,
-                       bulk_insert_chk, bulk_insert_ssk)
+                       bulk_insert_chk, bulk_insert_ssk, duration)
           values(%s, %s, %s, %s, %s, %s)
         """, (now, htl, result[REJECT_BULK_REQUEST_CHK],
               result[REJECT_BULK_REQUEST_SSK], result[REJECT_BULK_INSERT_CHK],
-              result[REJECT_BULK_INSERT_SSK]))
+              result[REJECT_BULK_INSERT_SSK], duration))
     elif probe_type == "STORE_SIZE":
         cur.execute("""
         INSERT INTO

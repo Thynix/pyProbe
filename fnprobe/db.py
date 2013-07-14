@@ -158,31 +158,31 @@ class Database:
         CREATE TABLE
           bandwidth(
                     id       SERIAL PRIMARY KEY,
-                    time     TIMESTAMP WITH TIME ZONE,
-                    duration INTERVAL,
-                    htl      INTEGER,
-                    KiB      FLOAT
+                    time     TIMESTAMP WITH TIME ZONE NOT NULL,
+                    duration INTERVAL NOT NULL,
+                    htl      INTEGER NOT NULL,
+                    KiB      FLOAT NOT NULL
                    )""")
 
         cur.execute("""
         CREATE TABLE
           build(
                 id       SERIAL PRIMARY KEY,
-                time     TIMESTAMP WITH TIME ZONE,
-                duration INTERVAL,
-                htl      INTEGER,
-                build    INTEGER
+                time     TIMESTAMP WITH TIME ZONE NOT NULL,
+                duration INTERVAL NOT NULL,
+                htl      INTEGER NOT NULL,
+                build    INTEGER NOT NULL
                )""")
 
         cur.execute("""
         CREATE TABLE
           identifier(
                      id         SERIAL PRIMARY KEY,
-                     time       TIMESTAMP WITH TIME ZONE,
-                     duration   INTERVAL,
-                     htl        INTEGER,
-                     identifier BIGINT,
-                     percent    INTEGER
+                     time       TIMESTAMP WITH TIME ZONE NOT NULL,
+                     duration   INTERVAL NOT NULL,
+                     htl        INTEGER NOT NULL,
+                     identifier BIGINT NOT NULL,
+                     percent    INTEGER NOT NULL
                     )""")
 
         # peer_count is out of alphabetical order here, but it must exist before
@@ -191,100 +191,103 @@ class Database:
         CREATE TABLE
           peer_count(
                      id       SERIAL PRIMARY KEY,
-                     time     TIMESTAMP WITH TIME ZONE,
-                     duration INTERVAL,
-                     htl      INTEGER,
-                     peers    INTEGER
+                     time     TIMESTAMP WITH TIME ZONE NOT NULL,
+                     duration INTERVAL NOT NULL,
+                     htl      INTEGER NOT NULL,
+                     peers    INTEGER NOT NULL
                     )""")
 
         cur.execute("""
         CREATE TABLE
           link_lengths(
                        id       BIGSERIAL PRIMARY KEY,
-                       length   FLOAT,
+                       length   FLOAT NOT NULL,
                        count_id INTEGER REFERENCES peer_count
                                                    ON DELETE CASCADE
                                                    ON UPDATE CASCADE
+                                        NOT NULL
                       )""")
 
         cur.execute("""
         CREATE TABLE
           location(
                    id       SERIAL PRIMARY KEY,
-                   time     TIMESTAMP WITH TIME ZONE,
-                   duration INTERVAL,
-                   htl      INTEGER,
-                   location FLOAT
+                   time     TIMESTAMP WITH TIME ZONE NOT NULL,
+                   duration INTERVAL NOT NULL,
+                   htl      INTEGER NOT NULL,
+                   location FLOAT NOT NULL
                   )""")
 
         cur.execute("""
         CREATE TABLE
           store_size(
                      id       SERIAL PRIMARY KEY,
-                     time     TIMESTAMP WITH TIME ZONE,
-                     duration INTERVAL,
-                     htl      INTEGER,
-                     gib      FLOAT
+                     time     TIMESTAMP WITH TIME ZONE NOT NULL,
+                     duration INTERVAL NOT NULL,
+                     htl      INTEGER NOT NULL,
+                     gib      FLOAT NOT NULL
                     )""")
 
         cur.execute("""
         CREATE TABLE
           reject_stats(
                        id               SERIAL PRIMARY KEY,
-                       time             TIMESTAMP WITH TIME ZONE,
-                       duration         INTERVAL,
-                       htl              INTEGER,
-                       bulk_request_chk INTEGER,
-                       bulk_request_ssk INTEGER,
-                       bulk_insert_chk  INTEGER,
-                       bulk_insert_ssk  INTEGER
+                       time             TIMESTAMP WITH TIME ZONE NOT NULL,
+                       duration         INTERVAL NOT NULL,
+                       htl              INTEGER NOT NULL,
+                       bulk_request_chk INTEGER NOT NULL,
+                       bulk_request_ssk INTEGER NOT NULL,
+                       bulk_insert_chk  INTEGER NOT NULL,
+                       bulk_insert_ssk  INTEGER NOT NULL
                       )""")
 
         cur.execute("""CREATE TABLE
           uptime_48h(
                      id       SERIAL PRIMARY KEY,
-                     time     TIMESTAMP WITH TIME ZONE,
-                     duration INTERVAL,
-                     htl      INTEGER,
-                     percent  FLOAT
+                     time     TIMESTAMP WITH TIME ZONE NOT NULL,
+                     duration INTERVAL NOT NULL,
+                     htl      INTEGER NOT NULL,
+                     percent  FLOAT NOT NULL
                     )""")
 
         cur.execute("""
         CREATE TABLE
           uptime_7d(
                     id       SERIAL PRIMARY KEY,
-                    time     TIMESTAMP WITH TIME ZONE,
-                    duration INTERVAL,
-                    htl      INTEGER,
-                    percent  FLOAT
+                    time     TIMESTAMP WITH TIME ZONE NOT NULL,
+                    duration INTERVAL NOT NULL,
+                    htl      INTEGER NOT NULL,
+                    percent  FLOAT NOT NULL
                    )""")
 
+        # code can be null if - as is often the case - the error is not due to
+        # a peer sending an unrecognized error code.
         cur.execute("""
         CREATE TABLE
           error(
                 id         SERIAL PRIMARY KEY,
-                time       TIMESTAMP WITH TIME ZONE,
-                duration   INTERVAL,
-                htl        INTEGER,
-                local      BOOLEAN,
-                probe_type INTEGER,
-                error_type INTEGER,
+                time       TIMESTAMP WITH TIME ZONE NOT NULL,
+                duration   INTERVAL NOT NULL,
+                htl        INTEGER NOT NULL,
+                local      BOOLEAN NOT NULL,
+                probe_type INTEGER NOT NULL,
+                error_type INTEGER NOT NULL,
                 code       INTEGER
                )""")
 
         cur.execute("""CREATE TABLE
           refused(
                   id         SERIAL PRIMARY KEY,
-                  time       TIMESTAMP WITH TIME ZONE,
-                  duration   INTERVAL,
-                  htl        INTEGER,
-                  probe_type INTEGER
+                  time       TIMESTAMP WITH TIME ZONE NOT NULL,
+                  duration   INTERVAL NOT NULL,
+                  htl        INTEGER NOT NULL,
+                  probe_type INTEGER NOT NULL
                  )""")
 
         cur.execute("""
         CREATE TABLE
           meta(
-               schema_version INTEGER
+               schema_version INTEGER NOT NULL
               )""")
         cur.execute("""
         INSERT INTO
