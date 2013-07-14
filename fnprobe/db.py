@@ -11,30 +11,6 @@ errorTypes = Enum('DISCONNECTED', 'OVERLOAD', 'TIMEOUT', 'UNKNOWN',
                   'UNRECOGNIZED_TYPE', 'CANNOT_FORWARD')
 
 
-def list_tables(cur):
-    """
-    Return a list of the names of public tables in the database (excluding
-    "meta") in ascending alphabetical order.
-
-    Requires a cursor.
-    """
-    # Ignore meta - it is just a version number. It need not be dumped or
-    # hold probe results or be analyzed.
-    cur.execute("""
-    SELECT
-      table_name
-    FROM
-      information_schema.tables
-    WHERE
-      table_schema = 'public' AND table_name != 'meta'
-    ORDER BY
-      table_name
-    """)
-
-    # Each element will be a singleton tuple, but we want just a string.
-    return [x[0] for x in cur.fetchall()]
-
-
 # Changes made to sequences are not transactional, no need to commit after.
 # See http://www.postgresql.org/docs/current/static/functions-sequence.html
 # Apparently without PostgreSQL extensions is awful.
@@ -129,9 +105,7 @@ class Database:
             self.maintenance.commit()
             self.create_new()
 
-            # self.list_tables() uses the read user, and it doesn't have
-            # permissions yet.
-            self.table_names = list_tables(cur)
+            self.table_names = self.list_tables(cur)
 
             # Grant permissions to the newly created tables.
             tables = ','.join(['"' + name + '"' for name in self.table_names])
@@ -402,11 +376,31 @@ class Database:
 
         self.maintenance.commit()
 
-    def list_tables(self):
+    def list_tables(self, cur=None):
         """
-        Internal wrapper for Database.list_tables.
+        Return a list of the names of public tables in the database (excluding
+        "meta") in ascending alphabetical order.
+
+        Can take a cursor to use, but defaults to read.
         """
-        return list_tables(self.read.cursor())
+        if not cur:
+            cur = self.read.cursor()
+
+        # Ignore meta - it is just a version number. It need not be dumped or
+        # hold probe results or be analyzed.
+        cur.execute("""
+        SELECT
+          table_name
+        FROM
+          information_schema.tables
+        WHERE
+          table_schema = 'public' AND table_name != 'meta'
+        ORDER BY
+          table_name
+        """)
+
+        # Each element will be a singleton tuple, but we want just a string.
+        return [x[0] for x in cur.fetchall()]
 
     def upgrade(self, version, config):
         # The user names (in config) will be needed to modify permissions as
