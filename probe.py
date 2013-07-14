@@ -1,8 +1,7 @@
 from __future__ import division
 import random
 import datetime
-from sys import stderr
-from twisted.internet import reactor, protocol
+from twisted.internet import protocol
 from twisted.internet.task import LoopingCall
 import logging
 from twisted.application import service
@@ -201,20 +200,6 @@ class SendHook:
         return True
 
 
-class Complain:
-    """
-    Registered on ProtocolError. If the callback is hit, complains loudly
-    and exits, as it's an indication that probes are not supported on the
-    target node.
-    """
-
-    def callback(self, message):
-        errStr = "Got ProtocolError - node does not support probes."
-        logging.error(errStr)
-        stderr.write(errStr + '\n')
-        reactor.stop()
-
-
 class FCPReconnectingFactory(protocol.ReconnectingClientFactory):
     """A protocol factory that uses FCP."""
     protocol = FreenetClientProtocol
@@ -232,7 +217,6 @@ class FCPReconnectingFactory(protocol.ReconnectingClientFactory):
         proto.timeout = self.args.timeout
 
         proto.deferred['NodeHello'] = self
-        proto.deferred['ProtocolError'] = Complain()
 
         self.sendLoop = LoopingCall(SendHook, self.args, proto, self.conn)
 
