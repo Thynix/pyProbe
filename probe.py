@@ -68,6 +68,7 @@ def insertResult(cur, header, htl, result, now, duration, probe_type):
         elif result[LOCAL] == "false":
             local = False
         else:
+            # This will result in a constraint violation. Local cannot be null.
             logging.error("Node gave '{0}' as ProbeError Local, "
                           "which is neither 'true' nor 'false'.".format(
                           result[LOCAL]))
