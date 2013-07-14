@@ -225,7 +225,8 @@ for row in SQLite.execute("""
 new_database.add.commit()
 update_id_sequence(Postgres_maint, 'store_size')
 
-# reject_stats was missing duration in the SQLite version.
+# reject_stats was missing duration in the SQLite version. The column can't
+# be NULL, so instead of relaxing constraints just make it zero seconds.
 for row in SQLite.execute("""
     SELECT
       ROWID, time, htl, bulk_request_chk, bulk_request_ssk,
@@ -237,17 +238,15 @@ for row in SQLite.execute("""
     ORDER BY ROWID ASC
     """, (resume_id('reject_stats'),)):
 
-    # No duration column; can't use convert_time.
-    row = list(row)
-    row[1] = TimestampFromTicks(row[1])
+    row = convert_time(row)
 
     # duration omitted; will be NULL.
     Postgres_add.execute("""
     INSERT INTO
-      reject_stats(id, time, htl, bulk_request_chk, bulk_request_ssk,
+      reject_stats(id, time, duration, htl, bulk_request_chk, bulk_request_ssk,
       bulk_insert_chk, bulk_insert_ssk)
     VALUES
-      (%s, %s, %s, %s, %s, %s, %s)
+      (%s, %s, %s, %s, %s, %s, %s, %s)
     """, row)
 new_database.add.commit()
 update_id_sequence(Postgres_maint, 'reject_stats')
