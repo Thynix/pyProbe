@@ -284,7 +284,7 @@ def main():
                         filename=args.logFile)
     logging.info("Starting up.")
 
-    conn = update_db.main().add
+    conn = update_db.main(log_to_stdout=False).add
 
     return internet.TCPClient(args.host, args.port,
                               FCPReconnectingFactory(args, conn))
