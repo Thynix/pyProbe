@@ -49,15 +49,19 @@ def insert(conn, args, probe_type, result, duration, now):
 
     header = result.name
     htl = args.hopsToLive
+    probe_type_code = getattr(probeTypes, probe_type).index
 
-    insertResult(conn.cursor(), header, htl, result, now, duration, probe_type)
+    insertResult(conn.cursor(), header, htl, result, now, duration,
+                 probe_type, probe_type_code)
 
     conn.commit()
     logging.debug("Committed {0} ({1}) in {2}.".format(header, probe_type,
                                                        datetime.datetime.utcnow() - start))
 
 
-def insertResult(cur, header, htl, result, now, duration, probe_type):
+# TODO: Would it make more sense to put some of these arguments in a dictionary?
+def insertResult(cur, header, htl, result, now, duration, probe_type,
+                 probe_type_code):
     if header == "ProbeError":
         #type should always be defined, but the code might not be.
         code = None
@@ -81,13 +85,13 @@ def insertResult(cur, header, htl, result, now, duration, probe_type):
         INSERT INTO
           error(time, htl, probe_type, error_type, code, duration, local)
           values(%s, %s, %s, %s, %s, %s, %s)
-        """, (now, htl, probe_type, error_type, code, duration, local))
+        """, (now, htl, probe_type_code, error_type, code, duration, local))
     elif header == "ProbeRefused":
         cur.execute("""
         INSERT INTO
           refused(time, htl, probe_type, duration)
           values(%s, %s, %s, %s)
-        """, (now, htl, probe_type, duration))
+        """, (now, htl, probe_type_code, duration))
     elif probe_type == "BANDWIDTH":
         cur.execute("""
         INSERT INTO
@@ -191,8 +195,7 @@ class SendHook:
         # TODO: This may be inaccurate or even negative due to time changes.
         # However Python 2 does not have Python 3.3's time.monotonic().
         duration = now - self.sent
-        probe_type_code = getattr(probeTypes, self.probeType).index
-        insert(self.conn, self.args, probe_type_code, message, duration, now)
+        insert(self.conn, self.args, self.probeType, message, duration, now)
         return True
 
 
