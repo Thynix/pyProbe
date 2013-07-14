@@ -21,7 +21,7 @@ pyProbe is a collection of data gathering and analysis tools for [Freenet](https
 
 Freenet, Python, gnuplot, rrdtool, Twisted, and Markdown all have installation instructions on their respective sites.
 
-`pip install markdown enum gnuplot-py psycopg2 python-dateutil`
+`pip install markdown enum gnuplot-py psycopg2`
 
 ### argparse
 
@@ -107,13 +107,13 @@ For documentation on using it run `analyze` with `--help`.
 
 ## Database Schema
 
-There are separate tables for each result type, errors, and refuals. The database is versioned, and previous versions will be upgraded. (`init_database()`) All table names but `error`, `refused`, and `peer_count` match the name of the result type with which they are updated. With the exception of `link_lengths` lacking a `duration` column, all tables have the following columns:
+There are separate tables for each result type, errors, and refuals. The database is versioned, and previous versions will be upgraded. All table names but `error`, `refused`, and `peer_count` match the name of the result type with which they are updated. With the exception of `link_lengths`, all tables have the following columns:
 
-* `time`: POSIX time when the result was committed.
-* `htl`: Hops to live the probe request had.
-* `duration`: Floating point seconds elapsed between sending the probe and receiving the response.
+* `time`: when the result was committed.
+* `htl`: hops to live of the request.
+* `duration`: elapsed between sending the probe and receiving the response.
 
-Additional columns vary by table:
+All tables have an `id` primary key. Additional columns vary by table:
 
 ### `bandwidth`
 
@@ -130,10 +130,10 @@ Additional columns vary by table:
 
 ### `link_lengths`
 
-Each individual reported length has its own entry. This table does not have a `duration` column because the next table, `peer_count`, is based off the same probe result and has only one entry for each, which avoids storing that information multiple times for a single returned result.
+Each individual reported length has its own entry.
 
 * `length`: Floating point difference between the responding node's location and one of its peers' locations.
-* `id`: Integer ID shared with the other entries resulting from the same probe result.
+* `count_id`: Matches the `id` of the associated `peer_count` row.
 
 ### `peer count`
 
@@ -148,6 +148,13 @@ Set from `LINK_LENGTHS` probes like `link_lengths`.
 ### `store_size`:
 
 * `GiB`: Datastore (cache and store) size in floating point GiB.
+
+### `reject_stats`:
+
+* `bulk_request_chk`: Percent bulk CHK requests rejected.
+* `bulk_request_ssk`: Percent bulk SSK requests rejected.
+* `bulk_insert_chk`: Percent bulk CHK inserts rejected.
+* `bulk_insert_ssk`: Percent bulk SSK inserts rejected.
 
 ### `uptime_48h`
 
@@ -167,3 +174,7 @@ Set from `LINK_LENGTHS` probes like `link_lengths`.
 ### `refused`
 
 * `probe_type`: The probe result which was requested.
+
+### `meta`
+
+* `schema_version`: Internal version number to handle upgrades.
