@@ -74,7 +74,7 @@ def handler(signum, frame):
     logging.warning("Shutting down.")
     sys.exit(0)
 
-# Commit on interrupt.
+# Commit on interrupt to allow resuming import on the same table.
 signal.signal(signal.SIGINT, handler)
 signal.signal(signal.SIGTERM, handler)
 

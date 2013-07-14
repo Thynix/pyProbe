@@ -197,6 +197,8 @@ class Database:
                      peers    INTEGER NOT NULL
                     )""")
 
+        # id is BIGSERIAL because there are likely to be a tremendous number
+        # of records.
         cur.execute("""
         CREATE TABLE
           link_lengths(
@@ -366,6 +368,10 @@ class Database:
         self.maintenance.commit()
 
     def drop_indexes(self):
+        """
+        Drops manually added indexes. Does not remove primary key indexes.
+        See http://www.postgresql.org/docs/9.2/static/populate.html
+        """
         cur = self.maintenance.cursor()
 
         for index in ['bandwidth_time_index', 'build_time_index',
