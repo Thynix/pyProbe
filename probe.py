@@ -43,11 +43,11 @@ HTL = "HopsToLive"
 LOCAL = "Local"
 
 
-def insert(conn, args, probe_type, result, duration, now):
+def insert(conn, config, probe_type, result, duration, now):
     start = datetime.datetime.utcnow()
 
     header = result.name
-    htl = args.hopsToLive
+    htl = config['hopsToLive']
     probe_type_code = getattr(probeTypes, probe_type).index
 
     insertResult(conn.cursor(), header, htl, result, now, duration,
@@ -184,15 +184,16 @@ class SendHook:
         def __call__(self, message):
             logging.error(message)
 
-    def __init__(self, args, proto, conn):
+    def __init__(self, config, proto, conn):
         self.sent = datetime.datetime.now(LocalTimezone())
-        self.args = args
-        self.probeType = random.choice(self.args.types)
+        self.config = config
+        self.probeType = random.choice(self.config['types'])
         self.conn = conn
         logging.debug("Sending {0}.".format(self.probeType))
 
         request = proto.do_session(MakeRequest(self.probeType,
-                                               self.args.hopsToLive), self)
+                                               self.config['hopsToLive']),
+                                   self)
 
         request.addErrback(SendHook.Log())
 
@@ -201,7 +202,7 @@ class SendHook:
         # TODO: This may be inaccurate or even negative due to time changes.
         # However Python 2 does not have Python 3.3's time.monotonic().
         duration = now - self.sent
-        insert(self.conn, self.args, self.probeType, message, duration, now)
+        insert(self.conn, self.config, self.probeType, message, duration, now)
         return True
 
 
@@ -212,23 +213,23 @@ class FCPReconnectingFactory(protocol.ReconnectingClientFactory):
     #Log disconnection and reconnection attempts
     noisy = True
 
-    def __init__(self, args, conn):
-        self.args = args
+    def __init__(self, config, conn):
+        self.config = config
         self.conn = conn
 
-    def buildProtocol(self, addr):
+    def buildProtocol(self, _):
         proto = FreenetClientProtocol()
         proto.factory = self
-        proto.timeout = self.args.timeout
+        proto.timeout = self.config['timeout']
 
         proto.deferred['NodeHello'] = self
 
-        self.sendLoop = LoopingCall(SendHook, self.args, proto, self.conn)
+        self.sendLoop = LoopingCall(SendHook, self.config, proto, self.conn)
 
         return proto
 
-    def callback(self, message):
-        self.sendLoop.start(self.args.probePeriod)
+    def callback(self, _):
+        self.sendLoop.start(self.config['probePeriod'])
 
     def clientConnectionLost(self, connector, reason):
         logging.warning("Lost connection: {0}".format(reason))
@@ -241,47 +242,42 @@ class FCPReconnectingFactory(protocol.ReconnectingClientFactory):
 
 
 def main():
-    config = SafeConfigParser()
-    #Case-sensitive to set args attributes correctly.
-    config.optionxform = str
-    config.read("probe.config")
-    defaults = config.defaults()
+    config_parser = SafeConfigParser()
+    # Case-sensitive option names.
+    config_parser.optionxform = str
+    config_parser.read("probe.config")
+    config = config_parser.defaults()
 
-    def get(option):
-        return config.get("OVERRIDE", option) or defaults[option]
-
-    # TODO: Config as dictionary
-    args = Arguments()
-    for arg in defaults.keys():
-        setattr(args, arg, get(arg))
+    for arg, value in config_parser.items('OVERRIDE'):
+        config[arg] = value
 
     #Convert integer options
     for arg in ["port", "hopsToLive", "probeRate"]:
-        setattr(args, arg, int(getattr(args, arg)))
+        config[arg] = int(config[arg])
 
     #Convert floating point options.
     for arg in ["timeout", "databaseTimeout"]:
-        setattr(args, arg, float(getattr(args, arg)))
+        config[arg] = float(config[arg])
 
     #Convert types list to list
-    args.types = split(args.types, ",")
+    config['types'] = split(config['types'], ",")
 
     # Compute probe period. Rate is easier to think about, so it's used in the
     # config file. probeRate is probes/minute. Period is seconds/probe.
     # 60 seconds   1 minute           seconds
     # ---------- * ---------------- = -------
     # 1 minute     probeRate probes   probe
-    args.probePeriod = 60 / args.probeRate
+    config['probePeriod'] = 60 / config['probeRate']
 
     logging.basicConfig(format="%(asctime)s - %(levelname)s: %(message)s",
-                        level=getattr(logging, args.verbosity),
-                        filename=args.logFile)
+                        level=getattr(logging, config['verbosity']),
+                        filename=config['logFile'])
     logging.info("Starting up.")
 
     conn = update_db.main(log_to_stdout=False).add
 
-    return internet.TCPClient(args.host, args.port,
-                              FCPReconnectingFactory(args, conn))
+    return internet.TCPClient(config['host'], config['port'],
+                              FCPReconnectingFactory(config, conn))
 
 # Run with twistd: set up application; let it start the reactor.
 if __name__ == "__builtin__":
