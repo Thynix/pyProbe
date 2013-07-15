@@ -155,15 +155,11 @@ except IOError:
     # An entry is computed including the start of the period and excluding the
     # end.
     #
-    # TODO: Why only check identifier? Check for earliest between all tables.
-    cur = db.read.cursor()
-    cur.execute("""select min("time") from "identifier" """)
-    fromTime = cur.fetchone()[0]
-    cur.close()
-    db.read.commit()
+    fromTime = db.earliest_result()
 
     if not fromTime:
-        print("No identifier probe results exist.")
+        print("No probe results exist.")
+        sys.exit(1)
 
     toTime = fromTime + shortPeriod
     shortPeriodSeconds = int(totalSeconds(shortPeriod))

@@ -441,6 +441,33 @@ class Database:
         # part of upgrades.
         pass
 
+    def earliest_result(self):
+        """
+        Return the datetime the earliest probe result was stored.
+        """
+        cur = self.read.cursor()
+
+        overall_earliest = None
+
+        for table in self.table_names:
+            if table == 'link_lengths':
+                # Link lengths only has time in association with peer_count.
+                continue
+            cur.execute("""
+            SELECT
+              min(time)
+            FROM
+              "{0}"
+            """.format(table))
+            earliest = cur.fetchone()[0]
+            if overall_earliest is None:
+                overall_earliest = earliest
+            elif earliest < overall_earliest:
+                print(table) # TODO: debugging
+                overall_earliest = earliest
+
+        return overall_earliest
+
     def intersect_identifier(self, earliest, mid, latest):
         """
         Return a tuple of the number of distinct identifiers appearing in
