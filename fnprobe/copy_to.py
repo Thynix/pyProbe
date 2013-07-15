@@ -3,18 +3,15 @@ import argparse
 import datetime
 from sys import exit, stderr
 import os
-import db
-from psycopg2.tz import LocalTimezone
 import update_db
-
-# TODO: up_to_date between here and analyze.py
-today = datetime.datetime.now(LocalTimezone()).strftime('%Y-%m-%d %Z')
+from fnprobe.time import get_midnight
 
 parser = argparse.ArgumentParser(description='Dumps spans of time from each '
                                              'table.')
-parser.add_argument('--up-to', dest='up_to', default=today,
-                    help='Dump up to the given date. Defaults to today. '
-                         '2013-02-27 EST is February 27th, 2013 midnight EST.')
+parser.add_argument('--up-to', dest='up_to', default='',
+                    help='Dump up to midnight on the given date. Defaults '
+                         'to today. 2013-02-27 is February 27th, '
+                         '2013. The time zone used is the local one.')
 parser.add_argument('--days', dest='days', type=int, default=7,
                     help='Number of days back to dump. Defaults to 7.')
 parser.add_argument('--suffix', dest='suffix', default='week',
@@ -32,7 +29,7 @@ except OSError:
     # Directory already exists, which is fine.
     pass
 
-up_to_date = datetime.datetime.strptime(args.up_to, '%Y-%m-%d %Z')
+up_to_date = get_midnight(args.up_to)
 start_date = up_to_date - datetime.timedelta(days=args.days)
 
 if not args.days > 0:

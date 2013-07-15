@@ -1,11 +1,39 @@
 import calendar
+from datetime import datetime, date, time
+from psycopg2.tz import LocalTimezone
+
+# Recall POSIX time is Seconds since midnight UTC 1970-1-1.
 
 
 def toPosix(dt):
     """
-    Returns the UTC POSIX timestamp for a datetime.
+    Return the POSIX timestamp for a datetime.
     """
     return int(calendar.timegm(dt.utctimetuple()))
+
+
+def fromPosix(posix):
+    """
+    Return a timezone-aware datetime for a POSIX timestamp.
+    """
+    return datetime.fromtimestamp(posix, LocalTimezone())
+
+
+def get_midnight(iso_date=''):
+    """
+    Return a timezone-aware datetime for midnight on the given date in ISO
+    format, (YYYY-MM-DD) or today if iso_date is empty or not given.
+    """
+    if iso_date:
+        try:
+            starting_date = date(*[int(num) for num in iso_date.split('-')])
+        except ValueError:
+            print("Could not parse '%s' as a date. See --help." % iso_date)
+            raise
+    else:
+        starting_date = date.today()
+
+    return datetime.combine(starting_date, time(tzinfo=LocalTimezone()))
 
 
 def totalSeconds(delta):

@@ -12,13 +12,9 @@ import os
 import markdown
 import logging
 import codecs
-from fnprobe.time import toPosix, totalSeconds
+from fnprobe.time import toPosix, fromPosix, get_midnight, totalSeconds
 from fnprobe.gnuplots import plot_link_length, plot_location_dist, plot_peer_count, plot_bulk_reject, reject_types, plot_uptime
 from fnprobe.db import Database, errorTypes
-from psycopg2.tz import LocalTimezone
-
-# TODO: up_to_date duplicated between here and dump.py
-today = datetime.datetime.now(LocalTimezone()).strftime('%Y-%m-%d %Z')
 
 parser = argparse.ArgumentParser(description="Analyze probe results for estimates of peer distribution and network interconnectedness; generate plots.")
 
@@ -41,9 +37,12 @@ parser.add_argument('--error-refused-graph', dest='errorRefusedGraph', default='
                     help='Path to the errors and refusals graph.')
 parser.add_argument('--uptime-histogram-max', dest="uptimeHistogramMax", default=120, type=int,
                     help='Maximum percentage to include in the uptime histogram. Default 120')
-parser.add_argument('--up-to', dest='up_to', default=today,
+# Default to midnight today in the local timezone. Allow specifying date and
+# time zone.
+parser.add_argument('--up-to', dest='up_to', default='',
                     help='Analyze up to midnight on the given date. Defaults '
-                         'to today. 2013-02-27 EST is February 27th, 2013 EST.')
+                         'to today. 2013-02-27 is February 27th, '
+                         '2013. The time zone used is the local one.')
 
 parser.add_argument('--output-dir', dest='outputDir', default='output',
                     help='Path to output directory.')
@@ -97,7 +96,7 @@ def log(msg):
 # This allows times other than the current one.
 # If a time period for RRD includes this start time it is considered
 # incomplete and not computed.
-startTime = datetime.datetime.strptime(args.up_to, '%Y-%m-%d %Z')
+startTime = get_midnight(args.up_to)
 recent = startTime - datetime.timedelta(hours=args.recentHours)
 log("Recency boundary is {0} ({1}).".format(recent, toPosix(recent)))
 
@@ -200,7 +199,7 @@ if args.runRRD:
     # If the database is new rrdtool last returns the database start time.
     #
     last = rrdtool.last(args.rrd)
-    fromTime = datetime.datetime.utcfromtimestamp(int(last))
+    fromTime = fromPosix(int(last))
     toTime = fromTime + shortPeriod
     log("Resuming network size computation for {0}.".format(toTime))
 
