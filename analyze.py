@@ -167,8 +167,12 @@ except IOError:
 
     toTime = fromTime + shortPeriod
     shortPeriodSeconds = int(totalSeconds(shortPeriod))
+
+    # Start at the beginning of an hour.
     rrdStart = fromTime - datetime.timedelta(seconds=1)
+    rrdStart = rrdStart.replace(minute=0, second=0, microsecond=0)
     rrdPOSIXStart = str(toPosix(rrdStart))
+
     log("Creating round robin network size database starting %s. (POSIX %s)"
         % (rrdStart, rrdPOSIXStart))
 
