@@ -82,6 +82,11 @@ class Database:
         self.add = psycopg2.connect(user=auth['add_user'],
                                     password=auth['add_pass'], **config)
 
+        # Prevent the read connection from holding open a transaction for
+        # long. Another option would be to manually commit after each group
+        # of queries.
+        self.read.autocommit = True
+
         cur = self.maintenance.cursor()
         try:
             cur.execute("""
