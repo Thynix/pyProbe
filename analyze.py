@@ -98,7 +98,7 @@ def log(msg):
 # incomplete and not computed.
 startTime = get_midnight(args.up_to)
 recent = startTime - datetime.timedelta(hours=args.recentHours)
-log("Recency boundary is {0} ({1}).".format(recent, toPosix(recent)))
+log("Analyzing up to %s. Recency boundary is %s." % (startTime, recent))
 
 log("Connecting to database.")
 db = Database(config)
@@ -167,7 +167,10 @@ except IOError:
 
     toTime = fromTime + shortPeriod
     shortPeriodSeconds = int(totalSeconds(shortPeriod))
-    log("Creating round robin network size database.")
+    rrdStart = fromTime - datetime.timedelta(seconds=1)
+    rrdPOSIXStart = str(toPosix(rrdStart))
+    log("Creating round robin network size database starting %s. (POSIX %s)"
+        % (rrdStart, rrdPOSIXStart))
 
     # Generate list of data sources to reduce repetition. All sources contain only values greater than zero.
     datasources = [ 'DS:{0}:GAUGE:{1}:0:U'.format(name, shortPeriodSeconds) for name in
@@ -181,7 +184,7 @@ except IOError:
     rrdtool.create( args.rrd,
                 # If the database already exists don't overwrite it.
                 '--no-overwrite',
-                '--start', str(toPosix(toTime) - 1),
+                '--start', rrdPOSIXStart,
                 # Once each hour.
                 '--step', '{0}'.format(shortPeriodSeconds),
                 # Lossless for a year of instantaneous; longer for effective estimate. No unknowns allowed.
@@ -201,7 +204,7 @@ if args.runRRD:
     last = rrdtool.last(args.rrd)
     fromTime = fromPosix(int(last))
     toTime = fromTime + shortPeriod
-    log("Resuming network size computation for {0}.".format(toTime))
+    log("Resuming network size computation for %s to %s." % (fromTime, toTime))
 
     def formula(samples, networkSize):
         return networkSize * (1 - math.e**(-samples/networkSize))
@@ -241,7 +244,8 @@ if args.runRRD:
                 # current == distinctSamples:
                 return mid
 
-    log("Computing network plot data. In-progress segment is {0}. ({1})".format(startTime, toPosix(startTime)))
+    log("Computing network plot data. In-progress segment is %s. (POSIX %s)" %
+        (startTime, toPosix(startTime)))
 
     #
     # Perform binary search for network size in:
@@ -258,12 +262,15 @@ if args.runRRD:
         # Start of previous effective size estimate period.
         fromTimeEffectivePrevious = toTime - 2*longPeriod
 
+        log("Computing %s to %s." % (fromTime, toTime))
+
         weekEffectiveResult = db.intersect_identifier(fromTimeEffectivePrevious, fromTimeEffective, toTime)
 
         effectiveSize = binarySearch(weekEffectiveResult[0], weekEffectiveResult[1])
 
-        log("{0}: {1} samples | {2} distinct samples | {3} estimated weekly effective size"
-               .format(toTime, weekEffectiveResult[1], weekEffectiveResult[0], effectiveSize))
+        log("%s samples | %s distinct samples | %s estimated weekly effective"
+            " size" % (weekEffectiveResult[1], weekEffectiveResult[0],
+                       effectiveSize))
 
         # Start of current daily effective size estimate period.
         fromTimeDaily = toTime - mediumPeriod
@@ -274,14 +281,16 @@ if args.runRRD:
 
         dailySize = binarySearch(dailyEffectiveResult[0], dailyEffectiveResult[1])
 
-        log("{0}: {1} samples | {2} distinct samples | {3} estimated daily effective size"
-               .format(toTime, dailyEffectiveResult[1], dailyEffectiveResult[0], dailySize))
+        log("%s samples | %s distinct samples | %s estimated daily effective "
+            "size" % (dailyEffectiveResult[1], dailyEffectiveResult[0],
+                      dailySize))
 
         instantaneousResult = db.span_identifier(fromTime, toTime)
 
         instantaneousSize = binarySearch(instantaneousResult[0], instantaneousResult[1])
-        log("{0}: {1} samples | {2} distinct samples | {3} estimated instantaneous size"
-               .format(toTime, instantaneousResult[1], instantaneousResult[0], instantaneousSize))
+        log("%s samples | %s distinct samples | %s estimated instantaneous "
+            "size" % (instantaneousResult[1], instantaneousResult[0],
+                      instantaneousSize))
 
         # Past week of datastore sizes.
         sizeResult = db.span_store_size(fromTimeEffective, toTime)
