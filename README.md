@@ -70,7 +70,7 @@ And in `pg_hba.conf`:
     local   probe-results   pyprobe-add                             peer map=pyprobe
     local   probe-results   pyprobe-read                            peer map=pyprobe
 
-Then reload the PostgreSQL configuration. If migrating from from the sqlite version of pyProbe, run `python fnprobe/migrate_from_sqlite.py`. If importing the database dumps, run `python fnprobe/copy_from.py`. Create `probe.config` from the sample to do probe collection, and `upload.config` from the sample to upload a site from the analysis scripts. Now probe collection and analysis can begin!
+Then reload the PostgreSQL configuration. If migrating from from the sqlite version of pyProbe, run `python fnprobe/migrate_from_sqlite.py`. If importing the database dumps, run `python fnprobe/copy_from.py`. Create `probe.config` from the sample to do probe collection, and `upload.config` from the sample to upload a site from the analysis scripts, and `database.config` for either. Now probe collection and analysis can begin!
 
 ## Usage
 
