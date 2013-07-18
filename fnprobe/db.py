@@ -462,8 +462,7 @@ class Database:
             earliest = cur.fetchone()[0]
             if overall_earliest is None:
                 overall_earliest = earliest
-            elif earliest < overall_earliest:
-                print(table) # TODO: debugging
+            elif earliest is not None and earliest < overall_earliest:
                 overall_earliest = earliest
 
         return overall_earliest
