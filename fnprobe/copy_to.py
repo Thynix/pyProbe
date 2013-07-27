@@ -19,8 +19,8 @@ parser.add_argument('--suffix', dest='suffix', default='week',
                          'to week. An example filename is '
                          '2013-02-27-bandwidth-week.sql')
 parser.add_argument('--output-dir', dest='out_dir',
-                    default='dumps/',
-                    help='Directory to dump into. Defaults to the "dumps/"')
+                    default='dumps',
+                    help='Directory to dump into. Defaults to the "dumps"')
 args = parser.parse_args()
 
 try:
