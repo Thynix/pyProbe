@@ -4,7 +4,7 @@ import datetime
 from sys import exit, stderr
 import os
 import update_db
-from time import get_midnight
+from time_utils import get_midnight
 
 parser = argparse.ArgumentParser(description='Dumps spans of time from each '
                                              'table.')

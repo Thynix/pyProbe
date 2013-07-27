@@ -12,7 +12,7 @@ import os
 import markdown
 import logging
 import codecs
-from fnprobe.time import toPosix, fromPosix, get_midnight, totalSeconds
+from fnprobe.time_utils import toPosix, fromPosix, get_midnight, totalSeconds
 from fnprobe.gnuplots import plot_link_length, plot_location_dist, plot_peer_count, plot_bulk_reject, reject_types, plot_uptime
 from fnprobe.db import Database, errorTypes
 
