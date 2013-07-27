@@ -127,7 +127,7 @@ def plot_peer_count(counts, histMax, width=default_width,
     g('set style fill solid border -1')
 
     # Could mean missing the details of things beyond the bounds.
-    g.set(xrange='[1:50]')
+    g.set(xrange='[1:%s]' % histMax)
     g.set(yrange='[0:]')
     g('set xtics 5')
 
