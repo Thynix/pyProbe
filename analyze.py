@@ -21,10 +21,16 @@ parser = argparse.ArgumentParser(description="Analyze probe results for estimate
 # Options.
 parser.add_argument('-d', dest="databaseFile", default="database.sql",
                     help="Path to database file. Default \"database.sql\"")
-parser.add_argument('-T', '--recentHours', dest="recentHours", default=168, type=int,
-                    help="Number of hours for which a probe is considered recent. Used for peer count histogram and link lengths. Default 168 - one week.")
-parser.add_argument('--histogram-max', dest="histogramMax", default=50, type=int,
-                    help="Maximum number of peers to consider for histogram generation; anything more than that is included in the maximum. Default 50.")
+parser.add_argument('-T', '--recentHours', dest="recentHours", default=24,
+                    type=int,
+                    help="Number of hours for which a probe is considered "
+                         "recent. Used for peer count histogram and link "
+                         "lengths. Default 24.")
+parser.add_argument('--histogram-max', dest="histogramMax", default=110,
+                    type=int,
+                    help="Maximum number of peers to consider for histogram "
+                         "generation; anything more than that is included in "
+                         "the maximum. Default 110.")
 parser.add_argument('-q', dest='quiet', default=False, action='store_true',
                     help='Do not print status updates.')
 parser.add_argument('--round-robin', dest='rrd', default='size.rrd',

@@ -103,6 +103,8 @@ Can perform analysis of gathered probe data:
 * Uptime distribution (using that included with `identifier`)
 * Bulk reject percentage distribution
 
+The time spans used are manually specified (with defaults) but might be better as a function of probe rate and type distribution for more consistent results at the cost of more unusual time spans.
+
 For documentation on using it run `analyze` with `--help`.
 
 ## Database Schema
