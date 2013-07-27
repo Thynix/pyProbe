@@ -413,7 +413,7 @@ class Database:
     def list_tables(self, cur=None):
         """
         Return a list of the names of public tables in the database (excluding
-        "meta") in ascending alphabetical order.
+        "meta") in order usable for importing dumps.
 
         Can take a cursor to use, but defaults to read.
         """
@@ -433,8 +433,20 @@ class Database:
           table_name
         """)
 
-        # Each element will be a singleton tuple, but we want just a string.
-        return [x[0] for x in cur.fetchall()]
+        # Each element will be a singleton tuple.
+        tables = [x[0] for x in cur.fetchall()]
+
+        # peer_count comes after link_lengths alphabetically, but link_lengths
+        # REFERENCES peer_count, so peer_count must come first when importing.
+        peer_count_index = tables.index('peer_count')
+        link_lengths_index = tables.index('link_lengths')
+
+        assert peer_count_index > link_lengths_index
+
+        tables[peer_count_index], tables[link_lengths_index] = \
+            tables[link_lengths_index], tables[peer_count_index]
+
+        return tables
 
     def upgrade(self, version, config):
         # The user names (in config) will be needed to modify permissions as
