@@ -7,6 +7,8 @@ import logging
 default_width = 900
 default_height = 600
 
+# TODO: Is this an appropriate place for such a list? Maybe fnprobe.db would
+# be better?
 reject_types = [ "bulk_request_chk",
                  "bulk_request_ssk",
                  "bulk_insert_chk",
@@ -71,6 +73,23 @@ def g_init(width, height, filename):
     return g
 
 
+def add_sample_size_label(g, size):
+    g('set label "N = {0:n}" at graph 0.5, 0.9 center'.format(size))
+
+
+def get_total_occurrences(in_list):
+    """
+    Return total occurrences. Same input as makePercentageHistogram().
+    """
+    total = 0
+
+    # TODO: Is there a one-liner for this?
+    for _, occurrences in in_list:
+        total += occurrences
+
+    return total
+
+
 def plot_link_length(lengths, width=default_width, height=default_height,
                      filename=None):
     if len(lengths) is 0:
@@ -83,6 +102,7 @@ def plot_link_length(lengths, width=default_width, height=default_height,
     g.title('Link Length Distribution')
     g.xlabel('Link Length (delta location)')
     g.ylabel('Percent links with this length or less')
+    add_sample_size_label(g, len(lengths))
 
     g('set logscale x')
     # As location is circular and [0,1), largest difference is 0.5.
@@ -103,6 +123,7 @@ def plot_location_dist(locations, width=default_width, height=default_height,
     g.title('Location Distribution')
     g.xlabel('Location')
     g.ylabel('Percent nodes with this location or less')
+    add_sample_size_label(g, len(locations))
 
     g.set(xrange='[0:1.0]')
     g.set(yrange='[0:100]')
@@ -122,6 +143,8 @@ def plot_peer_count(counts, histMax, width=default_width,
     g.title('Peer Count Distribution')
     g.xlabel('Reported Peers')
     g.ylabel('Percent of Reports')
+    # TODO: Histogram-ness? Count total occurences.
+    add_sample_size_label(g, get_total_occurrences(counts))
 
     g('set style data histogram')
     g('set style fill solid border -1')
@@ -135,6 +158,26 @@ def plot_peer_count(counts, histMax, width=default_width,
 
 def plot_bulk_reject(counts, width=default_width, height=default_height,
                      filename=None):
+    g = g_init(width, height, filename)
+
+    g.title('Reject Distribution')
+    g.xlabel('Reported reject percentage')
+    g.ylabel('Percent reports')
+
+    # counts is a list of (value, occurrences) keyed by queue type. Any
+    # sample from any of the queue types could be omitted as "no data",
+    # so the actual sample size is not available from here. Use
+    # whichever happened to have the least "no data".
+    add_sample_size_label(g,
+                          max([get_total_occurrences(x)
+                               for x in counts.itervalues()]))
+
+    g('set style data histogram')
+    g('set logscale x')
+
+    g.set(xrange='[1:100]')
+    g.set(yrange='[0:]')
+
     assert len(counts) > 0
     for item in counts.items():
         key = item[0]
@@ -143,18 +186,6 @@ def plot_bulk_reject(counts, width=default_width, height=default_height,
             counts[key] = [[0, 0]]
 
         counts[key] = makePercentageHistogram(100, item[1])
-
-    g = g_init(width, height, filename)
-
-    g.title('Reject Distribution')
-    g.xlabel('Reported reject percentage')
-    g.ylabel('Percent reports')
-
-    g('set style data histogram')
-    g('set logscale x')
-
-    g.set(xrange='[1:100]')
-    g.set(yrange='[0:]')
 
     # Title of each is the database table name, which is the map key.
     g.plot(*[Gnuplot.Data(item[1], title=item[0], with_='lines') for item in counts.iteritems()])
@@ -171,6 +202,7 @@ def plot_uptime(uptimes, histMax, width=default_width, height=default_height,
     g.title('Uptime Distribution')
     g.xlabel('Reported 7-day uptime percentage')
     g.ylabel('Percent reports')
+    add_sample_size_label(g, get_total_occurrences(uptimes))
 
     g('set style data histogram')
     g('set style fill solid border -1')

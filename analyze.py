@@ -15,6 +15,7 @@ import codecs
 from fnprobe.time_utils import toPosix, fromPosix, get_midnight, totalSeconds
 from fnprobe.gnuplots import plot_link_length, plot_location_dist, plot_peer_count, plot_bulk_reject, reject_types, plot_uptime
 from fnprobe.db import Database, errorTypes
+import locale
 
 parser = argparse.ArgumentParser(description="Analyze probe results for estimates of peer distribution and network interconnectedness; generate plots.")
 
@@ -92,6 +93,9 @@ args = parser.parse_args()
 parser = SafeConfigParser()
 parser.read("database.config")
 config = parser.defaults()
+
+# Set default locale for number formatting.
+locale.setlocale(locale.LC_ALL, '')
 
 def log(msg):
     if not args.quiet:
