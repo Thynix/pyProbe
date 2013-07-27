@@ -40,7 +40,7 @@ database = update_db.main()
 cur = database.read.cursor()
 
 for table in database.table_names:
-    filename = '{0}/{1}-{2}-{3}.sql'.format(args.out_dir, args.up_to, table,
+    filename = '{0}/{1}-{2}-{3}.sql'.format(args.out_dir, up_to_date, table,
                                             args.suffix)
     print("Copying '{0}' to '{1}'.".format(table, filename), file=stderr)
 
