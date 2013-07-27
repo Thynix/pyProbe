@@ -311,11 +311,11 @@ if args.runRRD:
 
         refused = db.span_refused(fromTime, toTime)
 
-        # Get numbers of each error type.
-        errors = []
-        for errorType in errorTypes:
-            errors.append(db.span_error_count(errorType.index, fromTime,
-                                              toTime))
+        # Get numbers of each error type. An error type with zero count does
+        # not return a row, so list entries must be made manually.
+        errors = [0] * len(errorTypes)
+        for index, count in db.span_error_count(fromTime, toTime):
+            errors[index] = count
 
         # RRDTool format string to explicitly specify the order of the data sources.
         # The first one is implicitly the time of the sample.

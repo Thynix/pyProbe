@@ -547,20 +547,23 @@ class Database:
             """, (start, end))
         return cur.fetchone()[0]
 
-    def span_error_count(self, errorType, start, end):
-        """Return the number of errors of the given type in the time span."""
+    def span_error_count(self, start, end):
+        """
+        Return a list of tuples of the error type and the number of errors in
+        the time span.
+        """
         cur = self.read.cursor()
         cur.execute("""
             SELECT
-              count(*)
+              error_type, count(*)
             FROM
               "error"
             WHERE
-              "error_type" = %(errorType)s AND
               "time" BETWEEN %(start)s AND %(end)s
-            """, {'errorType': errorType, 'start': start,
-                  'end': end})
-        return cur.fetchone()[0]
+            GROUP BY
+              "error_type"
+            """, {'start': start, 'end': end})
+        return cur.fetchall()
 
     def span_locations(self, start, end):
         """Return the distinct locations seen over the given time span."""
