@@ -255,7 +255,7 @@ if args.runRRD:
     # the period of the same length farther back.
     # ----Instantaneous size estimate:
     # Identifiers that appear in the current short time period in the past.
-    while startTime > toTime:
+    while startTime >= toTime:
 
         # Start of current effective size estimate period.
         fromTimeEffective = toTime - longPeriod
