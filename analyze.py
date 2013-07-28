@@ -4,6 +4,7 @@ import datetime
 import rrdtool
 import math
 from ConfigParser import SafeConfigParser
+from psycopg2.tz import LocalTimezone
 from twistedfcp.protocol import FreenetClientProtocol, Message
 from twisted.internet import reactor, protocol
 import sys
@@ -12,7 +13,8 @@ import os
 import markdown
 import logging
 import codecs
-from fnprobe.time_utils import toPosix, fromPosix, get_midnight, totalSeconds
+from fnprobe.time_utils import toPosix, fromPosix, get_midnight, totalSeconds,\
+    clamp_to_hour
 from fnprobe.gnuplots import plot_link_length, plot_location_dist, plot_peer_count, plot_bulk_reject, reject_types, plot_uptime
 from fnprobe.db import Database, errorTypes
 import locale
@@ -51,6 +53,9 @@ parser.add_argument('--up-to', dest='up_to', default='',
                     help='Analyze up to midnight on the given date. Defaults '
                          'to today. 2013-02-27 is February 27th, '
                          '2013. The time zone used is the local one.')
+parser.add_argument('--hourly', dest='hourly', action='store_true',
+                    help='Analyze up to the start of the current hour instead'
+                         ' of midnight.')
 
 parser.add_argument('--output-dir', dest='outputDir', default='output',
                     help='Path to output directory.')
@@ -107,7 +112,11 @@ def log(msg):
 # This allows times other than the current one.
 # If a time period for RRD includes this start time it is considered
 # incomplete and not computed.
-startTime = get_midnight(args.up_to)
+if args.hourly:
+    startTime = clamp_to_hour(datetime.datetime.now(LocalTimezone()))
+else:
+    startTime = get_midnight(args.up_to)
+
 recent = startTime - datetime.timedelta(hours=args.recentHours)
 log("Analyzing up to %s. Recency boundary is %s." % (startTime, recent))
 
@@ -176,8 +185,7 @@ except IOError:
     shortPeriodSeconds = int(totalSeconds(shortPeriod))
 
     # Start at the beginning of an hour.
-    rrdStart = fromTime - datetime.timedelta(seconds=1)
-    rrdStart = rrdStart.replace(minute=0, second=0, microsecond=0)
+    rrdStart = clamp_to_hour(fromTime - datetime.timedelta(seconds=1))
     rrdPOSIXStart = str(toPosix(rrdStart))
 
     log("Creating round robin network size database starting %s. (POSIX %s)"

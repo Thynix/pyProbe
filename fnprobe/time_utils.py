@@ -19,6 +19,13 @@ def fromPosix(posix):
     return datetime.fromtimestamp(posix, LocalTimezone())
 
 
+def clamp_to_hour(timestamp):
+    """
+    Return the datetime set to the start of the hour.
+    """
+    return timestamp.replace(minute=0, second=0, microsecond=0)
+
+
 def get_midnight(iso_date=''):
     """
     Return a timezone-aware datetime for midnight on the given date in ISO
