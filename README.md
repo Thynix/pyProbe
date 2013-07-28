@@ -16,12 +16,13 @@ pyProbe is a collection of data gathering and analysis tools for [Freenet](https
 * [enum](http://pypi.python.org/pypi/enum/0.4.4)
 * [postgresql](http://www.postgresql.org/)
 * [psycopg](http://initd.org/psycopg/)
+* [numpy](http://scipy.org/)
 
 ## Installation
 
 Freenet, Python, gnuplot, rrdtool, Twisted, and Markdown all have installation instructions on their respective sites.
 
-`pip install markdown enum gnuplot-py psycopg2`
+`pip install markdown enum gnuplot-py psycopg2 numpy`
 
 ### argparse
 

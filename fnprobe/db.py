@@ -1,6 +1,7 @@
 import logging
 from enum import Enum
 import psycopg2
+from numpy import median, mean, percentile
 
 # Current mapping between probe and error types. Used for storage (probe) and
 # analysis. (analyze)
@@ -520,19 +521,23 @@ class Database:
 
     def span_store_size(self, start, end):
         """
-        Return a tuple of the sum of reported store sizes and the number of
-        reports in the given time span.
+        Return mean store size (after excluding outliers) in the given time
+        span.
         """
         cur = self.read.cursor()
         cur.execute("""
             SELECT
-              sum("gib"), count("gib")
+              "gib"
             FROM
               "store_size"
             WHERE
               "time" BETWEEN %s AND %s
             """, (start, end))
-        return cur.fetchone()
+
+        # Each result is a singleton tuple. Unpack before analysis.
+        sizes = exclude_outliers([x[0] for x in cur.fetchall()])
+
+        return mean(sizes)
 
     def span_refused(self, start, end):
         """Return the number of refused probes in the given time span."""
@@ -644,3 +649,25 @@ class Database:
             ORDER BY {0}
             """.format(queue_type), (start, end))
         return cur.fetchall()
+
+
+def exclude_outliers(array):
+    """
+    Return a copy of array with values farther than 1.5 * interquartile range
+    from the median excluded.
+    """
+    # Nothing to exclude from an empty array.
+    if not array:
+        return array
+
+    q1 = percentile(array, 25)
+    q3 = percentile(array, 75)
+    med = median(array)
+
+    # Outliers are 1.5 * interquartile range from the median.
+    outlier_range = 1.5 * (q3 - q1)
+
+    lower_bound = med - outlier_range
+    upper_bound = med + outlier_range
+
+    return filter(lambda x: lower_bound < x < upper_bound, array)

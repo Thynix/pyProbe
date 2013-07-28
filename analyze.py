@@ -38,8 +38,9 @@ parser.add_argument('--round-robin', dest='rrd', default='size.rrd',
                     help='Path to round robin network and store size database file.')
 parser.add_argument('--size-graph', dest='sizeGraph', default='plot_network_size.png',
                     help='Path to the network size graph.')
-parser.add_argument('--store-graph', dest='storeGraph', default='plot_store_capacity.png',
-                    help='Path to the store capacity graph.')
+parser.add_argument('--store-graph', dest='storeGraph',
+                    default='plot_datastore.png',
+                    help='Path to the datastore size graph.')
 parser.add_argument('--error-refused-graph', dest='errorRefusedGraph', default='plot_error_refused.png',
                     help='Path to the errors and refusals graph.')
 parser.add_argument('--uptime-histogram-max', dest="uptimeHistogramMax", default=120, type=int,
@@ -303,15 +304,10 @@ if args.runRRD:
                       instantaneousSize))
 
         # Past week of datastore sizes.
-        sizeResult = db.span_store_size(fromTimeEffective, toTime)
+        meanDatastoreSize = db.span_store_size(fromTimeEffective, toTime)
 
-        storeCapacity = float('nan')
-        if sizeResult[1] != 0:
-            meanDatastoreSize = sizeResult[0] / sizeResult[1]
-            # Half of datastore is store; blocks are doubled for FEC, then each
-            # stored ~3 times for redundancy. 1073741824 bytes per GiB, 1/12 of
-            # datastore size is store capacity.
-            storeCapacity = meanDatastoreSize * effectiveSize * 1073741824 / 12
+        # 1073741824 bytes per GiB,
+        estimatedDatastore = meanDatastoreSize * effectiveSize * 1073741824
 
         refused = db.span_refused(fromTime, toTime)
 
@@ -325,7 +321,7 @@ if args.runRRD:
         # The first one is implicitly the time of the sample.
         rrdtool.update( args.rrd,
             '-t', 'instantaneous-size:daily-size:effective-size:store-capacity:refused:' + join(errorDataSources, ':'),
-                join(map(str, [ toPosix(toTime), instantaneousSize, dailySize, effectiveSize, storeCapacity, refused ] + errors), ':'))
+                join(map(str, [ toPosix(toTime), instantaneousSize, dailySize, effectiveSize, estimatedDatastore, refused ] + errors), ':'))
 
         fromTime = toTime
         toTime = fromTime + shortPeriod

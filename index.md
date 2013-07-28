@@ -19,19 +19,19 @@ Freenet Statistics
 
 <a href="year_1200x400_plot_network_size.png"><img src="year_900x300_plot_network_size.png" alt="Plot of all available network size estimates" title="All available data" width="900" height="300"/></a>
 
-## Store Capacity
+## Datastore Size
 
 ### Past Week
 
-<a href="week_1200x400_plot_store_capacity.png"><img src="week_900x300_plot_store_capacity.png" alt="Plot of the last 7 days of store capacity data" title="Last 7 days" width="900" height="300"/></a>
+<a href="week_1200x400_plot_datastore.png"><img src="week_900x300_plot_datastore.png" alt="Plot of the past 7 days of datastore size estimates" title="Past 7 days" width="900" height="300"/></a>
 
 ### Past Month
 
-<a href="month_1200x400_plot_store_capacity.png"><img src="month_900x300_plot_store_capacity.png" alt="Plot of the last 30 days of store capacity data" title="Last 30 days" width="900" height="300"/></a>
+<a href="month_1200x400_plot_datastore.png"><img src="month_900x300_plot_datastore.png" alt="Plot of the past 30 days of datastore size estimates" title="Past 30 days" width="900" height="300"/></a>
 
 ### Past Year
 
-<a href="year_1200x400_plot_store_capacity.png"><img src="year_900x300_plot_store_capacity.png" alt="Plot of all available store capacity data" title="All available data" width="900" height="300"/></a>
+<a href="year_1200x400_plot_datastore.png"><img src="year_900x300_plot_datastore.png" alt="Plot of the past year of datastore size estimates" title="Past year" width="900" height="300"/></a>
 
 ## Errors and Refused
 
@@ -71,7 +71,7 @@ The network size is estimated by gathering identifier probe results, and compari
 
 Nodes still contribute to the network if they are online regularly - they need not be online all the time. The effective network size attempts to account for this by using the same estimation technique as the instantaneous size, but with only those identifiers which were seen both in the past period of time and the one before that. This is problematic: one cannot depend on a response from a node during a time period even if it is online. A more accurate estimate could involve the included uptime percentage.
 
-Datastore size probe results return the approximate amount of disk space a node has reserved to store data for the network. Taking the mean of these values and multiplying by the (weekly) effective network size gives an estimate of the total amount of disk space used for datastores throughout the entire network. Half of the datastore on each node is used for caching; half for longer-term storage. When blocks are inserted into Freenet an error correction (FEC) block is added for each one to allow reconstructing the data without being able to fetch every single block. In addition, every block, including error correction, is stored multiple - often three - times. This means that the usable storage capacity on Freenet is approximately 1/12th of the total dedicated disk space.
+Datastore size probe results return the approximate amount of disk space a node has reserved to store data for the network. After excluding outliers, taking the mean of these values and multiplying by the (weekly) effective network size gives an estimate of the total amount of disk space used for datastores throughout the entire network. Without outliers excluded extreme values lead to sudden jumps in the estimate.
 
 Refused responses mean that a node opted not to respond with the requested information.
 
