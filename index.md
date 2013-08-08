@@ -159,4 +159,4 @@ Initial release.
 * A download of the network and usable store size estimate RRD.
 * Plots of the past 7 days of link length and peer count distribution.
 
-_Generated [GENERATED-DATE] by [operhiem1](/USK@pxtehd-TmfJwyNUAW2Clk4pwv7Nshyg21NNfXcqzFv4,LTjcTWqvsq3ju6pMGe9Cqb3scvQgECG81hRdgj5WO4s,AQACAAE/blog/17/) using pyProbe. Web mirror is [here](http://asksteved.com/stats/). The RRD is [here](size.xml). The source code is in [this Infocalypse repository](/USK@pxtehd-TmfJwyNUAW2Clk4pwv7Nshyg21NNfXcqzFv4,LTjcTWqvsq3ju6pMGe9Cqb3scvQgECG81hRdgj5WO4s,AQACAAE/pyProbe.R1/10), or on [GitHub](https://github.com/thynix/pyProbe/)._
+_Generated [GENERATED-DATE] by [operhiem1](/USK@pxtehd-TmfJwyNUAW2Clk4pwv7Nshyg21NNfXcqzFv4,LTjcTWqvsq3ju6pMGe9Cqb3scvQgECG81hRdgj5WO4s,AQACAAE/blog/18/) using pyProbe. Web mirror is [here](http://asksteved.com/stats/). The RRD is [here](size.xml). The source code is in [this Infocalypse repository](/USK@pxtehd-TmfJwyNUAW2Clk4pwv7Nshyg21NNfXcqzFv4,LTjcTWqvsq3ju6pMGe9Cqb3scvQgECG81hRdgj5WO4s,AQACAAE/pyProbe.R1/11), or on [GitHub](https://github.com/thynix/pyProbe/)._
