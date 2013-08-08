@@ -40,7 +40,7 @@ parser.add_argument('--round-robin', dest='rrd', default='size.rrd',
                     help='Path to round robin network and store size database file.')
 parser.add_argument('--size-graph', dest='sizeGraph', default='plot_network_size.png',
                     help='Path to the network size graph.')
-parser.add_argument('--store-graph', dest='storeGraph',
+parser.add_argument('--datastore-graph', dest='datastoreGraph',
                     default='plot_datastore.png',
                     help='Path to the datastore size graph.')
 parser.add_argument('--error-refused-graph', dest='errorRefusedGraph', default='plot_error_refused.png',
@@ -195,7 +195,7 @@ except IOError:
     datasources = [ 'DS:{0}:GAUGE:{1}:0:U'.format(name, shortPeriodSeconds) for name in
                     [   'instantaneous-size',   # Size estimated over a shortPeriod.
                         'effective-size',       # Effective size estimated over a longPeriod.
-                        'store-capacity',       # Usable store capacity. In bytes so RRDTool can use prefixes.
+                        'datastore-capacity',   # Usable datastore capacity. In bytes so RRDTool can use prefixes.
                         'daily-size',           # Effective size estimated over the past 2 days.
                         'refused'               # Refused, for all probe types.
                     ] + errorDataSources ]
@@ -328,7 +328,7 @@ if args.runRRD:
         # RRDTool format string to explicitly specify the order of the data sources.
         # The first one is implicitly the time of the sample.
         rrdtool.update( args.rrd,
-            '-t', 'instantaneous-size:daily-size:effective-size:store-capacity:refused:' + join(errorDataSources, ':'),
+            '-t', 'instantaneous-size:daily-size:effective-size:datastore-capacity:refused:' + join(errorDataSources, ':'),
                 join(map(str, [ toPosix(toTime), instantaneousSize, dailySize, effectiveSize, estimatedDatastore, refused ] + errors), ':'))
 
         fromTime = toTime
@@ -391,12 +391,12 @@ if args.runRRD:
                             '--height', str(dimension[1])
                          )
 
-            rrdtool.graph(args.outputDir + '/{0}_{1}x{2}_{3}'.format(period[0], dimension[0], dimension[1], args.storeGraph),
+            rrdtool.graph(args.outputDir + '/{0}_{1}x{2}_{3}'.format(period[0], dimension[0], dimension[1], args.datastoreGraph),
                             '--start', str(period[1]),
                             '--end', str(lastResult),
-                            'DEF:store-capacity={0}:store-capacity:AVERAGE:step={1}'.format(args.rrd, int(totalSeconds(shortPeriod))),
-                            'AREA:store-capacity#0000FF',
-                            '-v', 'Store Capacity',
+                            'DEF:datastore-capacity={0}:datastore-capacity:AVERAGE:step={1}'.format(args.rrd, int(totalSeconds(shortPeriod))),
+                            'AREA:datastore-capacity#0000FF',
+                            '-v', 'Datastore Capacity',
                             '--right-axis', '1:0',
                             '--full-size-mode',
                             '--width', str(dimension[0]),
