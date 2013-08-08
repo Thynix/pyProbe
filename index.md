@@ -90,6 +90,12 @@ The bulk queue (therefore not realtime queue) reject percentages are an indicato
 
 ## Changelog
 
+### August 8th, 2013
+
+Port backend to PostgreSQL and bring the site back online after integrating backlog from the SQLite version. Thanks to RhodiumToad for extensive help! Add sample size label to plots. The bulk reject sample size is likely to be around 2% low. (Only the number of results with data for each type, not the number of results in all, is currently visible from the plotting layer.) Reduce non-RRD plot time span to a day - the probe rate is high enough that it's enough information. Estimate disk space dedicated to datastore instead of store capacity. This excludes outliers, so a plot showing the distribution of those outliers would be useful, but that's not yet implemented.
+
+The SQLite backend had serious problems around May 10th or 20th and stopped storing results or answering queries. I think this was my fault in mangling the database file, but there were enough other annoyances with SQLite being untyped and increasingly slow that moving still seemed worthwhile.
+
 ### May 9th, 2013
 
 Fix typos.
