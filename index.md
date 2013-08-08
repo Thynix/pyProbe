@@ -71,7 +71,7 @@ The network size is estimated by gathering identifier probe results, and compari
 
 Nodes still contribute to the network if they are online regularly - they need not be online all the time. The effective network size attempts to account for this by using the same estimation technique as the instantaneous size, but with only those identifiers which were seen both in the past period of time and the one before that. This is problematic: one cannot depend on a response from a node during a time period even if it is online. A more accurate estimate could involve the included uptime percentage.
 
-Datastore size probe results return the approximate amount of disk space a node has reserved to store data for the network. After excluding outliers, taking the mean of these values and multiplying by the (weekly) effective network size gives an estimate of the total amount of disk space used for datastores throughout the entire network. Without outliers excluded extreme values lead to sudden jumps in the estimate.
+Datastore size probe results return the approximate amount of disk space a node has reserved to store data for the network. After excluding outliers, taking the mean and multiplying by the (weekly) effective network size gives an estimate of the total amount of disk space used for datastores throughout the entire network. Without outliers excluded (seemingly impossibly) extreme values lead to sudden jumps in the estimate. Note that due to block storage redundancy the usable storage capacity is less, but how much less uses guesswork, so this is easier to estimate. It might be on the order of 1/12.
 
 Refused responses mean that a node opted not to respond with the requested information.
 
