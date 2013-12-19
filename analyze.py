@@ -22,8 +22,6 @@ import locale
 parser = argparse.ArgumentParser(description="Analyze probe results for estimates of peer distribution and network interconnectedness; generate plots.")
 
 # Options.
-parser.add_argument('-d', dest="databaseFile", default="database.sql",
-                    help="Path to database file. Default \"database.sql\"")
 parser.add_argument('-T', '--recentHours', dest="recentHours", default=24,
                     type=int,
                     help="Number of hours for which a probe is considered "

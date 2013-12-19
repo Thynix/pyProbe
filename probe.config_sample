@@ -40,11 +40,6 @@ probeRate=150
 timeout=110
 
 #
-# Database location.
-#
-databaseFile=database.sql
-
-#
 # Seconds to wait to acquire a database lock.
 #
 databaseTimeout=60
