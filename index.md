@@ -7,61 +7,61 @@ Freenet Statistics
 
 <!--- TODO: Vertical lines at configuration changes and build release/mandatory. -->
 
-### Past Week
+### Last Week
 
 <a href="week_1200x400_plot_network_size.png"><img src="week_900x300_plot_network_size.png" alt="Plot of the last 7 days of network size estimates" title="Last 7 days" width="900" height="300"/></a>
 
-### Past Month
+### Last Month
 
 <a href="month_1200x400_plot_network_size.png"><img src="month_900x300_plot_network_size.png" alt="Plot of the last 30 days of network size estimates" title="Last 30 days" width="900" height="300"/></a>
 
-### Past Year
+### Last Year
 
-<a href="year_1200x400_plot_network_size.png"><img src="year_900x300_plot_network_size.png" alt="Plot of all available network size estimates" title="All available data" width="900" height="300"/></a>
+<a href="year_1200x400_plot_network_size.png"><img src="year_900x300_plot_network_size.png" alt="Plot of the last year of network size estimates" title="Last year" width="900" height="300"/></a>
 
 ## Datastore Size
 
-### Past Week
+### Last Week
 
-<a href="week_1200x400_plot_datastore.png"><img src="week_900x300_plot_datastore.png" alt="Plot of the past 7 days of datastore size estimates" title="Past 7 days" width="900" height="300"/></a>
+<a href="week_1200x400_plot_datastore.png"><img src="week_900x300_plot_datastore.png" alt="Plot of the last 7 days of datastore size estimates" title="Last 7 days" width="900" height="300"/></a>
 
-### Past Month
+### Last Month
 
-<a href="month_1200x400_plot_datastore.png"><img src="month_900x300_plot_datastore.png" alt="Plot of the past 30 days of datastore size estimates" title="Past 30 days" width="900" height="300"/></a>
+<a href="month_1200x400_plot_datastore.png"><img src="month_900x300_plot_datastore.png" alt="Plot of the last 30 days of datastore size estimates" title="Last 30 days" width="900" height="300"/></a>
 
-### Past Year
+### Last Year
 
-<a href="year_1200x400_plot_datastore.png"><img src="year_900x300_plot_datastore.png" alt="Plot of the past year of datastore size estimates" title="Past year" width="900" height="300"/></a>
+<a href="year_1200x400_plot_datastore.png"><img src="year_900x300_plot_datastore.png" alt="Plot of the last year of datastore size estimates" title="Last year" width="900" height="300"/></a>
 
 ## Errors and Refused
 
-### Past Week
+### Last Week
 
-<a href="week_1200x400_plot_error_refused.png"><img src="week_900x300_plot_error_refused.png" alt="Plot of the last 7 days of store capacity data" title="Last 7 days" width="900" height="300"/></a>
+<a href="week_1200x400_plot_error_refused.png"><img src="week_900x300_plot_error_refused.png" alt="Plot of the last 7 days of errors and refusals" title="Last 7 days" width="900" height="300"/></a>
 
-### Past Month
+### Last Month
 
-<a href="month_1200x400_plot_error_refused.png"><img src="month_900x300_plot_error_refused.png" alt="Plot of the last 30 days of store capacity data" title="Last 30 days" width="900" height="300"/></a>
+<a href="month_1200x400_plot_error_refused.png"><img src="month_900x300_plot_error_refused.png" alt="Plot of the last 30 days of errors and refusals" title="Last 30 days" width="900" height="300"/></a>
 
-### Past Year
+### Last Year
 
-<a href="year_1200x400_plot_error_refused.png"><img src="year_900x300_plot_error_refused.png" alt="Plot of all available store capacity data" title="All available data" width="900" height="300"/></a>
+<a href="year_1200x400_plot_error_refused.png"><img src="year_900x300_plot_error_refused.png" alt="Plot of the last year of errors and refusals" title="Last year" width="900" height="300"/></a>
 
 ## Peer Count
 
-<img src="plot_peer_count.png" alt="Plot of the past week of peer counts" width="900" height="600"/>
+<img src="plot_peer_count.png" alt="Plot of the last week of peer counts" width="900" height="600"/>
 
 ## Link Length
 
-<img src="plot_link_length.png" alt="Plot of the past week of link length" width="900" height="600"/>
+<img src="plot_link_length.png" alt="Plot of the last week of link length" width="900" height="600"/>
 
 ## 7-Day Uptime
 
-<img src="plot_week_uptime.png" alt="Plot of the past week of 7-day uptime" width="900" height="600"/>
+<img src="plot_week_uptime.png" alt="Plot of the last week of 7-day uptime" width="900" height="600"/>
 
 ## Bulk Reject
 
-<img src="plot_week_reject.png" alt="Plot of the past week of bulk reject percentage by type" width="900" height="600"/>
+<img src="plot_week_reject.png" alt="Plot of the last week of bulk reject percentage by type" width="900" height="600"/>
 
 ## Explanation
 
@@ -69,7 +69,7 @@ These estimates are based on results gathered with the probes introduced in buil
 
 The network size is estimated by gathering identifier probe results, and comparing the number of distinct identifiers with the total number of samples. Based on the assumption that the results are from nodes selected from the entire network at random, as the probes are designed to do, this allows guessing the size the network would have to be to give that proportion. The instantaneous size estimate does this with an hour of samples, and as such estimates how many nodes are online at that moment.
 
-Nodes still contribute to the network if they are online regularly - they need not be online all the time. The effective network size attempts to account for this by using the same estimation technique as the instantaneous size, but with only those identifiers which were seen both in the past period of time and the one before that. This is problematic: one cannot depend on a response from a node during a time period even if it is online. A more accurate estimate could involve the included uptime percentage.
+Nodes still contribute to the network if they are online regularly - they need not be online all the time. The effective network size attempts to account for this by using the same estimation technique as the instantaneous size, but with only those identifiers which were seen both in the last period of time and the one before that. This is problematic: one cannot depend on a response from a node during a time period even if it is online. A more accurate estimate could involve the included uptime percentage.
 
 Datastore size probe results return the approximate amount of disk space a node has reserved to store data for the network. After excluding outliers, taking the mean and multiplying by the (weekly) effective network size gives an estimate of the total amount of disk space used for datastores throughout the entire network. Without outliers excluded (seemingly impossibly) extreme values lead to sudden jumps in the estimate. Note that due to block storage redundancy the usable storage capacity is less, but how much less uses guesswork, so this is easier to estimate. It might be on the order of 1/12.
 
@@ -84,7 +84,7 @@ Errors are:
 * Unrecognized Type: a remote node did not recognize the requested probe type.
 * Cannot Forward: a remote node understood the request but failed to forward it to another node.
 
-Link length, peer count, bulk reject percentages, and uptime are from the past day of results. All peer counts above 110 count towards 110. Reported uptime can exceed 100% due to the added random noise. Bulk reject percentages are restricted to between 0% and 100%.
+Link length, peer count, bulk reject percentages, and uptime are from the last day of results. All peer counts above 110 count towards 110. Reported uptime can exceed 100% due to the added random noise. Bulk reject percentages are restricted to between 0% and 100%.
 
 The bulk queue (therefore not realtime queue) reject percentages are an indicator of network health. My understanding is that a node will reject a request if it does not have sufficient bandwidth available to take on the commitment. This would mean that high reject percentages might indicate low bandwidth limits and problems with routing. I am currently collecting information on bandwidth limits, but I am not yet plotting that information.
 
