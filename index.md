@@ -90,6 +90,10 @@ The bulk queue (therefore not realtime queue) reject percentages are an indicato
 
 ## Changelog
 
+### December 19th, 2013
+
+Change error plot to stacked area for clearer total. Decrease HTL in an attempt to lower overload rate and get a better impression of the network.
+
 ### August 8th, 2013
 
 Port backend to PostgreSQL and bring the site back online after integrating backlog from the SQLite version. Thanks to RhodiumToad for extensive help! Add sample size label to plots. The bulk reject sample size is likely to be around 2% low. (Only the number of results with data for each type, not the number of results in all, is currently visible from the plotting layer.) Reduce non-RRD plot time span to a day - the probe rate is high enough that it's enough information. Estimate disk space dedicated to datastore instead of store capacity. This excludes outliers, so a plot showing the distribution of those outliers would be useful, but that's not yet implemented.
