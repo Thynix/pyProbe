@@ -365,7 +365,7 @@ if args.runRRD:
 
     refusedAndErrors = ['DEF:{0}={1}:{0}:AVERAGE:step={2}'.format(pair[0], args.rrd, int(totalSeconds(shortPeriod)))
                         for pair in sourcesNames]
-    refusedAndErrors += ['LINE2:{0}{1}:{2}'.format(pair[0], pair[2], pair[1])
+    refusedAndErrors += ['AREA:{0}{1}:{2}:STACK'.format(pair[0], pair[2], pair[1])
                          for pair in sourcesNames]
 
     # Year: 3600 * 24 * 365 = 31536000 seconds
