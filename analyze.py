@@ -523,9 +523,11 @@ class InsertFCPFactory(protocol.ClientFactory):
     protocol = FreenetClientProtocol
 
     def __init__(self):
+        self.Identifier = 'Statistics Page Insert {0}'.format(startTime)
+        # TODO: Why doesn't twistedfcp use a dictionary for fields?
         self.fields = [
                     ('URI', '{0}/{1}/0/'.format(privkey, path)),
-                    ('Identifier', 'Statistics Page Insert {0}'.format(startTime)),
+                    ('Identifier', self.Identifier),
                     ('MaxRetries', '-1'),
                     ('Persistence', 'reboot'),
                     ('DefaultName', 'index.html'),
@@ -572,7 +574,7 @@ class InsertFCPFactory(protocol.ClientFactory):
         self.proto.sendMessage(Message('ClientPutDiskDir', self.fields))
 
     def buildProtocol(self, addr):
-        log("Connecting.")
+        log("Connecting as {0}.".format(self.Identifier))
         proto = FreenetClientProtocol()
         proto.factory = self
         self.proto = proto
