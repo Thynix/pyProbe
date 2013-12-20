@@ -101,6 +101,7 @@ config = parser.defaults()
 # Set default locale for number formatting.
 locale.setlocale(locale.LC_ALL, '')
 
+
 def log(msg):
     if not args.quiet:
         print("{0}: {1}".format(datetime.datetime.now(), msg))
@@ -150,14 +151,16 @@ errorDataSources = ['error-disconnected',   # Error occurrences in the past shor
                     'error-timeout',        # It may be more informative to treat local and remote separately.
                     'error-unknown',
                     'error-unrecognized',
-                    'error-cannot-frwrd' ]
+                    'error-cannot-frwrd'
+                    ]
 
-errorPlotNames = [  'Disconnected',
-                    'Overload',
-                    'Timeout',
-                    'Unknown Error',
-                    'Unrecognized Type',
-                    'Cannot Forward' ]
+errorPlotNames = ['Disconnected',
+                  'Overload',
+                  'Timeout',
+                  'Unknown Error',
+                  'Unrecognized Type',
+                  'Cannot Forward'
+                  ]
 
 try:
     f = open(args.rrd, "r")
@@ -190,28 +193,29 @@ except IOError:
         % (rrdStart, rrdPOSIXStart))
 
     # Generate list of data sources to reduce repetition. All sources contain only values greater than zero.
-    datasources = [ 'DS:{0}:GAUGE:{1}:0:U'.format(name, shortPeriodSeconds) for name in
-                    [   'instantaneous-size',   # Size estimated over a shortPeriod.
-                        'effective-size',       # Effective size estimated over a longPeriod.
-                        'datastore-capacity',   # Usable datastore capacity. In bytes so RRDTool can use prefixes.
-                        'daily-size',           # Effective size estimated over the past 2 days.
-                        'refused'               # Refused, for all probe types.
-                    ] + errorDataSources ]
+    datasources = ['DS:{0}:GAUGE:{1}:0:U'.format(name, shortPeriodSeconds) for name in
+                   ['instantaneous-size',   # Size estimated over a shortPeriod.
+                    'effective-size',       # Effective size estimated over a longPeriod.
+                    'datastore-capacity',   # Usable datastore capacity. In bytes so RRDTool can use prefixes.
+                    'daily-size',           # Effective size estimated over the past 2 days.
+                    'refused'               # Refused, for all probe types.
+                    ] + errorDataSources
+                   ]
 
-    rrdtool.create( args.rrd,
-                # If the database already exists don't overwrite it.
-                '--no-overwrite',
-                '--start', rrdPOSIXStart,
-                # Once each hour.
-                '--step', '{0}'.format(shortPeriodSeconds),
-                # Lossless for a year of instantaneous; longer for effective estimate. No unknowns allowed.
-                # (60 * 60 * 24 * 365 = 31536000 seconds per year)
-                'RRA:AVERAGE:0:1:{0}'.format(int(31536000/shortPeriodSeconds)),
-                # Daily average for five years; longer for effective estimate.
-                # (3600 * 24 = 86400 seconds in a day;365 * 5 = 1825 days)
-                'RRA:AVERAGE:0:{0}:1825'.format(int(86400/shortPeriodSeconds)),
-                *datasources
-              )
+    rrdtool.create(args.rrd,
+                   # If the database already exists don't overwrite it.
+                   '--no-overwrite',
+                   '--start', rrdPOSIXStart,
+                   # Once each hour.
+                   '--step', '{0}'.format(shortPeriodSeconds),
+                   # Lossless for a year of instantaneous; longer for effective estimate. No unknowns allowed.
+                   # (60 * 60 * 24 * 365 = 31536000 seconds per year)
+                   'RRA:AVERAGE:0:1:{0}'.format(int(31536000/shortPeriodSeconds)),
+                   # Daily average for five years; longer for effective estimate.
+                   # (3600 * 24 = 86400 seconds in a day;365 * 5 = 1825 days)
+                   'RRA:AVERAGE:0:{0}:1825'.format(int(86400/shortPeriodSeconds)),
+                   *datasources
+                   )
 
 if args.runRRD:
     #
@@ -325,9 +329,9 @@ if args.runRRD:
 
         # RRDTool format string to explicitly specify the order of the data sources.
         # The first one is implicitly the time of the sample.
-        rrdtool.update( args.rrd,
-            '-t', 'instantaneous-size:daily-size:effective-size:datastore-capacity:refused:' + join(errorDataSources, ':'),
-                join(map(str, [ toPosix(toTime), instantaneousSize, dailySize, effectiveSize, estimatedDatastore, refused ] + errors), ':'))
+        rrdtool.update(args.rrd,
+                       '-t', 'instantaneous-size:daily-size:effective-size:datastore-capacity:refused:' + join(errorDataSources, ':'),
+                       join(map(str, [toPosix(toTime), instantaneousSize, dailySize, effectiveSize, estimatedDatastore, refused] + errors), ':'))
 
         fromTime = toTime
         toTime = fromTime + shortPeriod
@@ -340,77 +344,77 @@ if args.runRRD:
     # Should be at least as long as len(sourcesNames) because zip()
     # truncates to the length of the shortest argument.
     colors = [
-                '#5B000D', # Brown
-                '#00FFFD', # Cyan
-                '#23A9FF', # Light blue
-                '#FFE800', # Yellow
-                '#08005B', # Dark blue
-                '#FFD0C6', # Light pink
-                '#04FF04', # Light green
-                '#0000FF', # Blue
-                '#004F00', # Dark green
-                '#FF15CD', # Dark pink
-                '#FF0000'  # Red
-             ]
+              '#5B000D',  # Brown
+              '#00FFFD',  # Cyan
+              '#23A9FF',  # Light blue
+              '#FFE800',  # Yellow
+              '#08005B',  # Dark blue
+              '#FFD0C6',  # Light pink
+              '#04FF04',  # Light green
+              '#0000FF',  # Blue
+              '#004F00',  # Dark green
+              '#FF15CD',  # Dark pink
+              '#FF0000'   # Red
+    ]
 
     # List for error sources and lines to avoid repetition.
     # Without a manually specified color RRDTool assigns them.
-    sourcesNames = zip( errorDataSources + [ 'refused' ],
-                        errorPlotNames + [ 'Refused' ],
-                        colors )
+    sourcesNames = zip(errorDataSources + ['refused'],
+                       errorPlotNames + ['Refused'],
+                       colors)
 
-    refusedAndErrors = [    'DEF:{0}={1}:{0}:AVERAGE:step={2}'.format(pair[0], args.rrd, int(totalSeconds(shortPeriod))) 
-                            for pair in sourcesNames ]
-    refusedAndErrors += [ 'LINE2:{0}{1}:{2}'.format(pair[0], pair[2], pair[1])
-                            for pair in sourcesNames ]
+    refusedAndErrors = ['DEF:{0}={1}:{0}:AVERAGE:step={2}'.format(pair[0], args.rrd, int(totalSeconds(shortPeriod)))
+                        for pair in sourcesNames]
+    refusedAndErrors += ['LINE2:{0}{1}:{2}'.format(pair[0], pair[2], pair[1])
+                         for pair in sourcesNames]
 
     # Year: 3600 * 24 * 365 = 31536000 seconds
     # Month: 3600 * 24 * 30 = 2592000 seconds
     # Week: 3600 * 24 * 7 = 604800 seconds
     # Period name, start.
-    for period in [ ('year', lastResult - 31536000), ('month', lastResult - 2592000), ('week', lastResult - 604800) ]:
+    for period in [('year', lastResult - 31536000), ('month', lastResult - 2592000), ('week', lastResult - 604800)]:
         # Width, height.
-        for dimension in [ (900, 300), (1200, 400) ]:
-            rrdtool.graph(args.outputDir + '/{0}_{1}x{2}_{3}'.format(period[0],dimension[0], dimension[1], args.sizeGraph),
-                            '--start', str(period[1]),
-                            '--end', str(lastResult),
-                            # Each data source has a new value each shortPeriod,
-                            # even if it involves data over a longer period.
-                            'DEF:instantaneous-size={0}:instantaneous-size:AVERAGE:step={1}'.format(args.rrd, int(totalSeconds(shortPeriod))),
-                            'DEF:daily-size={0}:daily-size:AVERAGE:step={1}'.format(args.rrd, int(totalSeconds(shortPeriod))),
-                            'DEF:effective-size={0}:effective-size:AVERAGE:step={1}'.format(args.rrd, int(totalSeconds(shortPeriod))),
-                            'LINE2:instantaneous-size#FF0000:Hourly Instantaneous',
-                            'LINE2:daily-size#0099FF:Daily Effective',
-                            'LINE2:effective-size#0000FF:Weekly Effective',
-                            '-v', 'Size Estimate',
-                            '--right-axis', '1:0',
-                            '--full-size-mode',
-                            '--width', str(dimension[0]),
-                            '--height', str(dimension[1])
-                         )
+        for dimension in [(900, 300), (1200, 400)]:
+            rrdtool.graph(args.outputDir + '/{0}_{1}x{2}_{3}'.format(period[0], dimension[0], dimension[1], args.sizeGraph),
+                          '--start', str(period[1]),
+                          '--end', str(lastResult),
+                          # Each data source has a new value each shortPeriod,
+                          # even if it involves data over a longer period.
+                          'DEF:instantaneous-size={0}:instantaneous-size:AVERAGE:step={1}'.format(args.rrd, int(totalSeconds(shortPeriod))),
+                          'DEF:daily-size={0}:daily-size:AVERAGE:step={1}'.format(args.rrd, int(totalSeconds(shortPeriod))),
+                          'DEF:effective-size={0}:effective-size:AVERAGE:step={1}'.format(args.rrd, int(totalSeconds(shortPeriod))),
+                          'LINE2:instantaneous-size#FF0000:Hourly Instantaneous',
+                          'LINE2:daily-size#0099FF:Daily Effective',
+                          'LINE2:effective-size#0000FF:Weekly Effective',
+                          '-v', 'Size Estimate',
+                          '--right-axis', '1:0',
+                          '--full-size-mode',
+                          '--width', str(dimension[0]),
+                          '--height', str(dimension[1])
+                          )
 
             rrdtool.graph(args.outputDir + '/{0}_{1}x{2}_{3}'.format(period[0], dimension[0], dimension[1], args.datastoreGraph),
-                            '--start', str(period[1]),
-                            '--end', str(lastResult),
-                            'DEF:datastore-capacity={0}:datastore-capacity:AVERAGE:step={1}'.format(args.rrd, int(totalSeconds(shortPeriod))),
-                            'AREA:datastore-capacity#0000FF',
-                            '-v', 'Datastore Capacity',
-                            '--right-axis', '1:0',
-                            '--full-size-mode',
-                            '--width', str(dimension[0]),
-                            '--height', str(dimension[1])
-                         )
+                          '--start', str(period[1]),
+                          '--end', str(lastResult),
+                          'DEF:datastore-capacity={0}:datastore-capacity:AVERAGE:step={1}'.format(args.rrd, int(totalSeconds(shortPeriod))),
+                          'AREA:datastore-capacity#0000FF',
+                          '-v', 'Datastore Capacity',
+                          '--right-axis', '1:0',
+                          '--full-size-mode',
+                          '--width', str(dimension[0]),
+                          '--height', str(dimension[1])
+                          )
 
             rrdtool.graph(args.outputDir + '/{0}_{1}x{2}_{3}'.format(period[0], dimension[0], dimension[1], args.errorRefusedGraph),
-                            '--start', str(period[1]),
-                            '--end', str(lastResult),
-                            '-v', 'Errors and Refused',
-                            '--right-axis', '1:0',
-                            '--full-size-mode',
-                            '--width', str(dimension[0]),
-                            '--height', str(dimension[1]),
-                            *refusedAndErrors
-                         )
+                          '--start', str(period[1]),
+                          '--end', str(lastResult),
+                          '-v', 'Errors and Refused',
+                          '--right-axis', '1:0',
+                          '--full-size-mode',
+                          '--width', str(dimension[0]),
+                          '--height', str(dimension[1]),
+                          *refusedAndErrors
+                          )
 
 if args.runLocation:
     log("Querying database for locations.")
@@ -473,11 +477,11 @@ if args.markdownFiles is not None:
                 # pass in text which behaves like a string but actually pulls data from
                 # the disk as needed.
                 body = markdown.markdown(markdownInput.read(),
-                                  extensions=['generateddate'],
-                                  encoding='utf8',
-                                  output_format='xhtml1',
-                                  # Not using user-supplied content; want image tags with size.
-                                  safe=False)
+                                         extensions=['generateddate'],
+                                         encoding='utf8',
+                                         output_format='xhtml1',
+                                         # Not using user-supplied content; want image tags with size.
+                                         safe=False)
 
                 # Root element and doctype, conforming with XHTML 1.1
                 # Via http://www.w3.org/TR/xhtml11/conformance.html#docconf
@@ -515,6 +519,7 @@ host = defaults['host']
 port = int(defaults['port'])
 scriptPath = os.path.dirname(os.path.realpath(__file__))
 
+
 class InsertFCPFactory(protocol.ClientFactory):
     """
     Inserts the site upon connection, then waits for success or failure
@@ -526,15 +531,15 @@ class InsertFCPFactory(protocol.ClientFactory):
         self.Identifier = 'Statistics Page Insert {0}'.format(startTime)
         # TODO: Why doesn't twistedfcp use a dictionary for fields?
         self.fields = [
-                    ('URI', '{0}/{1}/0/'.format(privkey, path)),
-                    ('Identifier', self.Identifier),
-                    ('MaxRetries', '-1'),
-                    ('Persistence', 'reboot'),
-                    ('DefaultName', 'index.html'),
-                    ('Filename', os.path.abspath(args.outputDir)),
-                    # Send PutFetchable
-                    ('Verbosity', 64),
-                 ]
+                       ('URI', '{0}/{1}/0/'.format(privkey, path)),
+                       ('Identifier', self.Identifier),
+                       ('MaxRetries', '-1'),
+                       ('Persistence', 'reboot'),
+                       ('DefaultName', 'index.html'),
+                       ('Filename', os.path.abspath(args.outputDir)),
+                       # Send PutFetchable
+                       ('Verbosity', 64),
+        ]
 
     def Done(self, message):
         print message.name, message.args
@@ -591,4 +596,3 @@ class InsertFCPFactory(protocol.ClientFactory):
 
 reactor.connectTCP(host, port, InsertFCPFactory())
 reactor.run()
-
