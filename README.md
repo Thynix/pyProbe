@@ -120,7 +120,7 @@ All tables have an `id` primary key. Additional columns vary by table:
 
 ### `bandwidth`
 
-* `KiB`- Outgoing bandwidth limit in floating point KiB/s.
+* `kib`- Outgoing bandwidth limit in floating point KiB/s.
 
 ### `build`
 
