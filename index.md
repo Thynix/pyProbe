@@ -90,6 +90,10 @@ The bulk queue (therefore not realtime queue) reject percentages are an indicato
 
 ## Changelog
 
+### December 22nd, 2013
+
+An ice storm prompted a 3-day power outage.
+
 ### December 19th, 2013
 
 Change error plot to stacked area for clearer total. Decrease HTL in an attempt to lower overload rate and get a better impression of the network.
