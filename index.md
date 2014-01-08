@@ -90,6 +90,10 @@ The bulk queue (therefore not realtime queue) reject percentages are an indicato
 
 ## Changelog
 
+### January 7th, 2014
+
+An Internet connection outage for most of the day was presumably prompted by the impractically large amounts of snow.
+
 ### December 22nd, 2013
 
 An ice storm prompted a 3-day power outage.
