@@ -65,7 +65,7 @@ Freenet Statistics
 
 ## Explanation
 
-These estimates are based on results gathered with the probes introduced in build 1409.
+These estimates are based on results gathered with probe requests.
 
 The network size is estimated by gathering identifier probe results, and comparing the number of distinct identifiers with the total number of samples. Based on the assumption that the results are from nodes selected from the entire network at random, as the probes are designed to do, this allows guessing the size the network would have to be to give that proportion. The instantaneous size estimate does this with an hour of samples, and as such estimates how many nodes are online at that moment.
 
@@ -89,6 +89,10 @@ Link length, peer count, bulk reject percentages, and uptime are from the last d
 The bulk queue (therefore not realtime queue) reject percentages are an indicator of network health. My understanding is that a node will reject a request if it does not have sufficient bandwidth available to take on the commitment. This would mean that high reject percentages might indicate low bandwidth limits and problems with routing. I am currently collecting information on bandwidth limits, but I am not yet plotting that information.
 
 ## Changelog
+
+### August 31st, 2014
+
+Add ideal and uniformly random link length distributions to the link length distribution plot for comparison.
 
 ### January 7th, 2014
 
@@ -171,4 +175,4 @@ Initial release.
 * A download of the network and usable store size estimate RRD.
 * Plots of the past 7 days of link length and peer count distribution.
 
-_Generated [GENERATED-DATE] by [operhiem1](/USK@pxtehd-TmfJwyNUAW2Clk4pwv7Nshyg21NNfXcqzFv4,LTjcTWqvsq3ju6pMGe9Cqb3scvQgECG81hRdgj5WO4s,AQACAAE/blog/18/) using pyProbe. Web mirror is [here](http://asksteved.com/stats/). The RRD is [here](size.xml). The source code is in [this Infocalypse repository](/USK@pxtehd-TmfJwyNUAW2Clk4pwv7Nshyg21NNfXcqzFv4,LTjcTWqvsq3ju6pMGe9Cqb3scvQgECG81hRdgj5WO4s,AQACAAE/pyProbe.R1/11), or on [GitHub](https://github.com/thynix/pyProbe/)._
+_Generated [GENERATED-DATE] by [operhiem1](/USK@pxtehd-TmfJwyNUAW2Clk4pwv7Nshyg21NNfXcqzFv4,LTjcTWqvsq3ju6pMGe9Cqb3scvQgECG81hRdgj5WO4s,AQACAAE/blog/12/) using pyProbe. Web mirror is [here](http://asksteved.com/stats/). The RRD is [here](size.xml). The source code is in [this Infocalypse repository](/USK@pxtehd-TmfJwyNUAW2Clk4pwv7Nshyg21NNfXcqzFv4,LTjcTWqvsq3ju6pMGe9Cqb3scvQgECG81hRdgj5WO4s,AQACAAE/pyProbe.R1/12), or on [GitHub](https://github.com/thynix/pyProbe/)._

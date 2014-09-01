@@ -97,7 +97,6 @@ def plot_link_length(lengths, width=default_width, height=default_height,
         lengths = [[0.01]]
 
     g = g_init(width, height, filename)
-    g('set key off')
 
     g.title('Link Length Distribution')
     g.xlabel('Link Length (delta location)')
@@ -109,7 +108,15 @@ def plot_link_length(lengths, width=default_width, height=default_height,
     g.set(xrange='[0.00001:0.5]')
     g.set(yrange='[0:100]')
 
-    g.plot(Gnuplot.Data(CDF(lengths), smooth='cumulative'))
+    g.plot(Gnuplot.Data(CDF(lengths), smooth='cumulative', title='Measured'),
+           Gnuplot.File('ideal-link', smooth='cumulative', title='Ideal'),
+           Gnuplot.File('flat-link', smooth='cumulative', title='Flat'))
+
+# TODO: Generate the flat and ideal link length distribution files if they
+# are missing. See:
+# flat: https://github.com/Thynix/routing-simulator/blob/master/src/main/java/org/freenetproject/routing_simulator/graph/linklength/UniformLinkSource.java
+# ideal: https://github.com/Thynix/routing-simulator/blob/master/src/main/java/org/freenetproject/routing_simulator/graph/linklength/KleinbergLinkSource.java
+
 
 def plot_location_dist(locations, width=default_width, height=default_height,
                        filename=None):
