@@ -27,7 +27,7 @@ parser.add_argument('-T', '--recentHours', dest="recentHours", default=24,
                     help="Number of hours for which a probe is considered "
                          "recent. Used for peer count histogram and link "
                          "lengths. Default 24.")
-parser.add_argument('--histogram-max', dest="histogramMax", default=110,
+parser.add_argument('--histogram-max', dest="histogramMax", default=152,
                     type=int,
                     help="Maximum number of peers to consider for histogram "
                          "generation; anything more than that is included in "
