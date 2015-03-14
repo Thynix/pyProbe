@@ -18,6 +18,7 @@ from fnprobe.time_utils import toPosix, fromPosix, get_midnight, totalSeconds,\
 from fnprobe.gnuplots import plot_link_length, plot_location_dist, plot_peer_count, plot_bulk_reject, reject_types, plot_uptime
 from fnprobe.db import Database, errorTypes
 import locale
+import time
 
 parser = argparse.ArgumentParser(description="Analyze probe results for estimates of peer distribution and network interconnectedness; generate plots.")
 
@@ -224,6 +225,11 @@ if args.runRRD:
     #
     last = rrdtool.last(args.rrd)
     fromTime = fromPosix(int(last))
+
+    # Tolerate daylight savings time.
+    if time.localtime().tm_isdst > 0:
+        fromTime += 3600
+
     toTime = fromTime + shortPeriod
     log("Resuming network size computation for %s to %s." % (fromTime, toTime))
 
