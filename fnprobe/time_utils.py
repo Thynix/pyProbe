@@ -12,7 +12,7 @@ def toPosix(dt):
     ts = int(calendar.timegm(dt.utctimetuple()))
 
     # Tolerate daylight savings time.
-    if time.localtime().tm_isdst > 0:
+    if dt.timetuple().tm_isdst > 0:
         ts += 3600
 
     return ts
