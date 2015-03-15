@@ -224,11 +224,12 @@ if args.runRRD:
     # If the database is new rrdtool last returns the database start time.
     #
     last = rrdtool.last(args.rrd)
-    fromTime = fromPosix(int(last))
 
     # Tolerate daylight savings time.
     if time.localtime().tm_isdst > 0:
-        fromTime += 3600
+        last += 3600
+
+    fromTime = fromPosix(int(last))
 
     toTime = fromTime + shortPeriod
     log("Resuming network size computation for %s to %s." % (fromTime, toTime))
