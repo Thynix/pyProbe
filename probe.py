@@ -50,6 +50,7 @@ def insert(conn, config, probe_type, result, duration, now):
     htl = config['hopsToLive']
     probe_type_code = getattr(probeTypes, probe_type).index
 
+    # TODO: Reconnect on failure?
     insertResult(conn.cursor(), header, htl, result, now, duration,
                  probe_type, probe_type_code)
 

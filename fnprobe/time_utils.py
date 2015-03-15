@@ -9,7 +9,13 @@ def toPosix(dt):
     """
     Return the POSIX timestamp for a datetime.
     """
-    return int(calendar.timegm(dt.utctimetuple()))
+    ts = int(calendar.timegm(dt.utctimetuple()))
+
+    # Tolerate daylight savings time.
+    if time.localtime().tm_isdst > 0:
+        ts += 3600
+
+    return ts
 
 
 def fromPosix(posix):
