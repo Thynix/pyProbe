@@ -476,7 +476,7 @@ if args.markdownFiles is not None:
                 # when it is all read into memory. Perhaps if it is a problem one could
                 # pass in text which behaves like a string but actually pulls data from
                 # the disk as needed.
-                body = markdown.markdown(markdownInput.read(),
+                body = markdown.markdown(markdownInput.read().format(args),
                                          extensions=['generateddate'],
                                          encoding='utf8',
                                          output_format='xhtml1',

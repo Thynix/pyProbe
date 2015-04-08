@@ -84,7 +84,7 @@ Errors are:
 * Unrecognized Type: a remote node did not recognize the requested probe type.
 * Cannot Forward: a remote node understood the request but failed to forward it to another node.
 
-Link length, peer count, bulk reject percentages, and uptime are from the last day of results. All peer counts above 110 count towards 110. Reported uptime can exceed 100% due to the added random noise. Bulk reject percentages are restricted to between 0% and 100%.
+Link length, peer count, bulk reject percentages, and uptime are from the last day of results. All peer counts above {0.histogramMax} count towards {0.histogramMax}. Reported uptime can exceed 100% due to the added random noise. Bulk reject percentages are restricted to between 0% and 100%.
 
 The bulk queue (therefore not realtime queue) reject percentages are an indicator of network health. My understanding is that a node will reject a request if it does not have sufficient bandwidth available to take on the commitment. This would mean that high reject percentages might indicate low bandwidth limits and problems with routing. I am currently collecting information on bandwidth limits, but I am not yet plotting that information.
 
