@@ -329,9 +329,12 @@ if args.runRRD:
 
         # RRDTool format string to explicitly specify the order of the data sources.
         # The first one is implicitly the time of the sample.
-        rrdtool.update(args.rrd,
+        try:
+            rrdtool.update(args.rrd,
                        '-t', 'instantaneous-size:daily-size:effective-size:datastore-capacity:refused:' + join(errorDataSources, ':'),
                        join(map(str, [toPosix(toTime), instantaneousSize, dailySize, effectiveSize, estimatedDatastore, refused] + errors), ':'))
+        except rrdtool.error as e:
+            log("Failed to update RRD: {0}".format(e))
 
         fromTime = toTime
         toTime = fromTime + shortPeriod
