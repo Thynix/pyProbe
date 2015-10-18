@@ -204,11 +204,15 @@ def plot_uptime(uptimes, histMax, width=default_width, height=default_height,
         logging.warning("No uptimes to plot.")
         uptimes = [[0, 0]]
 
+    # Adjust report by inverse uptime to get a network percentage estimate:
+    # nodes with high uptime are more often online to appear in results.
+    uptimes = [(uptime, count / (uptime + 10)) for uptime, count in uptimes]
+
     g = g_init(width, height, filename)
 
     g.title('Uptime Distribution')
     g.xlabel('Reported 7-day uptime percentage')
-    g.ylabel('Percent reports')
+    g.ylabel('Estimated network percentage')
     add_sample_size_label(g, get_total_occurrences(uptimes))
 
     g('set style data histogram')
