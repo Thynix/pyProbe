@@ -6,7 +6,7 @@ import datetime
 datere = re.compile(r'\[GENERATED-DATE\]')
 # "Locale's full month name" "Day of the month as a decimal number", "Year with century as a decimal number"
 # Ex: "September 02, 2012"
-today = datetime.date.today().strftime('%B %d, %Y')
+today = datetime.date.today().strftime('%Y-%m-%d')
 
 class GeneratedDateExtension(markdown.Extension):
     def extendMarkdown(self, md, md_globals):
