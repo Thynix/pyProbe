@@ -3,6 +3,8 @@ Freenet Statistics
 
 <img src="activelink.png" alt="Activelink" width="108" height="36"/>
 
+_Generated [GENERATED-DATE]._
+
 ## Network Size
 
 <!--- TODO: Vertical lines at configuration changes and build release/mandatory. -->
