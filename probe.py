@@ -48,7 +48,11 @@ def insert(conn, config, probe_type, result, duration, now):
 
     header = result.name
     htl = config['hopsToLive']
-    probe_type_code = getattr(probeTypes, probe_type).index
+    try:
+        probe_type_code = getattr(probeTypes, probe_type).index
+    except (exceptions.AttributeError):
+        logging.error("Could not get type %s", probe_type)
+        return
 
     insertResult(conn.cursor(), header, htl, result, now, duration,
                  probe_type, probe_type_code)
