@@ -48,7 +48,7 @@ def insert(conn, config, probe_type, result, duration, now):
 
     header = result.name
     htl = config['hopsToLive']
-    probe_type_code = getattr(probeTypes, probe_type).index
+    probe_type_code = getattr(probeTypes, probe_type).value
 
     insertResult(conn.cursor(), header, htl, result, now, duration,
                  probe_type, probe_type_code)
@@ -78,7 +78,7 @@ def insertResult(cur, header, htl, result, now, duration, probe_type,
                           result[LOCAL]))
             raise ValueError
 
-        error_type = getattr(errorTypes, result[TYPE]).index
+        error_type = getattr(errorTypes, result[TYPE]).value
 
         cur.execute("""
         INSERT INTO

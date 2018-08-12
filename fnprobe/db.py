@@ -5,11 +5,11 @@ from numpy import median, mean, percentile
 
 # Current mapping between probe and error types. Used for storage (probe) and
 # analysis. (analyze)
-probeTypes = Enum('BANDWIDTH', 'BUILD', 'IDENTIFIER', 'LINK_LENGTHS',
+probeTypes = Enum('probeTypes', ['BANDWIDTH', 'BUILD', 'IDENTIFIER', 'LINK_LENGTHS',
                   'LOCATION', 'STORE_SIZE', 'UPTIME_48H',
-                  'UPTIME_7D', 'REJECT_STATS')
-errorTypes = Enum('DISCONNECTED', 'OVERLOAD', 'TIMEOUT', 'UNKNOWN',
-                  'UNRECOGNIZED_TYPE', 'CANNOT_FORWARD')
+                  'UPTIME_7D', 'REJECT_STATS'])
+errorTypes = Enum('errorTypes', ['DISCONNECTED', 'OVERLOAD', 'TIMEOUT', 'UNKNOWN',
+                  'UNRECOGNIZED_TYPE', 'CANNOT_FORWARD'])
 
 
 # Changes made to sequences are not transactional, no need to commit after.
