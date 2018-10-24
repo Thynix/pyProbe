@@ -13,7 +13,7 @@ pyProbe is a collection of data gathering and analysis tools for [Freenet](https
 * [Twisted](https://twistedmatrix.com/trac/)
 * [twistedfcp](https://github.com/AnIrishDuck/twistedfcp)
 * [Markdown](http://packages.python.org/Markdown/index.html)
-* [enum](http://pypi.python.org/pypi/enum/0.4.4)
+* [enum34](http://pypi.python.org/pypi/enum34)
 * [postgresql](http://www.postgresql.org/)
 * [psycopg](http://initd.org/psycopg/)
 * [numpy](http://scipy.org/)
