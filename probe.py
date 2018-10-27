@@ -1,4 +1,5 @@
 from __future__ import division
+import exceptions
 import random
 import datetime
 from twisted.internet import protocol
@@ -49,7 +50,7 @@ def insert(conn, config, probe_type, result, duration, now):
     header = result.name
     htl = config['hopsToLive']
     try:
-        probe_type_code = getattr(probeTypes, probe_type).index
+        probe_type_code = getattr(probeTypes, probe_type).value
     except (exceptions.AttributeError):
         logging.error("Could not get type %s", probe_type)
         return
@@ -82,7 +83,7 @@ def insertResult(cur, header, htl, result, now, duration, probe_type,
                           result[LOCAL]))
             raise ValueError
 
-        error_type = getattr(errorTypes, result[TYPE]).index
+        error_type = getattr(errorTypes, result[TYPE]).value
 
         cur.execute("""
         INSERT INTO
