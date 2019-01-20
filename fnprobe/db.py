@@ -3,26 +3,31 @@ from enum import Enum
 import psycopg2
 from numpy import median, mean, percentile
 
+
 # Current mapping between probe and error types. Used for storage (probe) and
 # analysis. (analyze)
+# See the Type enum in src/freenet/node/probe/Type.java
 class probeTypes(Enum):
-    BANDWIDTH=1
-    BUILD=2
-    IDENTIFIER=3
-    LINK_LENGTHS=4
-    LOCATION=5
-    STORE_SIZE=6
-    UPTIME_48H=7
-    UPTIME_7D=8
-    REJECT_STATS=9
+    BANDWIDTH = 0
+    BUILD = 1
+    IDENTIFIER = 2
+    LINK_LENGTHS = 3
+    LOCATION = 4
+    STORE_SIZE = 5
+    UPTIME_48H = 6
+    UPTIME_7D = 7
+    REJECT_STATS = 8
+    OVERALL_BULK_OUTPUT_CAPACITY_USAGE = 9
 
+
+# See the Error enum in src/freenet/node/probe/Error.java
 class errorTypes(Enum):
-    DISCONNECTED=1
-    OVERLOAD=2
-    TIMEOUT=3
-    UNKNOWN=4
-    UNRECOGNIZED_TYPE=5
-    CANNOT_FORWARD=6
+    DISCONNECTED = 0
+    OVERLOAD = 1
+    TIMEOUT = 2
+    UNKNOWN = 3
+    UNRECOGNIZED_TYPE = 4
+    CANNOT_FORWARD = 5
 
 
 # Changes made to sequences are not transactional, no need to commit after.
