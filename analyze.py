@@ -325,7 +325,10 @@ if args.runRRD:
         # not return a row, so list entries must be made manually.
         errors = [0] * len(errorTypes)
         for index, count in db.span_error_count(fromTime, toTime):
-            errors[index] = count
+            try:
+                errors[index] = count
+            except IndexError as e:
+                print("could not track error with index", index, "and count", count, "in list", errors, "for error types", errorTypes)
 
         # RRDTool format string to explicitly specify the order of the data sources.
         # The first one is implicitly the time of the sample.

@@ -22,12 +22,13 @@ class probeTypes(Enum):
 
 # See the Error enum in src/freenet/node/probe/Error.java
 class errorTypes(Enum):
-    DISCONNECTED = 0
-    OVERLOAD = 1
-    TIMEOUT = 2
-    UNKNOWN = 3
-    UNRECOGNIZED_TYPE = 4
-    CANNOT_FORWARD = 5
+    DISCONNECTED=0
+    OVERLOAD=1
+    TIMEOUT=2
+    UNKNOWN=3
+    UNRECOGNIZED_TYPE=4
+    CANNOT_FORWARD=5
+    UNKNOWN=6
 
 
 # Changes made to sequences are not transactional, no need to commit after.
