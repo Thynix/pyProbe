@@ -325,7 +325,10 @@ if args.runRRD:
         # not return a row, so list entries must be made manually.
         errors = [0] * len(errorTypes)
         for index, count in db.span_error_count(fromTime, toTime):
-            errors[index] = count
+            try:
+                errors[index] = count
+            except IndexError as e:
+                print("could not track error with index", index, "and count", count, "in list", errors, "for error types", errorTypes)
 
         # RRDTool format string to explicitly specify the order of the data sources.
         # The first one is implicitly the time of the sample.
@@ -375,7 +378,7 @@ if args.runRRD:
     # Month: 3600 * 24 * 30 = 2592000 seconds
     # Week: 3600 * 24 * 7 = 604800 seconds
     # Period name, start.
-    for period in [('year', lastResult - 31536000), ('month', lastResult - 2592000), ('week', lastResult - 604800)]:
+    for period in [('decade', lastResult - 31536000 * 10), ('year', lastResult - 31536000), ('month', lastResult - 2592000), ('week', lastResult - 604800)]:
         # Width, height.
         for dimension in [(900, 300), (1200, 400)]:
             rrdtool.graph(args.outputDir + '/{0}_{1}x{2}_{3}'.format(period[0], dimension[0], dimension[1], args.sizeGraph),
